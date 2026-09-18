@@ -1,0 +1,11 @@
+.member { display:flex; align-items:center; gap:10px; min-width:0; }
+.avatar { flex-shrink:0; display:grid; place-items:center; width:36px; height:36px; border:1px solid #c8e8da; border-radius:50%; background:#e3f4ec; color:#07815b; font-size:14px; font-weight:600; }
+.details { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.name { color:#283b4c; font-size:13px; font-weight:600; }
+.email { max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#7b8a9d; font-size:11px; }
+.links { display:flex; align-items:center; gap:28px; font-size:12px; white-space:nowrap; }
+.links > a:first-child:hover { color:#059d69; }
+.start { display:inline-flex; justify-content:center; align-items:center; min-height:40px; padding:9px 22px; background:#26343f; color:white; border-radius:8px; font-weight:600; }
+.start:hover { background:#0a7859; }
+.unavailable { max-width:220px; font-size:11px; line-height:1.5; color:#7b8a9d; }
+@media(max-width:600px) { .member { gap:7px; }.avatar { width:30px; height:30px; }.email { max-width:135px; font-size:10px; }.name { font-size:12px; }.links { gap:15px; }.start { padding:9px 12px; } }

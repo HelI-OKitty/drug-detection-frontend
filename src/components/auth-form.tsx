@@ -35,7 +35,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
       const result = await authenticate(mode, data);
       if (result.success) {
         // Start a fresh document after authentication to discard cached redirects.
-        window.location.replace(isSignup ? "/login" : "/");
+        window.location.replace(isSignup ? "/login" : "/dashboard");
         return;
       }
       setMessage(result.message);
