@@ -44,7 +44,7 @@ export default function Home() {
               <p className={styles.eyebrow}>마약 거래 의심 게시글 탐지 콘솔</p>
               <h1><span>마약 거래 의심 게시글</span>,<br />지금 감지하고 더 안전한 내일을 만듭니다.</h1>
               <p className={styles.description}>게시글 속 은어와 거래 정황, 혼자 판단하지 마세요.<br />SENTINEL의 텍스트 분석이 마약 거래 의심 여부를 판별해<br className={styles.desktopBreak} /> 더 안전한 온라인 환경을 만들어 갑니다.</p>
-              <div className={styles.heroActions}><Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link><Link href="/text-detector" className={styles.outlineButton}>텍스트 분석 체험</Link></div>
+              <div className={styles.heroActions}><Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link></div>
               <p className={styles.trustLabel}>복잡한 설정 없이, 게시글 텍스트 입력부터 시작하세요.</p>
               <div className={styles.trustItems}>{trustItems.map(({ Icon, label }) => <span key={label}><Icon aria-hidden="true" />{label}</span>)}</div>
             </div>
@@ -66,7 +66,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className={styles.footer}><Link href="/" className={styles.brand}><i />SENTINEL</Link><Link href="/dashboard">대시보드</Link><Link href="/text-detector">텍스트 분석</Link><span>© {new Date().getFullYear()} SENTINEL. All rights reserved.</span></footer>
+      <footer className={styles.footer}><Link href="/" className={styles.brand}><i />SENTINEL</Link><span>© {new Date().getFullYear()} SENTINEL. All rights reserved.</span></footer>
     </div>
   );
 }
