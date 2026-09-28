@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-브라우저에서 `http://localhost:3000`으로 접속해 화면을 확인할 수 있습니다.
+브라우저에서 `http://localhost:8080`으로 접속해 화면을 확인할 수 있습니다.
 
 ## 사용 가능한 스크립트
 
