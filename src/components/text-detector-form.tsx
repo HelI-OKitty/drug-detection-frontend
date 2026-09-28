@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import { detectText } from "@/app/text-detector/actions";
 
@@ -67,7 +68,7 @@ export default function TextDetectorForm() {
           />
           <p className="mt-2 text-right text-xs text-slate-500">{text.length.toLocaleString("ko-KR")}자</p>
           <button type="submit" disabled={pending || !text.trim()} className="submit-button disabled:cursor-not-allowed disabled:opacity-50">
-            {pending ? "분석 중…" : "텍스트 분석하기"}<span aria-hidden="true">→</span>
+            {pending ? "분석 중…" : "텍스트 분석하기"}<ArrowRight aria-hidden="true" />
           </button>
         </form>
 

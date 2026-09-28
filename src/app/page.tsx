@@ -1,23 +1,30 @@
 import Link from "next/link";
+import { ArrowRight, BarChart3, Bell, LayoutDashboard, Link2, Radar, ScanText, SearchCheck, ShieldCheck, SlidersHorizontal, TriangleAlert, Zap } from "lucide-react";
 import DashboardView from "@/components/dashboard-view";
 import MemberInfo from "@/components/member-info";
 import styles from "./home.module.css";
 
 const features = [
-  { icon: "search", title: "게시글 텍스트 분석", text: <>게시글을 입력하고 마약 거래<br />의심 여부를 간편하게 확인하세요.</> },
-  { icon: "alert", title: "마약 은어 탐지", text: <>AI 기반 텍스트 분석으로<br />은어와 거래 정황을 살펴보세요.</> },
-  { icon: "chart", title: "직관적인 대시보드", text: <>탐지 현황과 검토 흐름을<br />한눈에 확인하는 화면입니다.</> },
-  { icon: "shield", title: "안전한 시작", text: <>계정을 만들고 로그인해<br />SENTINEL을 시작하세요.</> },
+  { Icon: ScanText, title: "게시글 텍스트 분석", text: <>게시글을 입력하고 마약 거래<br />의심 여부를 간편하게 확인하세요.</> },
+  { Icon: Radar, title: "마약 은어 탐지", text: <>AI 기반 텍스트 분석으로<br />은어와 거래 정황을 살펴보세요.</> },
+  { Icon: BarChart3, title: "직관적인 대시보드", text: <>탐지 현황과 검토 흐름을<br />한눈에 확인하는 화면입니다.</> },
+  { Icon: ShieldCheck, title: "안전한 시작", text: <>계정을 만들고 로그인해<br />SENTINEL을 시작하세요.</> },
 ];
 
-function FeatureIcon({ name }: { name: string }) {
-  return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {name === "search" && <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></>}
-    {name === "alert" && <><path d="m12 3 10 18H2L12 3Z" /><path d="M12 9v5m0 3v.1" /></>}
-    {name === "chart" && <><path d="M3 13h4v8H3zm7-5h4v13h-4zm7-5h4v18h-4z" /></>}
-    {name === "shield" && <><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z" /><path d="m8 12 3 3 5-6" /></>}
-  </svg>;
-}
+const trustItems = [
+  { Icon: SearchCheck, label: "은어·정황 분석" },
+  { Icon: ShieldCheck, label: "의심 여부 판별" },
+  { Icon: Zap, label: "빠른 확인" },
+];
+
+const previewMenu = [
+  { Icon: LayoutDashboard, label: "대시보드", active: true },
+  { Icon: ScanText, label: "텍스트 분석" },
+  { Icon: TriangleAlert, label: "탐지 게시글" },
+  { Icon: SlidersHorizontal, label: "탐지 임계치" },
+  { Icon: Bell, label: "알림 채널" },
+  { Icon: Link2, label: "대상 URL 관리" },
+];
 
 export default function Home() {
   return (
@@ -37,25 +44,25 @@ export default function Home() {
               <p className={styles.eyebrow}>마약 거래 의심 게시글 탐지 콘솔</p>
               <h1><span>마약 거래 의심 게시글</span>,<br />지금 감지하고 더 안전한 내일을 만듭니다.</h1>
               <p className={styles.description}>게시글 속 은어와 거래 정황, 혼자 판단하지 마세요.<br />SENTINEL의 텍스트 분석이 마약 거래 의심 여부를 판별해<br className={styles.desktopBreak} /> 더 안전한 온라인 환경을 만들어 갑니다.</p>
-              <div className={styles.heroActions}><Link href="/signup" className={styles.button}>시작하기 <span aria-hidden="true">→</span></Link><Link href="/text-detector" className={styles.outlineButton}>텍스트 분석 체험</Link></div>
+              <div className={styles.heroActions}><Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link><Link href="/text-detector" className={styles.outlineButton}>텍스트 분석 체험</Link></div>
               <p className={styles.trustLabel}>복잡한 설정 없이, 게시글 텍스트 입력부터 시작하세요.</p>
-              <div className={styles.trustItems}><span>◇ 은어·정황 분석</span><span>◎ 의심 여부 판별</span><span>△ 빠른 확인</span></div>
+              <div className={styles.trustItems}>{trustItems.map(({ Icon, label }) => <span key={label}><Icon aria-hidden="true" />{label}</span>)}</div>
             </div>
             <div className={styles.previewFrame}>
-              <div className={styles.previewSide}><div className={styles.miniBrand}><i />SENTINEL</div><span className={styles.activeMini}>▦ 대시보드</span><span>⌕ 텍스트 분석</span><span>△ 탐지 게시글</span><span>☷ 탐지 임계치</span><span>♧ 알림 채널</span><span>↗ 대상 URL 관리</span></div>
+              <div className={styles.previewSide}><div className={styles.miniBrand}><i />SENTINEL</div>{previewMenu.map(({ Icon, label, active }) => <span key={label} className={active ? styles.activeMini : undefined}><Icon aria-hidden="true" />{label}</span>)}</div>
               <div className={styles.previewMain}><div className={styles.previewHeader}><strong>탐지 대시보드</strong><span>/ summary</span></div><DashboardView preview /></div>
             </div>
           </div>
         </section>
 
         <section id="features" className={styles.features} aria-label="주요 기능">
-          {features.map((feature) => <article key={feature.title}><div className={styles.featureIcon}><FeatureIcon name={feature.icon} /></div><h2>{feature.title}</h2><p>{feature.text}</p></article>)}
+          {features.map(({ Icon, title, text }) => <article key={title}><div className={styles.featureIcon}><Icon aria-hidden="true" /></div><h2>{title}</h2><p>{text}</p></article>)}
         </section>
 
         <section className={styles.cta} aria-labelledby="cta-title">
           <div className={styles.ctaArt} aria-hidden="true"><div><i /><i /><i /></div><span /><section><b /><b /><b /></section></div>
           <div><h2 id="cta-title">보안의 새로운 기준, SENTINEL</h2><p>지금 바로 시작하고,<br />한층 더 안전한 환경을 만들어 보세요.</p></div>
-          <Link href="/signup" className={styles.button}>시작하기 <span aria-hidden="true">→</span></Link>
+          <Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link>
         </section>
       </main>
 
