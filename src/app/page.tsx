@@ -25,7 +25,7 @@ export default function Home() {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand}><i />SENTINEL</Link>
-          <nav className={styles.nav} aria-label="주요 메뉴"><a href="#about">제품 소개</a><a href="#features">주요 기능</a><a href="#faq">자주 묻는 질문</a></nav>
+          <nav className={styles.nav} aria-label="주요 메뉴"><a href="#about">제품 소개</a><a href="#features">주요 기능</a></nav>
           <div className={styles.headerActions}><MemberInfo /></div>
         </div>
       </header>
@@ -44,7 +44,6 @@ export default function Home() {
             <div className={styles.previewFrame}>
               <div className={styles.previewSide}><div className={styles.miniBrand}><i />SENTINEL</div><span className={styles.activeMini}>▦ 대시보드</span><span>⌕ 텍스트 분석</span><span>△ 탐지 게시글</span><span>☷ 탐지 임계치</span><span>♧ 알림 채널</span><span>↗ 대상 URL 관리</span></div>
               <div className={styles.previewMain}><div className={styles.previewHeader}><strong>탐지 대시보드</strong><span>/ summary</span></div><DashboardView preview /></div>
-              <Link href="/dashboard" className={styles.previewLink}>대시보드 미리보기 <span aria-hidden="true">↗</span></Link>
             </div>
           </div>
         </section>
@@ -57,13 +56,6 @@ export default function Home() {
           <div className={styles.ctaArt} aria-hidden="true"><div><i /><i /><i /></div><span /><section><b /><b /><b /></section></div>
           <div><h2 id="cta-title">보안의 새로운 기준, SENTINEL</h2><p>지금 바로 시작하고,<br />한층 더 안전한 환경을 만들어 보세요.</p></div>
           <Link href="/signup" className={styles.button}>시작하기 <span aria-hidden="true">→</span></Link>
-        </section>
-
-        <section id="faq" className={styles.faq} aria-labelledby="faq-title">
-          <h2 id="faq-title">자주 묻는 질문</h2>
-          <details><summary>SENTINEL은 어떤 서비스인가요?</summary><p>게시글 텍스트를 분석해 마약 관련 의심 여부를 확인하는 서비스입니다. 분석 결과는 게시글의 맥락과 함께 검토해 주세요.</p></details>
-          <details><summary>어떻게 텍스트를 분석하나요?</summary><p>텍스트 분석 화면에서 게시글을 입력하고 분석하기를 누르세요. 분석이 완료되면 의심 신호 탐지 여부를 확인할 수 있습니다.</p></details>
-          <details><summary>가입 전에 사용해 볼 수 있나요?</summary><p>텍스트 분석은 로그인 없이 체험할 수 있습니다. <Link href="/text-detector">지금 분석하기 →</Link></p></details>
         </section>
       </main>
 
