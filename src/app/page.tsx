@@ -4,8 +4,8 @@ import MemberInfo from "@/components/member-info";
 import styles from "./home.module.css";
 
 const features = [
-  { icon: "search", title: "텍스트 분석", text: <>게시글을 입력하고<br />의심 여부를 간편하게 확인하세요.</> },
-  { icon: "alert", title: "지능형 탐지", text: <>AI 기반 텍스트 분석으로<br />잠재적인 위험 신호를 살펴보세요.</> },
+  { icon: "search", title: "게시글 텍스트 분석", text: <>게시글을 입력하고 마약 거래<br />의심 여부를 간편하게 확인하세요.</> },
+  { icon: "alert", title: "마약 은어 탐지", text: <>AI 기반 텍스트 분석으로<br />은어와 거래 정황을 살펴보세요.</> },
   { icon: "chart", title: "직관적인 대시보드", text: <>탐지 현황과 검토 흐름을<br />한눈에 확인하는 화면입니다.</> },
   { icon: "shield", title: "안전한 시작", text: <>계정을 만들고 로그인해<br />SENTINEL을 시작하세요.</> },
 ];
@@ -34,12 +34,12 @@ export default function Home() {
         <section id="about" className={styles.hero}>
           <div className={styles.heroInner}>
             <div className={styles.heroCopy}>
-              <p className={styles.eyebrow}>NARCOTICS WATCH CONSOLE</p>
-              <h1>지금 감지하고,<br /><span>더 안전한 내일</span>을 만듭니다.</h1>
-              <p className={styles.description}>의심스러운 게시글, 혼자 판단하지 마세요.<br />SENTINEL의 텍스트 분석으로 위험 신호를 확인하고,<br className={styles.desktopBreak} /> 더 안전한 온라인 환경을 만들어 가세요.</p>
+              <p className={styles.eyebrow}>마약 거래 의심 게시글 탐지 콘솔</p>
+              <h1><span>마약 거래 의심 게시글</span>,<br />지금 감지하고 더 안전한 내일을 만듭니다.</h1>
+              <p className={styles.description}>게시글 속 은어와 거래 정황, 혼자 판단하지 마세요.<br />SENTINEL의 텍스트 분석이 마약 거래 의심 여부를 판별해<br className={styles.desktopBreak} /> 더 안전한 온라인 환경을 만들어 갑니다.</p>
               <div className={styles.heroActions}><Link href="/signup" className={styles.button}>시작하기 <span aria-hidden="true">→</span></Link><Link href="/text-detector" className={styles.outlineButton}>텍스트 분석 체험</Link></div>
-              <p className={styles.trustLabel}>복잡한 설정 없이, 텍스트 입력부터 시작하세요.</p>
-              <div className={styles.trustItems}><span>◇ 간편한 분석</span><span>◎ 명확한 결과</span><span>△ 빠른 확인</span></div>
+              <p className={styles.trustLabel}>복잡한 설정 없이, 게시글 텍스트 입력부터 시작하세요.</p>
+              <div className={styles.trustItems}><span>◇ 은어·정황 분석</span><span>◎ 의심 여부 판별</span><span>△ 빠른 확인</span></div>
             </div>
             <div className={styles.previewFrame}>
               <div className={styles.previewSide}><div className={styles.miniBrand}><i />SENTINEL</div><span className={styles.activeMini}>▦ 대시보드</span><span>⌕ 텍스트 분석</span><span>△ 탐지 게시글</span><span>☷ 탐지 임계치</span><span>♧ 알림 채널</span><span>↗ 대상 URL 관리</span></div>
