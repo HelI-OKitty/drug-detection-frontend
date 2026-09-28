@@ -88,7 +88,7 @@ button { cursor: pointer; }
 .submit-button { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 52px; margin-top: 8px; padding: 12px; border: 0; border-radius: 10px; background: #09a96d; color: white; font-size: 16px; font-weight: 700; transition: background 150ms; }
 .submit-button:hover { background: #07885a; }
 .submit-button:active { background: #066b48; }
-.submit-button span { font-size: 22px; font-weight: 400; }
+.submit-button > svg { width: 19px; height: 19px; flex-shrink: 0; stroke-width: 2; }
 .form-message { margin: 0; color: #28654e; font-size: 12px; line-height: 1.7; }
 .form-message:empty { display: none; }
 .form-message.form-error { color: #b42318; }

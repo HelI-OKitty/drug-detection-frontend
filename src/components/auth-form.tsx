@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { authenticate } from "@/app/auth-actions";
 
@@ -35,7 +36,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
       const result = await authenticate(mode, data);
       if (result.success) {
         // Start a fresh document after authentication to discard cached redirects.
-        window.location.replace(isSignup ? "/login" : "/");
+        window.location.replace(isSignup ? "/login" : "/dashboard");
         return;
       }
       setMessage(result.message);
@@ -80,16 +81,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
                 required
               />
               <button className="password-toggle" type="button" aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 표시"} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  {!showPassword ? (
-                    <path d="M3 8c3 8 15 8 18 0M5 11l-2 3m6-1-1 4m7-4 1 4m3-6 2 3" />
-                  ) : (
-                    <>
-                      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </>
-                  )}
-                </svg>
+                {showPassword ? <Eye size={18} strokeWidth={1.5} aria-hidden="true" /> : <EyeOff size={18} strokeWidth={1.5} aria-hidden="true" />}
               </button>
             </div>
             {isSignup && <p className="field-hint" id="password-hint">비밀번호는 8자 이상으로 설정해 주세요.</p>}
@@ -108,7 +100,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
             </div>
           )}
           <button className="submit-button" type="submit" disabled={pending}>
-            {pending ? "처리 중…" : isSignup ? "계정 만들기" : "로그인"}<span aria-hidden="true">→</span>
+            {pending ? "처리 중…" : isSignup ? "계정 만들기" : "로그인"}<ArrowRight aria-hidden="true" />
           </button>
           </fieldset>
           <p className="form-message form-error" role="status">{message}</p>

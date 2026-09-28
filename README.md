@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-브라우저에서 `http://localhost:3000`으로 접속해 화면을 확인할 수 있습니다.
+브라우저에서 `http://localhost:8080`으로 접속해 화면을 확인할 수 있습니다.
 
 ## 사용 가능한 스크립트
 
@@ -74,7 +74,10 @@ drug-detection-frontend/
 ## 현재 구현 상태
 
 - `src/app/layout.tsx`에서 한국어 문서 언어(`lang="ko"`)와 기본 메타데이터를 설정합니다.
-- `/`는 “홈” 화면이며, `/signup`과 `/login`에서 회원가입·로그인을 진행합니다. 가입 성공 시 `/login`, 로그인 성공 시 `/`로 이동합니다.
+- `/`는 서비스 소개 홈입니다. 가입 성공 시 `/login`, 로그인 성공 시 `/dashboard`로 이동합니다.
+- `/dashboard`는 예시 데이터로 구성한 대시보드입니다. 대시보드와 텍스트 분석 화면의 공통 사이드바에서 기능을 이동할 수 있습니다.
+- 홈·대시보드·텍스트 분석 화면의 우측 상단은 HttpOnly 쿠키의 토큰으로 `/profile`을 조회해 회원 이름과 이메일을 표시합니다. 비로그인 상태에서는 로그인·시작하기 링크를 표시합니다.
+- `/text-detector`에서 텍스트를 입력하고 분석 결과를 확인할 수 있습니다. `POST /public/analyze`의 `is_drug` 응답으로 의심 여부를 표시하며, 서버가 제공하지 않는 점수나 상세 근거는 표시하지 않습니다.
 - `src/app/globals.css`는 Tailwind CSS를 불러오고 기본 배경색, 글자색, 박스 모델, 폰트 스타일을 정의합니다.
 - TypeScript는 strict mode로 설정되어 있습니다.
 - `@/*` 경로 별칭은 `src/*`를 가리킵니다.
@@ -84,13 +87,14 @@ drug-detection-frontend/
 인증 폼은 `src/components/auth-form.tsx`, 서버 액션은 `src/app/auth-actions.ts`, 백엔드 요청은 `src/lib/auth-api.ts`에 있습니다.
 
 - 회원가입: `POST /auth/signup`에 이름·이메일·비밀번호를 전달합니다. 비밀번호 확인은 프론트에서 검증하며 API에는 보내지 않습니다. 가입 후 로그인을 별도로 진행합니다.
-- 로그인: `POST /auth/login` 후 Bearer 토큰으로 `GET /profile`을 조회하고, 성공하면 홈 화면으로 이동합니다.
+- 로그인: `POST /auth/login` 후 Bearer 토큰으로 `GET /profile`을 조회하고, 성공하면 대시보드로 이동합니다.
 - 토큰: Next.js 서버에서 HttpOnly·SameSite=Lax 세션 쿠키로 저장합니다. 프로덕션에서는 Secure를 적용하며 브라우저 스크립트에 토큰을 반환하지 않습니다.
 - 기본 API 주소는 배포된 Cloud Run 서버입니다. 변경하려면 `.env.example`을 참고해 `.env.local`의 `BACKEND_API_URL`을 설정한 후 서버를 재시작합니다.
-- 현재 범위는 가입·로그인과 사용자 정보 확인입니다. 대시보드 이동, 보호된 페이지, 자동 토큰 갱신, 로그아웃은 아직 구현하지 않았습니다.
+- 텍스트 분석은 `src/lib/text-detector.ts`와 `src/app/text-detector/actions.ts`에서 처리합니다. 같은 `BACKEND_API_URL`을 사용하며, 현재 백엔드 명세상 인증이 필요하지 않습니다. 빈 입력, 중복 제출, 통신 오류, 60초 시간 초과 및 잘못된 응답을 처리합니다.
+- 현재 범위는 가입·로그인, 사용자 정보 확인, 텍스트 분석입니다. 대시보드의 실데이터 연결, 보호된 페이지, 자동 토큰 갱신, 로그아웃은 아직 구현하지 않았습니다.
 
 요청 계약 테스트는 TypeScript 직접 실행을 지원하는 Node.js 22.18 이상에서 실행합니다. 실제 서버나 계정을 변경하지 않습니다.
 
 ```bash
-node --test tests/auth-api.test.mjs
+node --test tests/*.test.mjs
 ```
