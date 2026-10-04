@@ -35,7 +35,7 @@ test("malformed responses never become a negative detection", async () => {
 });
 
 test("handles backend errors without exposing raw response bodies", async () => {
-  for (const [status, message] of [[422, /텍스트를 확인/], [429, /요청이 많/], [500, /완료하지 못/]]) {
+  for (const [status, message] of [[422, /내용을 확인/], [429, /요청이 많/], [500, /완료하지 못/]]) {
     globalThis.fetch = async () => new Response("private server details", { status });
     await assert.rejects(analyzeText("테스트"), message);
   }
