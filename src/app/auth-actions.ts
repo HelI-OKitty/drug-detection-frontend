@@ -1,7 +1,34 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { authRequest, submitAuth } from "@/lib/auth-api";
+
+export async function logout() {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("sentinel_access_token")?.value;
+  const refreshToken = cookieStore.get("sentinel_refresh_token")?.value;
+
+  // 서버 쪽 토큰 폐기는 최선 시도로만 하고, 실패해도 쿠키는 반드시 제거한다.
+  if (accessToken && refreshToken) {
+    try {
+      const baseUrl = process.env.BACKEND_API_URL || "https://drug-detection-671085027854.asia-northeast3.run.app";
+      await fetch(`${baseUrl.replace(/\/$/, "")}/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch {
+      // 네트워크 오류 등은 무시
+    }
+  }
+
+  cookieStore.delete("sentinel_access_token");
+  cookieStore.delete("sentinel_refresh_token");
+  redirect("/login");
+}
 
 export async function authenticate(mode: "signup" | "login", form: FormData) {
   if (mode !== "signup" && mode !== "login") {
