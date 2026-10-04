@@ -25,10 +25,8 @@
 .row:hover { background:#f8fbfc; }
 .row:focus-within { background:#f5faf8; }
 
-.score { display:inline-grid; place-items:center; min-width:56px; padding:7px 10px; border-radius:9px; font:700 14px ui-monospace,SFMono-Regular,Consolas,monospace; }
-.score[data-band=high] { background:#fce3e8; color:#cf2548; }
-.score[data-band=mid] { background:#fff0ce; color:#ad720e; }
-.score[data-band=low] { background:#d9f6e9; color:#008f61; }
+/* 색상은 점수에 따라 scoreColors()가 인라인으로 지정한다. */
+.score { display:inline-grid; place-items:center; min-width:56px; padding:6px 9px; border:1px solid transparent; border-radius:9px; font:700 14px ui-monospace,SFMono-Regular,Consolas,monospace; }
 
 .summaryCell { max-width:0; width:52%; }
 /* 링크를 행 전체로 확장해 어디를 눌러도 상세로 이동하게 한다 */
@@ -42,11 +40,10 @@
 .sourceLink { position:relative; z-index:1; font:12px ui-monospace,SFMono-Regular,Consolas,monospace; color:#3c82f6; white-space:nowrap; }
 .sourceLink:hover { text-decoration:underline; }
 
-.status { display:inline-block; padding:4px 9px; border-radius:8px; font:9px ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:600; letter-spacing:.5px; white-space:nowrap; }
-.status[data-status=new] { background:#fce3e8; color:#cf2548; }
-.status[data-status=review] { background:#fff0ce; color:#ad720e; }
+.status { display:inline-block; padding:4px 9px; border-radius:8px; font-size:10px; font-weight:600; line-height:1.5; white-space:nowrap; }
+.status[data-status=unreviewed] { background:#fce3e8; color:#cf2548; }
+.status[data-status=reviewing] { background:#fff0ce; color:#ad720e; }
 .status[data-status=confirmed] { background:#d9f6e9; color:#008f61; }
-.status[data-status=excluded] { background:#eef2f6; color:#7d8b9c; }
 
 .empty { padding:56px 20px; text-align:center; color:#8a9bb1; font-size:13px; }
 
@@ -65,8 +62,6 @@
 .detailLayout { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:20px; align-items:start; }
 .postCard { border:1px solid #e0e7ee; border-radius:15px; background:#fff; padding:26px 28px 32px; }
 .postHeader { display:flex; align-items:center; gap:14px; padding-bottom:20px; border-bottom:1px solid #eef3f7; }
-.avatar { display:grid; place-items:center; width:46px; height:46px; flex-shrink:0; border:1px solid #d7e0e9; border-radius:50%; background:#eef3f7; color:#8a9bb1; }
-.avatar > svg { width:19px; height:19px; }
 .postIdentity { min-width:0; }
 .postIdentity strong { display:block; font:600 16px ui-monospace,SFMono-Regular,Consolas,monospace; color:#172535; }
 .postIdentity span { display:block; margin-top:5px; font-size:12px; color:#8a9bb1; }
@@ -76,9 +71,18 @@
 .postContent mark { padding:2px 6px; border-radius:5px; background:#fde8ec; color:#cf2548; font-weight:500; }
 
 .images { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:26px; }
-.imageBox { position:relative; aspect-ratio:1/1.02; display:grid; place-items:center; border:1px solid #e9eef3; border-radius:11px; background:linear-gradient(135deg,#f4f7fa,#eef2f6); color:#c2ccd7; }
-.imageBox > svg { width:26px; height:26px; }
+.imageBox { position:relative; aspect-ratio:1/1.02; display:grid; place-items:center; overflow:hidden; padding:0; border:1px solid #e9eef3; border-radius:11px; background:linear-gradient(135deg,#f4f7fa,#eef2f6); color:#c2ccd7; cursor:zoom-in; transition:border-color .12s; }
+.imageBox:hover { border-color:#b9c7d4; }
+.imageBox > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+
+/* ───────── 이미지 원본 보기 ───────── */
+.viewerOverlay { position:fixed; inset:0; z-index:70; display:grid; place-items:center; padding:28px; background:rgba(10,16,22,.84); cursor:zoom-out; }
+.viewerOverlay > img { max-width:min(1200px,94vw); max-height:88vh; border-radius:8px; cursor:default; box-shadow:0 22px 60px rgba(0,0,0,.5); }
+.viewerClose { position:fixed; top:18px; right:18px; display:grid; place-items:center; width:42px; height:42px; border:0; border-radius:11px; background:rgba(255,255,255,.14); color:#fff; transition:background .12s; }
+.viewerClose:hover { background:rgba(255,255,255,.28); }
+.viewerClose > svg { width:19px; height:19px; stroke-width:2; }
 .flagBadge { position:absolute; top:10px; right:10px; padding:4px 8px; border-radius:7px; background:#fce3e8; color:#cf2548; font:9px ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:700; letter-spacing:.5px; }
+.flagBadge[data-flagged=false] { background:#eef2f6ee; color:#5b6b7d; }
 .noImages { margin-top:26px; padding:28px; border:1px dashed #e0e7ee; border-radius:11px; text-align:center; font-size:12px; color:#9aa8b9; }
 
 /* 우측 컬럼 */
@@ -91,14 +95,8 @@
 .gauge svg { width:100%; height:100%; transform:rotate(-90deg); }
 .gaugeTrack { fill:none; stroke:#eef2f6; stroke-width:9; }
 .gaugeValue { fill:none; stroke-width:9; stroke-linecap:round; }
-.gauge[data-band=high] .gaugeValue { stroke:#e5193f; }
-.gauge[data-band=mid] .gaugeValue { stroke:#e0a021; }
-.gauge[data-band=low] .gaugeValue { stroke:#0aaa75; }
 .gaugeText { position:absolute; inset:0; display:grid; place-content:center; text-align:center; }
 .gaugeScore { display:block; font:700 34px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:1px; }
-.gauge[data-band=high] .gaugeScore { color:#e5193f; }
-.gauge[data-band=mid] .gaugeScore { color:#c48a20; }
-.gauge[data-band=low] .gaugeScore { color:#0aaa75; }
 .gaugeBand { display:block; margin-top:4px; font:9px ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:600; letter-spacing:1.5px; color:#8a9bb1; }
 
 .metaList { margin:0; }
@@ -121,6 +119,19 @@
 .excludeButton:hover:not(:disabled) { background:#e9eef3; }
 .confirmButton:disabled, .excludeButton:disabled { opacity:.55; cursor:default; }
 .actionNote { margin:14px 0 0; font-size:11px; line-height:1.7; color:#8a9bb1; text-align:center; }
+.actionError { margin:14px 0 0; font-size:11px; line-height:1.7; color:#cf2548; text-align:center; }
+
+/* ───────── 삭제 확인 모달 ───────── */
+.modalOverlay { position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:20px; background:rgba(15,23,32,.45); }
+.modal { width:100%; max-width:420px; border-radius:15px; background:#fff; padding:26px; box-shadow:0 18px 50px rgba(15,23,32,.28); }
+.modal h2 { margin:0 0 10px; font-size:16px; font-weight:600; color:#172535; }
+.modal p { margin:0; font-size:13px; line-height:1.8; color:#52657b; }
+.modalActions { display:flex; justify-content:flex-end; gap:9px; margin-top:22px; }
+.modalActions button { min-height:44px; padding:10px 20px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; color:#52657b; font-size:13px; font-weight:600; transition:background .12s; }
+.modalActions button:hover:not(:disabled) { background:#f5f8fa; }
+.modalActions button:disabled { opacity:.6; cursor:default; }
+.modalActions .modalDelete { border-color:transparent; background:#dc3352; color:#fff; }
+.modalActions .modalDelete:hover:not(:disabled) { background:#c01f3e; }
 
 .notFound { display:grid; place-items:center; gap:14px; padding:90px 20px; text-align:center; }
 .notFound p { margin:0; font-size:14px; color:#52657b; }

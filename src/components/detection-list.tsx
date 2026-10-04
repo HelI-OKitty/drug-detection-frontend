@@ -6,23 +6,23 @@ import { useMemo, useState } from "react";
 import {
   STATUS_FILTERS,
   STATUS_LABEL,
-  detections,
-  riskBand,
+  scoreColors,
   sourceHost,
+  type DetectionRow,
   type StatusFilter,
-} from "@/lib/detections-sample";
+} from "@/lib/detections";
 import styles from "./detections.module.css";
 
-const PER_PAGE = 6;
+const PER_PAGE = 10;
 
-export default function DetectionList() {
+export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    return detections.filter((item) => {
+    return items.filter((item) => {
       if (status !== "all" && item.status !== status) return false;
       if (!keyword) return true;
       return (
@@ -31,7 +31,7 @@ export default function DetectionList() {
         item.keywords.some((word) => word.toLowerCase().includes(keyword))
       );
     });
-  }, [query, status]);
+  }, [items, query, status]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   // 필터가 바뀌어 페이지 수가 줄면 마지막 페이지로 당겨서 빈 화면을 막는다.
@@ -50,8 +50,6 @@ export default function DetectionList() {
 
   return (
     <div className={styles.page}>
-      <p className={styles.demoLabel}><i />화면 예시 · 실제 운영 데이터가 아닙니다</p>
-
       <div className={styles.toolbar}>
         <div className={styles.search}>
           <Search aria-hidden="true" />
@@ -95,7 +93,14 @@ export default function DetectionList() {
               {rows.map((item) => (
                 <tr key={item.id} className={styles.row}>
                   <td>
-                    <span className={styles.score} data-band={riskBand(item.score)}>
+                    <span
+                      className={styles.score}
+                      style={{
+                        background: scoreColors(item.score).bg,
+                        color: scoreColors(item.score).fg,
+                        borderColor: scoreColors(item.score).border,
+                      }}
+                    >
                       {item.score.toFixed(2)}
                     </span>
                   </td>
