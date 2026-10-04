@@ -12,6 +12,7 @@
 .nav a[aria-current=page] { color:#142b40; background:#fff; }
 .nav a[aria-current=page]::before { content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px; background:#0aaf75; }
 .nav small { margin-left:auto; font-size:10px; color:#8998aa; }
+.nav small.count { padding:2px 8px; border-radius:7px; background:#fce3e8; color:#cf2548; font-weight:700; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
 .nav button:disabled { cursor:default; color:#8794a5; }
 .sidebarFooter { margin-top:auto; padding:30px 7px 0; display:flex; gap:12px; align-items:center; font-size:12px; }
 .sidebarFooter small { display:block; color:#8a98aa; font-size:10px; margin-top:6px; }
