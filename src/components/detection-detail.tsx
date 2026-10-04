@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, AtSign, Check, ImageIcon, X } from "lucide-react";
-import { Fragment, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Check, X } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
+import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
 import {
   RISK_LABEL,
   STATUS_LABEL,
   riskBand,
+  scoreColors,
   shortUrl,
-  type Detection,
+  type DetectionDetailData,
   type ReviewStatus,
-} from "@/lib/detections-sample";
+} from "@/lib/detections";
 import styles from "./detections.module.css";
 
 const GAUGE_RADIUS = 63;
@@ -33,10 +36,54 @@ function highlightKeywords(content: string, keywords: string[]) {
   );
 }
 
-export default function DetectionDetail({ detection }: { detection: Detection }) {
+export default function DetectionDetail({ detection }: { detection: DetectionDetailData }) {
   const [status, setStatus] = useState<ReviewStatus>(detection.status);
+  const [pending, setPending] = useState<"confirm" | "delete" | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  // 이미지 원본 보기는 Esc 키로도 닫는다.
+  useEffect(() => {
+    if (!viewerUrl) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setViewerUrl(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewerUrl]);
   const band = riskBand(detection.score);
-  const resolved = status === "confirmed" || status === "excluded";
+  const colors = scoreColors(detection.score);
+
+  async function handleConfirm() {
+    if (pending) return;
+    setError("");
+    setPending("confirm");
+    const result = await confirmDetection(detection.id);
+    if (result.success) {
+      setStatus("confirmed");
+      router.refresh();
+    } else {
+      setError(result.message);
+    }
+    setPending(null);
+  }
+
+  async function handleDelete() {
+    if (pending) return;
+    setError("");
+    setPending("delete");
+    const result = await deleteDetection(detection.id);
+    if (result.success) {
+      router.push("/detections");
+      router.refresh();
+      return;
+    }
+    setError(result.message);
+    setPending(null);
+    setConfirmOpen(false);
+  }
 
   return (
     <div className={styles.page}>
@@ -44,12 +91,9 @@ export default function DetectionDetail({ detection }: { detection: Detection })
         <ArrowLeft aria-hidden="true" />목록으로
       </Link>
 
-      <p className={styles.demoLabel}><i />화면 예시 · 실제 운영 데이터가 아닙니다</p>
-
       <div className={styles.detailLayout}>
         <article className={styles.postCard}>
           <header className={styles.postHeader}>
-            <span className={styles.avatar} aria-hidden="true"><AtSign /></span>
             <div className={styles.postIdentity}>
               <strong>{detection.nickname}</strong>
               <span>{detection.platform} · 게시 {detection.postedAt}</span>
@@ -64,12 +108,20 @@ export default function DetectionDetail({ detection }: { detection: Detection })
           {detection.images.length > 0 ? (
             <div className={styles.images}>
               {detection.images.map((image, index) => (
-                <div className={styles.imageBox} key={index}>
-                  <ImageIcon aria-hidden="true" />
-                  {image.flagScore !== undefined && (
-                    <span className={styles.flagBadge}>FLAG {image.flagScore.toFixed(2)}</span>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  className={styles.imageBox}
+                  key={`${image.url}-${index}`}
+                  onClick={() => setViewerUrl(image.url)}
+                  aria-label={`첨부 이미지 ${index + 1} 원본 크기로 보기`}
+                >
+                  {/* 외부 플랫폼 이미지라 호스트를 예측할 수 없어 next/image 대신 img를 쓴다. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image.url} alt={`첨부 이미지 ${index + 1}`} loading="lazy" />
+                  <span className={styles.flagBadge} data-flagged={image.flagged}>
+                    FLAG {image.score.toFixed(2)}
+                  </span>
+                </button>
               ))}
             </div>
           ) : (
@@ -81,7 +133,7 @@ export default function DetectionDetail({ detection }: { detection: Detection })
           <section className={styles.asideCard} aria-labelledby="risk-title">
             <h2 className={styles.asideTitle} id="risk-title">AI 위험 점수</h2>
             <div className={styles.gaugeWrap}>
-              <div className={styles.gauge} data-band={band}>
+              <div className={styles.gauge}>
                 <svg viewBox="0 0 150 150" aria-hidden="true">
                   <circle className={styles.gaugeTrack} cx="75" cy="75" r={GAUGE_RADIUS} />
                   <circle
@@ -89,11 +141,12 @@ export default function DetectionDetail({ detection }: { detection: Detection })
                     cx="75"
                     cy="75"
                     r={GAUGE_RADIUS}
+                    style={{ stroke: colors.stroke }}
                     strokeDasharray={`${(GAUGE_CIRCUMFERENCE * detection.score).toFixed(2)} ${GAUGE_CIRCUMFERENCE.toFixed(2)}`}
                   />
                 </svg>
                 <div className={styles.gaugeText}>
-                  <strong className={styles.gaugeScore}>{detection.score.toFixed(2)}</strong>
+                  <strong className={styles.gaugeScore} style={{ color: colors.fg }}>{detection.score.toFixed(2)}</strong>
                   <small className={styles.gaugeBand}>{RISK_LABEL[band]}</small>
                 </div>
               </div>
@@ -136,28 +189,69 @@ export default function DetectionDetail({ detection }: { detection: Detection })
               <button
                 type="button"
                 className={styles.confirmButton}
-                onClick={() => setStatus("confirmed")}
-                disabled={status === "confirmed"}
+                onClick={handleConfirm}
+                disabled={status === "confirmed" || pending !== null}
               >
-                <Check aria-hidden="true" />마약 게시글 확정
+                <Check aria-hidden="true" />{pending === "confirm" ? "저장 중…" : "마약 게시글 확정"}
               </button>
               <button
                 type="button"
                 className={styles.excludeButton}
-                onClick={() => setStatus("excluded")}
-                disabled={status === "excluded"}
+                onClick={() => setConfirmOpen(true)}
+                disabled={pending !== null}
               >
                 <X aria-hidden="true" />오탐 · 제외
               </button>
             </div>
-            <p className={styles.actionNote} role="status">
-              {resolved
-                ? `현재 화면에서만 '${STATUS_LABEL[status]}'로 표시됩니다. 서버에는 저장되지 않습니다.`
-                : "아직 서버에 저장되지 않는 화면 예시입니다."}
+            <p className={error ? styles.actionError : styles.actionNote} role="status">
+              {error || (status === "confirmed"
+                ? "마약 게시글로 확정된 상태입니다."
+                : "확정하면 서버에 저장되며, 오탐 · 제외는 게시글을 완전히 삭제합니다.")}
             </p>
           </section>
         </aside>
       </div>
+
+      {viewerUrl && (
+        <div
+          className={styles.viewerOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label="첨부 이미지 원본 보기"
+          onClick={() => setViewerUrl(null)}
+        >
+          <button type="button" className={styles.viewerClose} onClick={() => setViewerUrl(null)} aria-label="닫기">
+            <X aria-hidden="true" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={viewerUrl} alt="첨부 이미지 원본" onClick={(event) => event.stopPropagation()} />
+        </div>
+      )}
+
+      {confirmOpen && (
+        <div className={styles.modalOverlay} role="presentation" onClick={() => pending === null && setConfirmOpen(false)}>
+          <div
+            className={styles.modal}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-title"
+            aria-describedby="delete-desc"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="delete-title">오탐 게시글 삭제</h2>
+            <p id="delete-desc">
+              이 탐지 게시글을 오탐으로 처리하고 완전히 삭제합니다.
+              <br />삭제한 데이터는 복구할 수 없습니다. 계속할까요?
+            </p>
+            <div className={styles.modalActions}>
+              <button type="button" onClick={() => setConfirmOpen(false)} disabled={pending !== null}>취소</button>
+              <button type="button" className={styles.modalDelete} onClick={handleDelete} disabled={pending !== null}>
+                {pending === "delete" ? "삭제 중…" : "삭제"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
