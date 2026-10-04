@@ -18,7 +18,8 @@
 .sidebarFooter small { display:block; color:#8a98aa; font-size:10px; margin-top:6px; }
 .avatar { display:grid; place-items:center; width:36px; height:36px; border:1px solid #d7e0e9; border-radius:9px; background:#e4eaf0; color:#059d69; font-family:monospace; }
 .workspace { min-width:0; }
-.topbar { min-height:66px; padding:16px 28px; display:flex; align-items:center; gap:20px; border-bottom:1px solid #e4eaf0; font-size:14px; }
+/* 회원 정보·로그인 버튼 등 어떤 내용이 와도 높이가 변하지 않도록 고정한다. */
+.topbar { height:72px; padding:0 28px; display:flex; align-items:center; gap:20px; border-bottom:1px solid #e4eaf0; font-size:14px; }
 .breadcrumb { color:#8a9bb1; font:12px ui-monospace,monospace; }
 .topbar > a { margin-left:auto; color:#6c7d91; font-size:12px; }
 .memberInfo { margin-left:auto; min-width:0; }
@@ -65,6 +66,11 @@
 .trendValue { position:absolute; transform:translate(-50%,calc(-100% - 9px)); font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; color:#52657b; white-space:nowrap; }
 .trendDates { position:relative; height:16px; margin-top:10px; }
 .trendDates span { position:absolute; transform:translateX(-50%); font:9px ui-monospace,SFMono-Regular,Consolas,monospace; color:#8a9bb1; white-space:nowrap; }
+/* ───────── 스켈레톤 로딩: 틀은 실제 UI를 쓰고 데이터 자리만 쉬머 블록으로 채운다 ───────── */
+.sk { position:relative; display:block; overflow:hidden; background:#e7edf2; }
+.sk::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,#ffffffc0,transparent); animation:skShimmer 1.4s infinite; }
+@keyframes skShimmer { 100% { transform:translateX(100%); } }
+
 .preview { padding:16px; }
 .preview .demoLabel { font-size:9px; margin-bottom:10px; }
 .preview .metrics { gap:9px; }
@@ -94,5 +100,5 @@
 .preview .trendDates { height:10px; margin-top:5px; }
 .preview .trendDates span { font-size:7px; }
 @media(max-width:1100px) { .shell { grid-template-columns:205px minmax(0,1fr); } .dashboard { padding:20px; } .panels { grid-template-columns:1fr; } .metric { padding:16px; } }
-@media(max-width:760px) { .shell { display:block; } .sidebar { padding:18px; border-right:0; border-bottom:1px solid #e0e7ee; } .caption,.sidebarFooter,.nav > p,.nav button { display:none; } .nav { flex-direction:row; flex-wrap:wrap; margin-top:16px; } .nav a { font-size:12px; padding:8px 10px; min-height:38px; } .nav a > svg { width:15px; height:15px; } .topbar { padding:16px 20px; } .breadcrumb { display:none; } .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .preview .metrics { grid-template-columns:repeat(4,minmax(0,1fr)); } .dashboard { padding:20px 16px; } }
+@media(max-width:760px) { .shell { display:block; } .sidebar { padding:18px; border-right:0; border-bottom:1px solid #e0e7ee; } .caption,.sidebarFooter,.nav > p,.nav button { display:none; } .nav { flex-direction:row; flex-wrap:wrap; margin-top:16px; } .nav a { font-size:12px; padding:8px 10px; min-height:38px; } .nav a > svg { width:15px; height:15px; } .topbar { padding:0 20px; } .breadcrumb { display:none; } .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .preview .metrics { grid-template-columns:repeat(4,minmax(0,1fr)); } .dashboard { padding:20px 16px; } }
 @media(max-width:400px) { .status { display:none; } .panel header,.posts { padding-left:14px; padding-right:14px; } }
