@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, BarChart3, Bell, LayoutDashboard, Link2, Radar, ScanText, SearchCheck, ShieldCheck, SlidersHorizontal, TriangleAlert, Zap } from "lucide-react";
+import { cookies } from "next/headers";
+import { ArrowRight, BarChart3, Bell, LayoutDashboard, Radar, ScanText, SearchCheck, ShieldCheck, SlidersHorizontal, TriangleAlert, UserCog, Zap } from "lucide-react";
 import DashboardView from "@/components/dashboard-view";
 import MemberInfo from "@/components/member-info";
 import styles from "./home.module.css";
@@ -19,14 +20,15 @@ const trustItems = [
 
 const previewMenu = [
   { Icon: LayoutDashboard, label: "대시보드", active: true },
-  { Icon: ScanText, label: "텍스트 분석" },
+  { Icon: ScanText, label: "단순 분석" },
   { Icon: TriangleAlert, label: "탐지 게시글" },
-  { Icon: SlidersHorizontal, label: "탐지 임계치" },
+  { Icon: SlidersHorizontal, label: "탐지 설정" },
   { Icon: Bell, label: "알림 채널" },
-  { Icon: Link2, label: "대상 URL 관리" },
+  { Icon: UserCog, label: "계정 관리" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const loggedIn = Boolean((await cookies()).get("sentinel_access_token")?.value);
   return (
     <div className={styles.home}>
       <header className={styles.header}>
@@ -44,7 +46,11 @@ export default function Home() {
               <p className={styles.eyebrow}>마약 거래 의심 게시글 탐지 콘솔</p>
               <h1><span>마약 거래 의심 게시글</span>,<br />지금 감지하고 더 안전한 내일을 만듭니다.</h1>
               <p className={styles.description}>게시글 속 은어와 거래 정황, 혼자 판단하지 마세요.<br />SENTINEL의 텍스트 분석이 마약 거래 의심 여부를 판별해<br className={styles.desktopBreak} /> 더 안전한 온라인 환경을 만들어 갑니다.</p>
-              <div className={styles.heroActions}><Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link></div>
+              <div className={styles.heroActions}>
+                {loggedIn
+                  ? <Link href="/dashboard" className={styles.button}>대시보드로 이동 <ArrowRight aria-hidden="true" /></Link>
+                  : <Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link>}
+              </div>
               <p className={styles.trustLabel}>복잡한 설정 없이, 게시글 텍스트 입력부터 시작하세요.</p>
               <div className={styles.trustItems}>{trustItems.map(({ Icon, label }) => <span key={label}><Icon aria-hidden="true" />{label}</span>)}</div>
             </div>
@@ -62,7 +68,9 @@ export default function Home() {
         <section className={styles.cta} aria-labelledby="cta-title">
           <div className={styles.ctaArt} aria-hidden="true"><div><i /><i /><i /></div><span /><section><b /><b /><b /></section></div>
           <div><h2 id="cta-title">보안의 새로운 기준, SENTINEL</h2><p>지금 바로 시작하고,<br />한층 더 안전한 환경을 만들어 보세요.</p></div>
-          <Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link>
+          {loggedIn
+            ? <Link href="/dashboard" className={styles.button}>대시보드로 이동 <ArrowRight aria-hidden="true" /></Link>
+            : <Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link>}
         </section>
       </main>
 
