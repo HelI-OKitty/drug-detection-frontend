@@ -44,27 +44,27 @@
 .panel header h2 { display:flex; align-items:center; gap:10px; margin:0; font-size:14px; font-weight:600; }
 .panel header h2 > svg { width:17px; height:17px; flex-shrink:0; color:#00ac74; stroke-width:1.7; }
 .panel header > small { font-size:10px; color:#8a9bb1; }
-.posts,.notifications { list-style:none; margin:0; padding:10px 20px; }
+.posts { list-style:none; margin:0; padding:10px 20px; }
 .posts li { display:flex; align-items:center; gap:14px; min-height:75px; }
-.score { flex-shrink:0; padding:8px; border-radius:9px; background:#fce3e8; color:#cf2548; font:700 14px ui-monospace,monospace; }
-.score[data-low=true] { background:#d9f6e9; color:#008f61; }
+.panelEmpty { margin:0; padding:40px 20px; text-align:center; font-size:12px; color:#8a9bb1; }
+/* 색상은 점수에 따라 scoreColors()가 인라인으로 지정한다. */
+.score { flex-shrink:0; padding:7px; border:1px solid transparent; border-radius:9px; font:700 14px ui-monospace,monospace; }
 .postBody { min-width:0; flex:1; }
-.postBody p { margin:0 0 7px; font-size:12px; line-height:1.5; }
+.postBody p { margin:0 0 7px; font-size:12px; line-height:1.5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.postBody p a { color:inherit; }
+.postBody p a:hover { color:#059d69; }
 .postBody > div { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font:10px ui-monospace,monospace; color:#8a9bb1; }
 .postBody em { font-style:normal; padding:1px 5px; background:#effaf5; color:#0a9d6a; border-radius:4px; }
-.status { font:9px ui-monospace,monospace; padding:3px 7px; background:#fce3e8; color:#cf2548; border-radius:8px; }
-.status[data-status=REVIEW] { background:#fff0ce; color:#ad720e; }
-.status[data-status=확정] { background:#d9f6e9; color:#008f61; }
-.notifications { padding-top:22px; }
-.notifications li { display:flex; gap:12px; margin-bottom:25px; }
-.notifications i { flex-shrink:0; width:8px; height:8px; border-radius:50%; background:#fc606a; margin-top:5px; }
-.notifications i[data-index="1"] { background:#f5b846; }
-.notifications i[data-index="2"] { background:#38b4bd; }
-.notifications i[data-index="3"] { background:#2ed998; }
-.notifications i[data-index="4"] { background:#718096; }
-.notifications p { margin:0; color:#76869a; font-size:12px; line-height:1.6; }
-.notifications strong { color:#253c50; font-weight:500; }
-.notifications small { display:block; margin-top:5px; font-size:10px; color:#94a2b5; }
+.status { font-size:10px; font-weight:600; line-height:1.5; white-space:nowrap; padding:3px 8px; background:#fce3e8; color:#cf2548; border-radius:8px; }
+.status[data-status=reviewing] { background:#fff0ce; color:#ad720e; }
+.status[data-status=confirmed] { background:#d9f6e9; color:#008f61; }
+.lineChart { padding:34px 26px 10px; }
+.chartArea { position:relative; height:150px; }
+.chartArea svg { position:absolute; inset:0; width:100%; height:100%; display:block; overflow:visible; }
+.trendDot { position:absolute; width:9px; height:9px; border:2px solid #0aaa75; border-radius:50%; background:#fff; transform:translate(-50%,-50%); }
+.trendValue { position:absolute; transform:translate(-50%,calc(-100% - 9px)); font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; color:#52657b; white-space:nowrap; }
+.trendDates { position:relative; height:16px; margin-top:10px; }
+.trendDates span { position:absolute; transform:translateX(-50%); font:9px ui-monospace,SFMono-Regular,Consolas,monospace; color:#8a9bb1; white-space:nowrap; }
 .preview { padding:16px; }
 .preview .demoLabel { font-size:9px; margin-bottom:10px; }
 .preview .metrics { gap:9px; }
@@ -81,15 +81,18 @@
 .preview .panel header h2 { font-size:10px; gap:6px; }
 .preview .panel header h2 > svg { width:12px; height:12px; }
 .preview .panel header > small { display:none; }
-.preview .posts,.preview .notifications { padding:10px; }
+.preview .posts { padding:10px; }
 .preview .posts li { min-height:57px; gap:7px; }
 .preview .score { font-size:10px; padding:5px; border-radius:5px; }
 .preview .postBody p { font-size:9px; margin-bottom:4px; }
 .preview .postBody > div { font-size:8px; gap:5px; }
 .preview .postBody em,.preview .status { display:none; }
-.preview .notifications li { gap:6px; margin-bottom:15px; }
-.preview .notifications p { font-size:9px; }
-.preview .notifications small { font-size:8px; }
+.preview .lineChart { padding:18px 14px 4px; }
+.preview .chartArea { height:76px; }
+.preview .trendDot { width:6px; height:6px; border-width:1.5px; }
+.preview .trendValue { font-size:8px; transform:translate(-50%,calc(-100% - 5px)); }
+.preview .trendDates { height:10px; margin-top:5px; }
+.preview .trendDates span { font-size:7px; }
 @media(max-width:1100px) { .shell { grid-template-columns:205px minmax(0,1fr); } .dashboard { padding:20px; } .panels { grid-template-columns:1fr; } .metric { padding:16px; } }
 @media(max-width:760px) { .shell { display:block; } .sidebar { padding:18px; border-right:0; border-bottom:1px solid #e0e7ee; } .caption,.sidebarFooter,.nav > p,.nav button { display:none; } .nav { flex-direction:row; flex-wrap:wrap; margin-top:16px; } .nav a { font-size:12px; padding:8px 10px; min-height:38px; } .nav a > svg { width:15px; height:15px; } .topbar { padding:16px 20px; } .breadcrumb { display:none; } .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .preview .metrics { grid-template-columns:repeat(4,minmax(0,1fr)); } .dashboard { padding:20px 16px; } }
 @media(max-width:400px) { .status { display:none; } .panel header,.posts { padding-left:14px; padding-right:14px; } }
