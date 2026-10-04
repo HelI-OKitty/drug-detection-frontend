@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { LogOut } from "lucide-react";
+import { logout } from "@/app/auth-actions";
 import styles from "./member-info.module.css";
 
 export default async function MemberInfo() {
@@ -35,6 +37,9 @@ export default async function MemberInfo() {
       <div className={styles.member} aria-label="로그인한 회원 정보">
         <span className={styles.avatar} aria-hidden="true">{member.name.slice(0, 1)}</span>
         <div className={styles.details}><span className={styles.name}>{member.name}님</span><span className={styles.email} title={member.email}>{member.email}</span></div>
+        <form action={logout}>
+          <button type="submit" className={styles.logout}><LogOut aria-hidden="true" />로그아웃</button>
+        </form>
       </div>
     );
   }
