@@ -66,33 +66,10 @@
 .trendValue { position:absolute; transform:translate(-50%,calc(-100% - 9px)); font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; color:#52657b; white-space:nowrap; }
 .trendDates { position:relative; height:16px; margin-top:10px; }
 .trendDates span { position:absolute; transform:translateX(-50%); font:9px ui-monospace,SFMono-Regular,Consolas,monospace; color:#8a9bb1; white-space:nowrap; }
-/* ───────── 스켈레톤 로딩 ───────── */
-.skPage { padding:24px 28px 40px; }
-.skNarrow { max-width:860px; display:flex; flex-direction:column; gap:20px; }
-.sk { position:relative; display:block; overflow:hidden; background:#e7edf2; border-radius:9px; }
+/* ───────── 스켈레톤 로딩: 틀은 실제 UI를 쓰고 데이터 자리만 쉬머 블록으로 채운다 ───────── */
+.sk { position:relative; display:block; overflow:hidden; background:#e7edf2; }
 .sk::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,#ffffffc0,transparent); animation:skShimmer 1.4s infinite; }
 @keyframes skShimmer { 100% { transform:translateX(100%); } }
-.skMetric { height:139px; border-radius:15px; }
-.skPanel { height:430px; border-radius:15px; }
-.skToolbar { display:flex; gap:10px; margin-bottom:18px; }
-.skSearch { flex:1; height:48px; border-radius:11px; }
-.skChip { width:86px; height:48px; border-radius:11px; }
-.skCard { border:1px solid #e0e7ee; border-radius:15px; background:#fff; padding:20px; }
-.skTitle { width:140px; height:16px; margin-bottom:18px; }
-.skLine { height:12px; margin-bottom:12px; }
-.skLineShort { width:60%; height:12px; }
-.skTableRow { display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid #f0f4f8; }
-.skTableRow:last-child { border-bottom:0; }
-.skCell { width:70px; height:14px; }
-.skCellWide { flex:1; height:14px; }
-.skCellSmall { width:46px; height:14px; }
-.skDetail { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:20px; align-items:start; }
-.skPost { height:520px; border-radius:15px; }
-.skAside { display:flex; flex-direction:column; gap:20px; }
-.skAsideCard { height:200px; border-radius:15px; }
-@media(max-width:1180px) { .skDetail { grid-template-columns:1fr; } }
-@media(max-width:900px) { .skChip { width:60px; } }
-@media(max-width:760px) { .skPage { padding:20px 16px 32px; } }
 
 .preview { padding:16px; }
 .preview .demoLabel { font-size:9px; margin-bottom:10px; }

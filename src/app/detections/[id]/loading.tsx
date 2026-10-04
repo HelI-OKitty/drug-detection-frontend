@@ -1,5 +1,5 @@
 import ConsoleLoading from "@/components/console-loading";
 
 export default function Loading() {
-  return <ConsoleLoading variant="detail" />;
+  return <ConsoleLoading variant="detection-detail" />;
 }
