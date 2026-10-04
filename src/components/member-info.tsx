@@ -1,10 +1,20 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 import { LogOut } from "lucide-react";
 import { logout } from "@/app/auth-actions";
 import styles from "./member-info.module.css";
 
-export default async function MemberInfo() {
+/** /profile 조회가 페이지 렌더링을 막지 않도록 Suspense로 감싸 스트리밍한다. */
+export default function MemberInfo() {
+  return (
+    <Suspense fallback={null}>
+      <MemberInfoContent />
+    </Suspense>
+  );
+}
+
+async function MemberInfoContent() {
   const token = (await cookies()).get("sentinel_access_token")?.value;
   let member: { name: string; email: string } | null = null;
   let unavailable = false;

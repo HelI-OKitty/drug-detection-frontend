@@ -65,6 +65,12 @@
 .trendValue { position:absolute; transform:translate(-50%,calc(-100% - 9px)); font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; color:#52657b; white-space:nowrap; }
 .trendDates { position:relative; height:16px; margin-top:10px; }
 .trendDates span { position:absolute; transform:translateX(-50%); font:9px ui-monospace,SFMono-Regular,Consolas,monospace; color:#8a9bb1; white-space:nowrap; }
+.loading { display:flex; gap:9px; justify-content:center; align-items:center; min-height:420px; }
+.loading i { width:9px; height:9px; border-radius:50%; background:#0aaf75; animation:loadingPulse 1s ease-in-out infinite; }
+.loading i:nth-child(2) { animation-delay:.15s; }
+.loading i:nth-child(3) { animation-delay:.3s; }
+@keyframes loadingPulse { 0%,100% { opacity:.25; transform:translateY(0); } 50% { opacity:1; transform:translateY(-5px); } }
+
 .preview { padding:16px; }
 .preview .demoLabel { font-size:9px; margin-bottom:10px; }
 .preview .metrics { gap:9px; }
