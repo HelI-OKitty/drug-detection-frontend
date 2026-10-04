@@ -1,1 +1,5 @@
-export { default } from "@/components/console-loading";
+import ConsoleLoading from "@/components/console-loading";
+
+export default function Loading() {
+  return <ConsoleLoading variant="cards" />;
+}
