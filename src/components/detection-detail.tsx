@@ -6,18 +6,14 @@ import { ArrowLeft, Check, X } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
 import {
-  RISK_LABEL,
   STATUS_LABEL,
-  riskBand,
   scoreColors,
   shortUrl,
+  toPercent,
   type DetectionDetailData,
   type ReviewStatus,
 } from "@/lib/detections";
 import styles from "./detections.module.css";
-
-const GAUGE_RADIUS = 63;
-const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
 
 /** 본문에서 탐지 키워드에 해당하는 구간을 <mark>로 감싼다. */
 function highlightKeywords(content: string, keywords: string[]) {
@@ -53,8 +49,11 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [viewerUrl]);
-  const band = riskBand(detection.score);
-  const colors = scoreColors(detection.score);
+  const textAnalysis = detection.textAnalysis;
+  const textScore = textAnalysis ? textAnalysis.probDrug : null;
+  const imageScore = detection.images.length > 0
+    ? Math.max(...detection.images.map((image) => image.score))
+    : null;
 
   async function handleConfirm() {
     if (pending) return;
@@ -92,65 +91,163 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
       </Link>
 
       <div className={styles.detailLayout}>
-        <article className={styles.postCard}>
-          <header className={styles.postHeader}>
-            <div className={styles.postIdentity}>
-              <strong>{detection.nickname}</strong>
-              <span>{detection.platform} · 게시 {detection.postedAt}</span>
-            </div>
-            <span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span>
-          </header>
+        <div className={styles.mainColumn}>
+          <article className={styles.postCard}>
+            <header className={styles.postHeader}>
+              <div className={styles.postIdentity}>
+                <strong>{detection.nickname}</strong>
+                <span>{detection.platform} · 게시 {detection.postedAt}</span>
+              </div>
+              <span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span>
+            </header>
 
-          <p className={styles.postContent}>
-            {highlightKeywords(detection.content, detection.keywords)}
-          </p>
+            <p className={styles.postContent}>
+              {highlightKeywords(detection.content, detection.keywords)}
+            </p>
+          </article>
 
-          {detection.images.length > 0 ? (
-            <div className={styles.images}>
-              {detection.images.map((image, index) => (
-                <button
-                  type="button"
-                  className={styles.imageBox}
-                  key={`${image.url}-${index}`}
-                  onClick={() => setViewerUrl(image.url)}
-                  aria-label={`첨부 이미지 ${index + 1} 원본 크기로 보기`}
-                >
-                  {/* 외부 플랫폼 이미지라 호스트를 예측할 수 없어 next/image 대신 img를 쓴다. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image.url} alt={`첨부 이미지 ${index + 1}`} loading="lazy" />
-                  <span className={styles.flagBadge} data-flagged={image.flagged}>
-                    FLAG {image.score.toFixed(2)}
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className={styles.noImages}>첨부된 이미지가 없습니다.</p>
-          )}
-        </article>
+          <section className={styles.analysisCard} aria-labelledby="text-analysis-title">
+            <header className={styles.analysisHeader}>
+              <h2 className={styles.asideTitle} id="text-analysis-title">텍스트 분석 결과</h2>
+              {textAnalysis && (
+                <span className={styles.analysisBadge} data-flagged={textAnalysis.flagged}>
+                  {textAnalysis.flagged ? "마약 의심" : "정상"}
+                </span>
+              )}
+            </header>
+            {textAnalysis ? (
+              <>
+                <div className={styles.probRow}>
+                  <span className={styles.probLabel}>마약 의심 비율</span>
+                  <div className={styles.probTrack} aria-hidden="true">
+                    <i
+                      className={styles.probFill}
+                      style={{
+                        width: toPercent(textAnalysis.probDrug),
+                        background: scoreColors(textAnalysis.probDrug).stroke,
+                      }}
+                    />
+                  </div>
+                  <strong className={styles.probValue} style={{ color: scoreColors(textAnalysis.probDrug).fg }}>
+                    {toPercent(textAnalysis.probDrug)}
+                  </strong>
+                </div>
+                {textAnalysis.matchedTerms.length > 0 && (
+                  <div className={styles.matchGroup}>
+                    <h3 className={styles.matchTitle}>매칭된 용어</h3>
+                    <div className={styles.matchChips}>
+                      {textAnalysis.matchedTerms.map((term) => (
+                        <span className={styles.termChip} key={term}>{term}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {textAnalysis.matchedIntents.length > 0 && (
+                  <div className={styles.matchGroup}>
+                    <h3 className={styles.matchTitle}>매칭된 의도</h3>
+                    <div className={styles.matchChips}>
+                      {textAnalysis.matchedIntents.map((intent) => (
+                        <span className={styles.intentChip} key={intent}>{intent}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className={styles.noAnalysis}>텍스트 분석 결과가 없습니다.</p>
+            )}
+          </section>
+
+          <section className={styles.analysisCard} aria-labelledby="image-analysis-title">
+            <header className={styles.analysisHeader}>
+              <h2 className={styles.asideTitle} id="image-analysis-title">이미지 분석 결과</h2>
+              {detection.images.length > 0 && (
+                <span className={styles.analysisBadge} data-flagged={detection.images.some((image) => image.flagged)}>
+                  {detection.images.some((image) => image.flagged) ? "마약 의심" : "정상"}
+                </span>
+              )}
+            </header>
+            {detection.images.length > 0 ? (
+              <div className={styles.images}>
+                {detection.images.map((image, index) => (
+                  <figure className={styles.imageItem} key={`${image.url}-${index}`}>
+                    <button
+                      type="button"
+                      className={styles.imageBox}
+                      onClick={() => setViewerUrl(image.url)}
+                      aria-label={`첨부 이미지 ${index + 1} 원본 크기로 보기`}
+                    >
+                      {/* 외부 플랫폼 이미지라 호스트를 예측할 수 없어 next/image 대신 img를 쓴다. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={image.url} alt={`첨부 이미지 ${index + 1}`} loading="lazy" />
+                      <span className={styles.flagBadge} data-flagged={image.flagged}>
+                        의심 {toPercent(image.score)}
+                      </span>
+                    </button>
+                    {(image.detectedObjects.length > 0 || image.ocrText) && (
+                      <figcaption className={styles.imageMeta}>
+                        {image.detectedObjects.length > 0 && (
+                          <ul className={styles.objectList}>
+                            {image.detectedObjects.map((object, objectIndex) => (
+                              <li className={styles.objectRow} key={`${object.name}-${objectIndex}`}>
+                                <span className={styles.objectName} title={object.name}>{object.name}</span>
+                                <i className={styles.objectTrack} aria-hidden="true">
+                                  <b style={{ width: toPercent(object.confidence), background: scoreColors(object.confidence).stroke }} />
+                                </i>
+                                <span className={styles.objectValue} style={{ color: scoreColors(object.confidence).fg }}>
+                                  {toPercent(object.confidence)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {image.ocrText && <p className={styles.ocrText}>OCR · {image.ocrText}</p>}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.noAnalysis}>첨부된 이미지가 없어 이미지 분석을 수행하지 않았습니다.</p>
+            )}
+          </section>
+        </div>
 
         <aside className={styles.aside}>
           <section className={styles.asideCard} aria-labelledby="risk-title">
-            <h2 className={styles.asideTitle} id="risk-title">AI 위험 점수</h2>
-            <div className={styles.gaugeWrap}>
-              <div className={styles.gauge}>
-                <svg viewBox="0 0 150 150" aria-hidden="true">
-                  <circle className={styles.gaugeTrack} cx="75" cy="75" r={GAUGE_RADIUS} />
-                  <circle
-                    className={styles.gaugeValue}
-                    cx="75"
-                    cy="75"
-                    r={GAUGE_RADIUS}
-                    style={{ stroke: colors.stroke }}
-                    strokeDasharray={`${(GAUGE_CIRCUMFERENCE * detection.score).toFixed(2)} ${GAUGE_CIRCUMFERENCE.toFixed(2)}`}
-                  />
-                </svg>
-                <div className={styles.gaugeText}>
-                  <strong className={styles.gaugeScore} style={{ color: colors.fg }}>{detection.score.toFixed(2)}</strong>
-                  <small className={styles.gaugeBand}>{RISK_LABEL[band]}</small>
-                </div>
+            <h2 className={styles.asideTitle} id="risk-title">마약 의심 비율</h2>
+            <dl className={styles.breakdown}>
+              <div className={styles.breakdownRow}>
+                <dt>텍스트</dt>
+                <dd>
+                  {textScore !== null ? (
+                    <>
+                      <i className={styles.breakdownTrack} aria-hidden="true">
+                        <b style={{ width: toPercent(textScore), background: scoreColors(textScore).stroke }} />
+                      </i>
+                      <span className={styles.breakdownValue} style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore)}</span>
+                    </>
+                  ) : (
+                    <span className={styles.breakdownEmpty}>분석 없음</span>
+                  )}
+                </dd>
               </div>
-            </div>
+              <div className={styles.breakdownRow}>
+                <dt>이미지</dt>
+                <dd>
+                  {imageScore !== null ? (
+                    <>
+                      <i className={styles.breakdownTrack} aria-hidden="true">
+                        <b style={{ width: toPercent(imageScore), background: scoreColors(imageScore).stroke }} />
+                      </i>
+                      <span className={styles.breakdownValue} style={{ color: scoreColors(imageScore).fg }}>{toPercent(imageScore)}</span>
+                    </>
+                  ) : (
+                    <span className={styles.breakdownEmpty}>분석 없음</span>
+                  )}
+                </dd>
+              </div>
+            </dl>
           </section>
 
           <section className={styles.asideCard} aria-labelledby="meta-title">

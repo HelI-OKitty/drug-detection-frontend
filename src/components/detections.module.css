@@ -60,6 +60,7 @@
 .backLink:hover { color:#059d69; }
 
 .detailLayout { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:20px; align-items:start; }
+.mainColumn { display:flex; flex-direction:column; gap:20px; min-width:0; }
 .postCard { border:1px solid #e0e7ee; border-radius:15px; background:#fff; padding:26px 28px 32px; }
 .postHeader { display:flex; align-items:center; gap:14px; padding-bottom:20px; border-bottom:1px solid #eef3f7; }
 .postIdentity { min-width:0; }
@@ -70,10 +71,42 @@
 .postContent { margin:24px 0 0; font-size:15px; line-height:2; color:#243447; word-break:keep-all; }
 .postContent mark { padding:2px 6px; border-radius:5px; background:#fde8ec; color:#cf2548; font-weight:500; }
 
-.images { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:26px; }
+/* ───────── 상세: AI 분석 결과(텍스트/이미지 묶음) ───────── */
+.analysisCard { border:1px solid #e0e7ee; border-radius:15px; background:#fff; padding:22px 24px 24px; }
+.analysisHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.analysisHeader .asideTitle { margin:0; }
+.analysisBadge { padding:4px 10px; border-radius:8px; font-size:11px; font-weight:600; white-space:nowrap; }
+.analysisBadge[data-flagged=true] { background:#fce3e8; color:#cf2548; }
+.analysisBadge[data-flagged=false] { background:#d9f6e9; color:#008f61; }
+.noAnalysis { margin:0; padding:24px; border:1px dashed #e0e7ee; border-radius:11px; text-align:center; font-size:12px; color:#9aa8b9; }
+
+.probRow { display:flex; align-items:center; gap:12px; }
+.probLabel { font-size:12px; color:#52657b; white-space:nowrap; }
+.probTrack { flex:1; height:8px; border-radius:99px; background:#eef2f6; overflow:hidden; }
+.probFill { display:block; height:100%; border-radius:99px; }
+.probValue { min-width:44px; text-align:right; font:700 14px ui-monospace,SFMono-Regular,Consolas,monospace; }
+
+.matchGroup { margin-top:18px; }
+.matchTitle { display:flex; align-items:center; gap:8px; margin:0 0 9px; font-size:11px; font-weight:600; color:#8a9bb1; }
+.matchChips { display:flex; flex-wrap:wrap; gap:8px; }
+.termChip { padding:5px 11px; border:1px solid #f3c6d0; border-radius:8px; background:#fdeef1; color:#cf2548; font-size:12px; }
+.intentChip { padding:5px 11px; border:1px solid #f0ddb2; border-radius:8px; background:#fff7e4; color:#ad720e; font-size:12px; }
+
+.images { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:start; }
+.imageItem { display:flex; flex-direction:column; margin:0; border:1px solid #e9eef3; border-radius:11px; overflow:hidden; }
+.imageItem .imageBox { border:0; border-radius:0; }
 .imageBox { position:relative; aspect-ratio:1/1.02; display:grid; place-items:center; overflow:hidden; padding:0; border:1px solid #e9eef3; border-radius:11px; background:linear-gradient(135deg,#f4f7fa,#eef2f6); color:#c2ccd7; cursor:zoom-in; transition:border-color .12s; }
 .imageBox:hover { border-color:#b9c7d4; }
 .imageBox > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.imageMeta { padding:13px 14px; border-top:1px solid #eef3f7; background:#fbfcfe; }
+.objectList { display:flex; flex-direction:column; gap:9px; margin:0; padding:0; list-style:none; }
+.objectRow { display:flex; align-items:center; gap:9px; }
+.objectName { flex-shrink:0; max-width:42%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 12px ui-monospace,SFMono-Regular,Consolas,monospace; color:#243447; }
+.objectTrack { flex:1; height:6px; border-radius:99px; background:#e7edf3; overflow:hidden; }
+.objectTrack b { display:block; height:100%; border-radius:99px; }
+.objectValue { min-width:36px; text-align:right; font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace; }
+.ocrText { margin:10px 0 0; font-size:11px; line-height:1.7; color:#52657b; word-break:break-all; }
+.ocrText:first-child { margin-top:0; }
 
 /* ───────── 이미지 원본 보기 ───────── */
 .viewerOverlay { position:fixed; inset:0; z-index:70; display:grid; place-items:center; padding:28px; background:rgba(10,16,22,.84); cursor:zoom-out; }
@@ -83,21 +116,21 @@
 .viewerClose > svg { width:19px; height:19px; stroke-width:2; }
 .flagBadge { position:absolute; top:10px; right:10px; padding:4px 8px; border-radius:7px; background:#fce3e8; color:#cf2548; font:9px ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:700; letter-spacing:.5px; }
 .flagBadge[data-flagged=false] { background:#eef2f6ee; color:#5b6b7d; }
-.noImages { margin-top:26px; padding:28px; border:1px dashed #e0e7ee; border-radius:11px; text-align:center; font-size:12px; color:#9aa8b9; }
 
 /* 우측 컬럼 */
 .aside { display:flex; flex-direction:column; gap:20px; }
 .asideCard { border:1px solid #e0e7ee; border-radius:15px; background:#fff; padding:22px; }
 .asideTitle { margin:0 0 18px; font:11px ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:500; letter-spacing:2px; color:#8a9bb1; }
 
-.gaugeWrap { display:grid; place-items:center; padding:6px 0 14px; }
-.gauge { position:relative; width:150px; height:150px; }
-.gauge svg { width:100%; height:100%; transform:rotate(-90deg); }
-.gaugeTrack { fill:none; stroke:#eef2f6; stroke-width:9; }
-.gaugeValue { fill:none; stroke-width:9; stroke-linecap:round; }
-.gaugeText { position:absolute; inset:0; display:grid; place-content:center; text-align:center; }
-.gaugeScore { display:block; font:700 34px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:1px; }
-.gaugeBand { display:block; margin-top:4px; font:9px ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:600; letter-spacing:1.5px; color:#8a9bb1; }
+/* 텍스트/이미지 마약 의심 비율 분해 */
+.breakdown { display:flex; flex-direction:column; gap:14px; margin:2px 0 0; }
+.breakdownRow { display:flex; align-items:center; gap:12px; font-size:12px; }
+.breakdownRow dt { flex-shrink:0; width:44px; color:#8a9bb1; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+.breakdownRow dd { display:flex; flex:1; align-items:center; gap:10px; margin:0; min-width:0; }
+.breakdownTrack { flex:1; height:7px; border-radius:99px; background:#eef2f6; overflow:hidden; }
+.breakdownTrack b { display:block; height:100%; border-radius:99px; }
+.breakdownValue { min-width:38px; text-align:right; font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace; }
+.breakdownEmpty { margin-left:auto; color:#9aa8b9; }
 
 .metaList { margin:0; }
 .metaRow { display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid #f0f4f8; font-size:12px; }

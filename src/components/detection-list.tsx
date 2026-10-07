@@ -8,6 +8,7 @@ import {
   STATUS_LABEL,
   scoreColors,
   sourceHost,
+  toPercent,
   type DetectionRow,
   type StatusFilter,
 } from "@/lib/detections";
@@ -101,7 +102,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
                         borderColor: scoreColors(item.score).border,
                       }}
                     >
-                      {item.score.toFixed(2)}
+                      {toPercent(item.score)}
                     </span>
                   </td>
                   <td className={styles.summaryCell}>

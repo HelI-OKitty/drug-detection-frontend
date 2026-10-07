@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import { ArrowDown, ArrowUp, BarChart3, Bell, TrendingUp, TriangleAlert } from "lucide-react";
 import type { DashboardSummary } from "@/lib/detections-api";
-import { STATUS_LABEL, scoreColors, type DetectionRow } from "@/lib/detections";
+import { STATUS_LABEL, scoreColors, toPercent, type DetectionRow } from "@/lib/detections";
 import styles from "./console.module.css";
 
 // 홈 화면 미리보기(비로그인 마케팅 화면)에서 쓰는 예시 데이터
@@ -148,7 +148,7 @@ export default function DashboardView({
           <header><h2><TriangleAlert aria-hidden="true" />최근 탐지 게시글</h2><small>{preview ? "탐지 결과 예시" : "최신 5건"}</small></header>
           {recent.length > 0 ? (
             <ul className={styles.posts}>{recent.slice(0, preview ? 3 : 5).map((post, index) => <li key={post.id || index}>
-              <span className={styles.score} style={{ background: scoreColors(post.score).bg, color: scoreColors(post.score).fg, borderColor: scoreColors(post.score).border }}>{post.score.toFixed(2)}</span>
+              <span className={styles.score} style={{ background: scoreColors(post.score).bg, color: scoreColors(post.score).fg, borderColor: scoreColors(post.score).border }}>{toPercent(post.score)}</span>
               <div className={styles.postBody}>
                 <p>{preview || !post.id ? post.summary : <Link href={`/detections/${post.id}`}>{post.summary}</Link>}</p>
                 <div><span>{post.nickname}</span>{post.keywords[0] && <em>{post.keywords[0]}</em>}<time>{post.detectedAt.slice(5)}</time></div>

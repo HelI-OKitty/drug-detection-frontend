@@ -106,25 +106,37 @@ function DetectionDetailSkeleton() {
     <div className={listStyles.page}>
       <Link href="/detections" className={listStyles.backLink}><ArrowLeft aria-hidden="true" />목록으로</Link>
       <div className={listStyles.detailLayout}>
-        <article className={listStyles.postCard}>
-          <header className={listStyles.postHeader}>
-            <div className={listStyles.postIdentity} style={{ flex: 1 }}>
-              <Sk w={150} h={16} />
-              <Sk w={210} h={12} style={{ marginTop: 9 }} />
+        <div className={listStyles.mainColumn}>
+          <article className={listStyles.postCard}>
+            <header className={listStyles.postHeader}>
+              <div className={listStyles.postIdentity} style={{ flex: 1 }}>
+                <Sk w={150} h={16} />
+                <Sk w={210} h={12} style={{ marginTop: 9 }} />
+              </div>
+              <Sk w={52} h={23} r={8} />
+            </header>
+            <div style={{ marginTop: 24, display: "grid", gap: 13 }}>
+              <Sk h={14} /><Sk h={14} /><Sk w="72%" h={14} />
             </div>
-            <Sk w={52} h={23} r={8} />
-          </header>
-          <div style={{ marginTop: 24, display: "grid", gap: 13 }}>
-            <Sk h={14} /><Sk h={14} /><Sk w="72%" h={14} />
-          </div>
-          <div className={listStyles.images}>
-            {Array.from({ length: 3 }, (_, index) => <Sk key={index} h={150} r={11} style={{ aspectRatio: "1/1.02", height: "auto" }} />)}
-          </div>
-        </article>
+          </article>
+          <section className={listStyles.analysisCard}>
+            <h2 className={listStyles.asideTitle}>텍스트 분석 결과</h2>
+            <div style={{ display: "grid", gap: 14 }}>
+              <Sk h={8} r={99} />
+              <div style={{ display: "flex", gap: 8 }}><Sk w={64} h={28} r={8} /><Sk w={78} h={28} r={8} /><Sk w={56} h={28} r={8} /></div>
+            </div>
+          </section>
+          <section className={listStyles.analysisCard}>
+            <h2 className={listStyles.asideTitle}>이미지 분석 결과</h2>
+            <div className={listStyles.images}>
+              {Array.from({ length: 3 }, (_, index) => <Sk key={index} h={150} r={11} style={{ aspectRatio: "1/1.02", height: "auto" }} />)}
+            </div>
+          </section>
+        </div>
         <aside className={listStyles.aside}>
           <section className={listStyles.asideCard}>
-            <h2 className={listStyles.asideTitle}>AI 위험 점수</h2>
-            <div className={listStyles.gaugeWrap}><Sk w={150} h={150} r="50%" /></div>
+            <h2 className={listStyles.asideTitle}>마약 의심 비율</h2>
+            <div style={{ display: "grid", gap: 15 }}><Sk h={13} /><Sk h={13} /></div>
           </section>
           <section className={listStyles.asideCard}>
             <h2 className={listStyles.asideTitle}>메타데이터</h2>

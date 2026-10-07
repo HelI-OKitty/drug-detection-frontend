@@ -1,7 +1,7 @@
 // GET /detections, GET /detections/{id}, GET /dashboard/* 서버 연동. 화면용 타입으로 변환해서 돌려준다.
 
 import { cookies } from "next/headers";
-import type { DetectionDetailData, DetectionImage, DetectionRow, ReviewStatus } from "./detections";
+import type { DetectedObject, DetectionDetailData, DetectionImage, DetectionRow, ReviewStatus, TextAnalysis } from "./detections";
 
 const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run.app";
 const REVIEW_STATUSES: ReviewStatus[] = ["unreviewed", "reviewing", "confirmed"];
@@ -48,6 +48,21 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
   };
 }
 
+function toDetectedObjects(raw: unknown): DetectedObject[] {
+  if (!Array.isArray(raw)) return [];
+  const objects = raw.flatMap((item) => {
+    if (typeof item !== "object" || item === null) return [];
+    const object = item as Record<string, unknown>;
+    if (typeof object.class_name !== "string" || !object.class_name) return [];
+    return [{
+      name: object.class_name,
+      confidence: typeof object.confidence === "number" ? object.confidence : 0,
+    }];
+  });
+  // 확신도 높은 객체가 먼저 보이도록 정렬
+  return objects.sort((a, b) => b.confidence - a.confidence);
+}
+
 function toImages(raw: unknown): DetectionImage[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item) => {
@@ -58,8 +73,25 @@ function toImages(raw: unknown): DetectionImage[] {
       url: image.image_url,
       flagged: image.prediction === 1,
       score: typeof image.image_score === "number" ? image.image_score : 0,
+      detectedObjects: toDetectedObjects(image.detected_objects),
+      ocrText: typeof image.ocr_text === "string" ? image.ocr_text.trim() : "",
     }];
   });
+}
+
+function toStringList(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.filter((word): word is string => typeof word === "string" && word.length > 0) : [];
+}
+
+function toTextAnalysis(raw: unknown): TextAnalysis | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const text = raw as Record<string, unknown>;
+  return {
+    flagged: text.prediction === 1,
+    probDrug: typeof text.prob_drug === "number" ? text.prob_drug : text.prediction === 1 ? 1 : 0,
+    matchedTerms: toStringList(text.matched_terms),
+    matchedIntents: toStringList(text.matched_intents),
+  };
 }
 
 async function request(path: string, init: RequestInit = {}) {
@@ -185,6 +217,7 @@ export async function fetchDetectionDetail(id: string): Promise<DetectionDetailR
         content: String(raw.content ?? ""),
         postedAt: formatDateTime(raw.created_at_source),
         images: toImages(raw.image_ai_results),
+        textAnalysis: toTextAnalysis(raw.text_ai_result),
       },
     };
   } catch {

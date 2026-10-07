@@ -3,11 +3,29 @@
 /** 백엔드 review_status 값 */
 export type ReviewStatus = "unreviewed" | "reviewing" | "confirmed";
 
+/** 이미지에서 탐지된 객체(class_name + confidence) */
+export type DetectedObject = {
+  name: string;
+  confidence: number;
+};
+
 export type DetectionImage = {
   url: string;
   /** 이미지 AI가 마약 관련으로 판정(prediction=1)했는지 */
   flagged: boolean;
   score: number;
+  detectedObjects: DetectedObject[];
+  ocrText: string;
+};
+
+/** 백엔드 text_ai_result에서 화면에 쓰는 값만 추린 것 */
+export type TextAnalysis = {
+  /** 텍스트 AI가 마약 관련으로 판정(prediction=1)했는지 */
+  flagged: boolean;
+  /** 마약일 확률 0~1 */
+  probDrug: number;
+  matchedTerms: string[];
+  matchedIntents: string[];
 };
 
 export type DetectionRow = {
@@ -28,7 +46,14 @@ export type DetectionDetailData = DetectionRow & {
   content: string;
   postedAt: string;
   images: DetectionImage[];
+  /** 텍스트 분석을 돌리지 않은 게시글이면 null */
+  textAnalysis: TextAnalysis | null;
 };
+
+/** 0~1 점수를 "92%" 형태의 비율 문자열로 바꾼다. */
+export function toPercent(score: number) {
+  return `${Math.round(Math.min(1, Math.max(0, score)) * 100)}%`;
+}
 
 export const STATUS_LABEL: Record<ReviewStatus, string> = {
   unreviewed: "미확인",
@@ -44,20 +69,6 @@ export const STATUS_FILTERS = [
 ] as const;
 
 export type StatusFilter = (typeof STATUS_FILTERS)[number]["key"];
-
-export type RiskBand = "high" | "mid" | "low";
-
-export function riskBand(score: number): RiskBand {
-  if (score >= 0.85) return "high";
-  if (score >= 0.8) return "mid";
-  return "low";
-}
-
-export const RISK_LABEL: Record<RiskBand, string> = {
-  high: "HIGH RISK",
-  mid: "MEDIUM RISK",
-  low: "LOW RISK",
-};
 
 /**
  * 점수를 0.5~1 구간에서 초록(0.5)→노랑(0.75)→빨강(1.0)으로 연속 매핑한 색상.
