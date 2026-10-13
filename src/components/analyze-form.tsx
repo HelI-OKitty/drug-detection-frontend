@@ -278,11 +278,11 @@ export default function AnalyzeForm() {
                           <b
                             style={{
                               width: toPercent(item.outcome.probDrug),
-                              background: scoreColors(item.outcome.probDrug, 0).stroke,
+                              background: scoreColors(item.outcome.probDrug).stroke,
                             }}
                           />
                         </i>
-                        <strong className={styles.probValue} style={{ color: scoreColors(item.outcome.probDrug, 0).fg }}>
+                        <strong className={styles.probValue} style={{ color: scoreColors(item.outcome.probDrug).fg }}>
                           {toPercent(item.outcome.probDrug)}
                         </strong>
                       </div>
@@ -311,11 +311,11 @@ export default function AnalyzeForm() {
                                       <b
                                         style={{
                                           width: toPercent(object.confidence),
-                                          background: scoreColors(object.confidence, 0).stroke,
+                                          background: scoreColors(object.confidence).stroke,
                                         }}
                                       />
                                     </i>
-                                    <strong className={styles.probValue} style={{ color: scoreColors(object.confidence, 0).fg }}>
+                                    <strong className={styles.probValue} style={{ color: scoreColors(object.confidence).fg }}>
                                       {toPercent(object.confidence)}
                                     </strong>
                                   </li>
@@ -348,13 +348,13 @@ export default function AnalyzeForm() {
                                     <b
                                       style={{
                                         width: toPercent(item.ocrOutcome.probDrug),
-                                        background: scoreColors(item.ocrOutcome.probDrug, 0).stroke,
+                                        background: scoreColors(item.ocrOutcome.probDrug).stroke,
                                       }}
                                     />
                                   </i>
                                   <strong
                                     className={styles.probValue}
-                                    style={{ color: scoreColors(item.ocrOutcome.probDrug, 0).fg }}
+                                    style={{ color: scoreColors(item.ocrOutcome.probDrug).fg }}
                                   >
                                     {toPercent(item.ocrOutcome.probDrug)}
                                   </strong>

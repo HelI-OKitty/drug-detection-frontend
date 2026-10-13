@@ -28,16 +28,56 @@ function formatDateTime(iso: unknown) {
   }).format(date);
 }
 
+/**
+ * TODO(mock): 목록 응답이 개별 분석 결과(text_ai_result/image_ai_results)를 내려주기 전까지
+ * id 기반 고정 mock 스코어로 채운다. API가 실제 값을 주면 이 함수와 호출부 fallback을 제거한다.
+ */
+function mockScore(id: string, salt: number): number {
+  let hash = salt;
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) % 997;
+  return hash / 997;
+}
+
+/** TODO(mock): 검출 객체 이름 mock 풀. 실제 class_name이 내려오면 제거. */
+const MOCK_OBJECTS = ["알약", "주사기", "대마초", "흰 가루", "지퍼백"];
+
 function toRow(raw: Record<string, unknown>): DetectionRow | null {
   if (typeof raw.id !== "string" || typeof raw.content !== "string") return null;
+  const id = raw.id;
   const platform = typeof raw.platform === "string" ? raw.platform : "";
   const author = typeof raw.author_id === "string" ? raw.author_id : "";
   const status = REVIEW_STATUSES.includes(raw.review_status as ReviewStatus)
     ? (raw.review_status as ReviewStatus)
     : "unreviewed";
+  const textAnalysis = toTextAnalysis(raw.text_ai_result);
+  const images = toImages(raw.image_ai_results);
+  let imageAnalyses = images.map((image, index) => ({
+    url: image.url,
+    objects: image.detectedObjects,
+    // OCR 텍스트별 분석 점수는 백엔드가 아직 안 내려줘서 ocr_text가 있는 이미지에 mock 점수를 부여한다.
+    ocrScore: image.ocrText ? mockScore(id, 31 + index) : null,
+  }));
+  if (images.length === 0) {
+    // mock 분포: 일부 행은 이미지 없음(빈 배열), 나머지는 1~4장. 객체 0~2개(각자 confidence), OCR은 일부만.
+    const count = mockScore(id, 13) > 0.75 ? 0 : 1 + Math.floor(mockScore(id, 29) * 4);
+    imageAnalyses = Array.from({ length: count }, (_, index) => {
+      const objectCount = Math.floor(mockScore(id, 71 + index) * 3);
+      const names = Array.from(
+        new Set(Array.from({ length: objectCount }, (_, j) => MOCK_OBJECTS[(id.length + index * 2 + j) % MOCK_OBJECTS.length])),
+      );
+      const ocr = mockScore(id, 59 + index);
+      return {
+        url: "",
+        objects: names.map((name, j) => ({ name, confidence: mockScore(id, 83 + index * 3 + j) })),
+        ocrScore: ocr > 0.8 ? null : ocr,
+      };
+    });
+  }
   return {
-    id: raw.id,
+    id,
     score: typeof raw.score === "number" ? raw.score : 0,
+    textScore: textAnalysis ? textAnalysis.probDrug : mockScore(id, 7),
+    imageAnalyses,
     summary: raw.content.replace(/\s+/g, " ").trim().slice(0, 80) || "(내용 없음)",
     nickname: author ? (author.startsWith("@") ? author : `@${author}`) : "(작성자 미상)",
     platform: PLATFORM_LABEL[platform.toLowerCase()] ?? platform,

@@ -74,7 +74,10 @@ function DetectionsSkeleton() {
           <table className={listStyles.table}>
             <thead>
               <tr>
-                <th scope="col">SCORE</th>
+                <th scope="col">텍스트</th>
+                <th scope="col">검출 객체</th>
+                <th scope="col">OCR(최대)</th>
+                <th scope="col">이미지</th>
                 <th scope="col">게시글</th>
                 <th scope="col">닉네임</th>
                 <th scope="col">출처</th>
@@ -86,6 +89,9 @@ function DetectionsSkeleton() {
               {Array.from({ length: 10 }, (_, index) => (
                 <tr key={index}>
                   <td><Sk w={56} h={32} r={9} /></td>
+                  <td><div style={{ display: "flex", gap: 5 }}><Sk w={48} h={27} r={8} /><Sk w={56} h={27} r={8} /></div></td>
+                  <td><Sk w={56} h={32} r={9} /></td>
+                  <td><Sk w={58} h={32} r={9} /></td>
                   <td className={listStyles.summaryCell}><Sk w={`${92 - (index % 4) * 10}%`} h={14} /></td>
                   <td><Sk w={92} h={13} /></td>
                   <td><Sk w={48} h={13} /></td>

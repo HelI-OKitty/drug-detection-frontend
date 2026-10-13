@@ -22,9 +22,9 @@ const PREVIEW_SUMMARY: DashboardSummary = {
 };
 
 const PREVIEW_RECENT: DetectionRow[] = [
-  { id: "", score: 0.92, summary: "의심 키워드와 외부 연락 유도 문구가 포함된 게시글", nickname: "@sample_1", platform: "X (Twitter)", sourceUrl: "", detectedAt: "2026-05-29 02:14", status: "unreviewed", keywords: ["키워드 탐지"] },
-  { id: "", score: 0.88, summary: "거래를 유도하는 표현이 발견된 게시글", nickname: "@sample_2", platform: "X (Twitter)", sourceUrl: "", detectedAt: "2026-05-29 01:50", status: "unreviewed", keywords: ["패턴 탐지"] },
-  { id: "", score: 0.85, summary: "외부 메신저 채널로 연결하는 의심 게시글", nickname: "@sample_3", platform: "X (Twitter)", sourceUrl: "", detectedAt: "2026-05-28 23:31", status: "reviewing", keywords: ["외부 링크"] },
+  { id: "", score: 0.92, textScore: 0.92, imageAnalyses: [{ url: "", objects: [{ name: "알약", confidence: 0.83 }, { name: "주사기", confidence: 0.61 }], ocrScore: 0.69 }, { url: "", objects: [], ocrScore: null }], summary: "의심 키워드와 외부 연락 유도 문구가 포함된 게시글", nickname: "@sample_1", platform: "X (Twitter)", sourceUrl: "", detectedAt: "2026-05-29 02:14", status: "unreviewed", keywords: ["키워드 탐지"] },
+  { id: "", score: 0.88, textScore: 0.88, imageAnalyses: [], summary: "거래를 유도하는 표현이 발견된 게시글", nickname: "@sample_2", platform: "X (Twitter)", sourceUrl: "", detectedAt: "2026-05-29 01:50", status: "unreviewed", keywords: ["패턴 탐지"] },
+  { id: "", score: 0.85, textScore: 0.85, imageAnalyses: [{ url: "", objects: [{ name: "주사기", confidence: 0.61 }], ocrScore: null }], summary: "외부 메신저 채널로 연결하는 의심 게시글", nickname: "@sample_3", platform: "X (Twitter)", sourceUrl: "", detectedAt: "2026-05-28 23:31", status: "reviewing", keywords: ["외부 링크"] },
 ];
 
 /** 점들을 Catmull-Rom 기반 베지어 곡선으로 잇는다. 제어점 y는 차트 범위로 눌러 과도한 출렁임을 막는다. */

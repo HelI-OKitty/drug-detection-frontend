@@ -184,26 +184,30 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                         의심 {toPercent(image.score)}
                       </span>
                     </button>
-                    {(image.detectedObjects.length > 0 || image.ocrText) && (
-                      <figcaption className={styles.imageMeta}>
-                        {image.detectedObjects.length > 0 && (
-                          <ul className={styles.objectList}>
-                            {image.detectedObjects.map((object, objectIndex) => (
-                              <li className={styles.objectRow} key={`${object.name}-${objectIndex}`}>
-                                <span className={styles.objectName} title={object.name}>{object.name}</span>
-                                <i className={styles.objectTrack} aria-hidden="true">
-                                  <b style={{ width: toPercent(object.confidence), background: scoreColors(object.confidence).stroke }} />
-                                </i>
-                                <span className={styles.objectValue} style={{ color: scoreColors(object.confidence).fg }}>
-                                  {toPercent(object.confidence)}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {image.ocrText && <p className={styles.ocrText}>OCR · {image.ocrText}</p>}
-                      </figcaption>
-                    )}
+                    <figcaption className={styles.imageMeta}>
+                      {image.detectedObjects.length > 0 ? (
+                        <ul className={styles.objectList}>
+                          {image.detectedObjects.map((object, objectIndex) => (
+                            <li className={styles.objectRow} key={`${object.name}-${objectIndex}`}>
+                              <span className={styles.objectName} title={object.name}>{object.name}</span>
+                              <i className={styles.objectTrack} aria-hidden="true">
+                                <b style={{ width: toPercent(object.confidence), background: scoreColors(object.confidence).stroke }} />
+                              </i>
+                              <span className={styles.objectValue} style={{ color: scoreColors(object.confidence).fg }}>
+                                {toPercent(object.confidence)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className={styles.metaEmpty}>객체 미검출</p>
+                      )}
+                      {image.ocrText ? (
+                        <p className={styles.ocrText}>OCR · {image.ocrText}</p>
+                      ) : (
+                        <p className={styles.metaEmpty}>OCR 텍스트 미검출</p>
+                      )}
+                    </figcaption>
                   </figure>
                 ))}
               </div>

@@ -26,7 +26,32 @@
 .row:focus-within { background:#f5faf8; }
 
 /* 색상은 점수에 따라 scoreColors()가 인라인으로 지정한다. */
-.score { display:inline-grid; place-items:center; min-width:56px; padding:6px 9px; border:1px solid transparent; border-radius:9px; font:700 14px ui-monospace,SFMono-Regular,Consolas,monospace; }
+/* 목록의 분석 결과 열들 */
+.score { display:inline-flex; align-items:center; justify-content:center; min-width:56px; padding:6px 9px; border:1px solid transparent; border-radius:9px; font:700 14px ui-monospace,SFMono-Regular,Consolas,monospace; white-space:nowrap; }
+.cellNone { color:#9aa8b9; font-weight:700; }
+/* 검출 객체 (대표 이름 + +N종 텍스트) */
+.objectText { display:inline-flex; align-items:baseline; gap:6px; font-size:13px; color:#243447; white-space:nowrap; }
+.objectText small { font-size:12px; font-weight:600; color:#8a9bb1; }
+/* 이미지 N장 버튼. 행 전체를 덮는 .summaryLink::after 위로 올려 클릭이 먹히게 한다. */
+.imageToggle { position:relative; z-index:1; display:inline-flex; align-items:center; gap:4px; padding:6px 10px; border:1px solid #e0e7ee; border-radius:9px; background:#fff; font-size:13px; color:#243447; white-space:nowrap; cursor:pointer; transition:border-color .12s, background .12s, color .12s; }
+.imageToggle:hover { border-color:#b9c7d4; background:#f8fafc; }
+.imageToggle > svg { width:14px; height:14px; color:#8a9bb1; transition:transform .15s; }
+.imageToggle[aria-expanded=true] { border-color:#3c82f6; color:#2563eb; }
+.imageToggle[aria-expanded=true] > svg { color:#3c82f6; transform:rotate(180deg); }
+
+/* ───────── 이미지별 분석 요약 팝오버 ───────── */
+.popoverBackdrop { position:fixed; inset:0; z-index:58; }
+.popover { position:fixed; z-index:59; width:440px; max-width:94vw; padding:18px 20px 16px; background:#fff; border:1px solid #e4eaf0; border-radius:14px; box-shadow:0 18px 44px rgba(15,25,38,.16); }
+.popoverHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
+.popoverTitle { margin:0; font-size:15px; font-weight:700; color:#172535; }
+.popoverClose { display:grid; place-items:center; width:30px; height:30px; border:0; border-radius:8px; background:transparent; color:#52657b; cursor:pointer; transition:background .12s; }
+.popoverClose:hover { background:#eef2f6; }
+.popoverClose > svg { width:16px; height:16px; stroke-width:2; }
+.popoverList { display:flex; flex-direction:column; margin:0; padding:0; list-style:none; }
+.popoverRow { display:grid; grid-template-columns:62px minmax(0,1fr) max-content; align-items:center; gap:14px; padding:9px 0; font-size:13px; }
+.popoverRow em { font:500 12px ui-monospace,SFMono-Regular,Consolas,monospace; font-style:normal; letter-spacing:.5px; color:#8a9bb1; white-space:nowrap; }
+.popoverObjects { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#243447; }
+.ocrBadge { justify-self:end; padding:5px 10px; border-radius:8px; background:#f1f5f9; color:#5b6b7d; font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace; white-space:nowrap; }
 
 .summaryCell { max-width:0; width:52%; }
 /* 링크를 행 전체로 확장해 어디를 눌러도 상세로 이동하게 한다 */
@@ -107,6 +132,8 @@
 .objectValue { min-width:36px; text-align:right; font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace; }
 .ocrText { margin:10px 0 0; font-size:11px; line-height:1.7; color:#52657b; word-break:break-all; }
 .ocrText:first-child { margin-top:0; }
+.metaEmpty { margin:10px 0 0; font-size:11px; color:#9aa8b9; }
+.metaEmpty:first-child { margin-top:0; }
 
 /* ───────── 이미지 원본 보기 ───────── */
 .viewerOverlay { position:fixed; inset:0; z-index:70; display:grid; place-items:center; padding:28px; background:rgba(10,16,22,.84); cursor:zoom-out; }
@@ -186,7 +213,7 @@
   .images { grid-template-columns:repeat(2,1fr); gap:12px; }
 }
 @media(max-width:520px) {
-  .table th:nth-child(3), .table td:nth-child(3),
-  .table th:nth-child(4), .table td:nth-child(4) { display:none; }
+  .table th:nth-child(6), .table td:nth-child(6),
+  .table th:nth-child(7), .table td:nth-child(7) { display:none; }
   .images { grid-template-columns:1fr; }
 }

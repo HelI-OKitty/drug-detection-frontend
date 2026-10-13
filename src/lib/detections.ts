@@ -28,9 +28,23 @@ export type TextAnalysis = {
   matchedIntents: string[];
 };
 
+/** 목록 표시용 이미지 1장의 분석 요약 */
+export type ImageAnalysisSummary = {
+  /** 이미지 URL. 썸네일 표시용 (없으면 빈 문자열) */
+  url: string;
+  /** 검출된 객체들(이름 + 객체별 confidence) */
+  objects: DetectedObject[];
+  /** OCR 텍스트 분석 점수 0~1. 추출된 텍스트가 없으면 null */
+  ocrScore: number | null;
+};
+
 export type DetectionRow = {
   id: string;
   score: number;
+  /** 텍스트 AI의 마약 확률(0~1). 텍스트 분석이 없으면 null */
+  textScore: number | null;
+  /** 이미지별 분석 요약. 이미지가 없으면 빈 배열 */
+  imageAnalyses: ImageAnalysisSummary[];
   /** 목록에 보여줄 한 줄 요약 */
   summary: string;
   nickname: string;
@@ -71,20 +85,14 @@ export const STATUS_FILTERS = [
 export type StatusFilter = (typeof STATUS_FILTERS)[number]["key"];
 
 /**
- * 점수를 min~1 구간에서 초록(min)→노랑→빨강(1.0)으로 연속 매핑한 색상.
- * min 미만은 초록으로 고정된다. 탐지 게시글은 점수가 대부분 0.5 이상이라 기본 min이 0.5이고,
- * 단순 분석처럼 0~1 전체를 쓰는 화면은 min=0을 넘긴다.
- * fg는 글자, bg는 배지 배경, border는 배지 테두리, stroke는 게이지 선 색.
+ * 위험도 색상. 그라데이션 대신 3구간으로 나눠 높은 위험이 중간 색에 묻히지 않게 한다.
+ * low(0.5 미만) 회색 · mid(0.5~0.9) 주황 · high(0.9 이상) 빨강.
+ * fg는 글자, bg는 배지 배경, border는 배지 테두리, stroke는 게이지·바 색.
  */
-export function scoreColors(score: number, min = 0.5) {
-  const t = Math.min(1, Math.max(0, (score - min) / (1 - min)));
-  const hue = Math.round(140 * (1 - t));
-  return {
-    fg: `hsl(${hue} 78% 34%)`,
-    bg: `hsl(${hue} 85% 94%)`,
-    border: `hsl(${hue} 65% 72%)`,
-    stroke: `hsl(${hue} 80% 44%)`,
-  };
+export function scoreColors(score: number) {
+  if (score >= 0.9) return { fg: "#cf2548", bg: "#fde8ec", border: "#f3c0cc", stroke: "#e11d48" };
+  if (score >= 0.5) return { fg: "#c2690a", bg: "#fdf0dd", border: "#f3d9a9", stroke: "#f59e0b" };
+  return { fg: "#5b6b7d", bg: "#f1f5f9", border: "#e2e8f0", stroke: "#94a3b8" };
 }
 
 /** source_url에서 표시용 호스트만 뽑는다. 잘못된 URL이면 원본을 그대로 돌려준다. */
