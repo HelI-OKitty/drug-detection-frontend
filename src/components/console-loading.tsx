@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import {
-  ArrowLeft, BarChart3, Bell, Hash, KeyRound, Power, Radar, ScanSearch, Timer, TriangleAlert, UserCog,
+  ArrowLeft, BarChart3, Bell, FileText, Hash, Images, KeyRound, Power, Radar, ScanSearch, ShieldCheck, Timer, TrendingUp, TriangleAlert, UserCog,
 } from "lucide-react";
 import { ConsoleShell } from "./console-shell";
 import styles from "./console.module.css";
@@ -17,10 +17,10 @@ function Sk({ w = "100%", h = 12, r = 7, style }: { w?: number | string; h?: num
 
 function DashboardSkeleton() {
   const metrics = [
-    { title: "오늘 탐지", tone: "red", Icon: TriangleAlert },
-    { title: "누적 탐지", tone: "blue", Icon: BarChart3 },
-    { title: "미확인", tone: "amber", Icon: Bell },
-    { title: "최근 7일", tone: "green", Icon: BarChart3 },
+    { title: "전체 수집", tone: "blue", Icon: BarChart3 },
+    { title: "양성 (의심)", tone: "red", Icon: TriangleAlert },
+    { title: "음성 (정상)", tone: "green", Icon: ShieldCheck },
+    { title: "오늘 수집", tone: "amber", Icon: TrendingUp },
   ];
   return (
     <div className={styles.dashboard}>
@@ -33,26 +33,32 @@ function DashboardSkeleton() {
           </section>
         ))}
       </div>
-      <div className={styles.panels}>
+      <div className={`${styles.panels} ${styles.panelsSingle}`}>
         <section className={styles.panel}>
-          <header><h2><TriangleAlert aria-hidden="true" />최근 탐지 게시글</h2><small>최신 5건</small></header>
-          <ul className={styles.posts}>
-            {Array.from({ length: 5 }, (_, index) => (
-              <li key={index}>
-                <Sk w={48} h={33} r={9} />
-                <div className={styles.postBody}>
-                  <p><Sk w={`${88 - (index % 3) * 14}%`} h={12} /></p>
-                  <div><Sk w={150} h={10} /></div>
-                </div>
-                <Sk w={48} h={22} r={8} />
-              </li>
-            ))}
-          </ul>
+          <header><h2><BarChart3 aria-hidden="true" />수집 추이</h2><small>최근 7일</small></header>
+          <div className={styles.lineChart}>
+            <div className={styles.trendToggles}>
+              <Sk w={64} h={30} r={9} /><Sk w={92} h={30} r={9} /><Sk w={92} h={30} r={9} />
+            </div>
+            <Sk h={176} r={11} />
+          </div>
         </section>
-        <section className={styles.panel}>
-          <header><h2><BarChart3 aria-hidden="true" />최근 7일 탐지 추이</h2><small>일별 건수</small></header>
-          <div className={styles.lineChart}><Sk h={176} r={11} /></div>
-        </section>
+      </div>
+      <div className={`${styles.panels} ${styles.panelsEven}`}>
+        {[
+          { title: "텍스트 분석 통계", Icon: FileText },
+          { title: "이미지 분석 통계", Icon: Images },
+        ].map(({ title, Icon }) => (
+          <section className={styles.panel} key={title}>
+            <header><h2><Icon aria-hidden="true" />{title}</h2><small><Sk w={52} h={10} /></small></header>
+            <div className={styles.statBody}>
+              <Sk h={10} r={99} />
+              <div style={{ display: "grid", gap: 11, marginTop: 24 }}>
+                {Array.from({ length: 4 }, (_, index) => <Sk key={index} h={12} w={`${96 - index * 14}%`} />)}
+              </div>
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );

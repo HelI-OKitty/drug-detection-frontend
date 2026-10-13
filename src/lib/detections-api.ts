@@ -191,7 +191,7 @@ export type DashboardSummary = {
 };
 
 export type DashboardResult =
-  | { ok: true; summary: DashboardSummary; recent: DetectionRow[] }
+  | { ok: true; summary: DashboardSummary }
   | { ok: false; reason: "unauthorized" | "error" };
 
 const EMPTY_SUMMARY: DashboardSummary = { total: 0, today: 0, unconfirmed: 0, trend: [] };
@@ -201,16 +201,13 @@ function toCount(value: unknown) {
 }
 
 /**
- * 응답이 비거나 일부 요청이 실패해도 기본값(0·빈 목록)으로 채워 항상 대시보드를 그린다.
+ * 응답이 비어 있어도 기본값(0·빈 목록)으로 채워 항상 대시보드를 그린다.
  * 로그인 문제(401/403)일 때만 실패로 처리한다.
  */
 export async function fetchDashboard(): Promise<DashboardResult> {
   const fallback = { status: 0, data: null as unknown };
-  const [summaryRes, recentRes] = await Promise.all([
-    request("/dashboard/summary").catch(() => fallback),
-    request("/dashboard/recent?limit=5").catch(() => fallback),
-  ]);
-  if ([summaryRes.status, recentRes.status].some((status) => status === 401 || status === 403)) {
+  const summaryRes = await request("/dashboard/summary").catch(() => fallback);
+  if (summaryRes.status === 401 || summaryRes.status === 403) {
     return { ok: false, reason: "unauthorized" };
   }
 
@@ -232,13 +229,106 @@ export async function fetchDashboard(): Promise<DashboardResult> {
     unconfirmed: toCount(summaryRaw.unconfirmed),
     trend,
   };
-  const recent = Array.isArray(recentRes.data)
-    ? recentRes.data.flatMap((item: unknown) => {
-        const row = typeof item === "object" && item !== null ? toRow(item as Record<string, unknown>) : null;
-        return row ? [row] : [];
-      })
-    : [];
-  return { ok: true, summary, recent };
+  return { ok: true, summary };
+}
+
+/** 대시보드 텍스트·이미지 분석 통계 (실데이터 집계) */
+export type AnalysisStats = {
+  /** 텍스트 분석이 수행된 게시글 수 */
+  analyzedText: number;
+  /** 모델 점수(prob_drug)가 있는 건수 */
+  textModel: number;
+  /** 규칙 매칭만 수행된 건수 */
+  textRuleOnly: number;
+  /** 단어 사전(용어) 매칭 상위 분포 */
+  terms: { name: string; count: number }[];
+  /** 동사 사전(의도) 매칭 상위 분포 */
+  intents: { name: string; count: number }[];
+  imageTotal: number;
+  withOcr: number;
+  withoutOcr: number;
+  /** 검출 객체 클래스 분포 */
+  objects: { name: string; count: number }[];
+};
+
+function topCounts(map: Map<string, number>, limit = 5) {
+  return [...map.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/** 이미지 모델이 탐지하는 객체 클래스. 분포에 0건인 클래스도 함께 보여주기 위한 기준 목록 */
+const OBJECT_CLASSES = ["Cocaine", "Heroin", "Shrooms", "Marijuana"];
+
+/**
+ * 목록의 모든 게시글 상세를 모아 텍스트·이미지 통계를 집계한다.
+ * TODO(stats): 게시글이 많아지면 요청이 N+1로 늘어나므로 백엔드 통계 API로 교체한다.
+ */
+export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
+  try {
+    const { status, data } = await request("/detections");
+    if (status !== 200 || !Array.isArray(data)) return null;
+    const ids = data
+      .map((item) => (typeof item === "object" && item !== null ? (item as Record<string, unknown>).id : null))
+      .filter((id): id is string => typeof id === "string");
+    const details = await Promise.all(
+      ids.map((id) => request(`/detections/${encodeURIComponent(id)}`).catch(() => ({ status: 0, data: null as unknown }))),
+    );
+
+    let analyzedText = 0;
+    let textModel = 0;
+    let textRuleOnly = 0;
+    let imageTotal = 0;
+    let withOcr = 0;
+    const termCounts = new Map<string, number>();
+    const intentCounts = new Map<string, number>();
+    // 탐지되지 않은 클래스도 0건으로 분포에 나오도록 기준 클래스를 미리 채워둔다.
+    const objectCounts = new Map<string, number>(OBJECT_CLASSES.map((name) => [name, 0]));
+
+    for (const { data: raw } of details) {
+      if (typeof raw !== "object" || raw === null) continue;
+      const detail = raw as Record<string, unknown>;
+      const text = detail.text_ai_result;
+      if (typeof text === "object" && text !== null) {
+        analyzedText += 1;
+        const t = text as Record<string, unknown>;
+        if (typeof t.prob_drug === "number") textModel += 1;
+        else textRuleOnly += 1;
+        for (const word of toStringList(t.matched_terms)) termCounts.set(word, (termCounts.get(word) ?? 0) + 1);
+        for (const word of toStringList(t.matched_intents)) intentCounts.set(word, (intentCounts.get(word) ?? 0) + 1);
+      }
+      if (Array.isArray(detail.image_ai_results)) {
+        for (const item of detail.image_ai_results) {
+          if (typeof item !== "object" || item === null) continue;
+          const image = item as Record<string, unknown>;
+          imageTotal += 1;
+          if (typeof image.ocr_text === "string" && image.ocr_text.trim()) withOcr += 1;
+          if (Array.isArray(image.detected_objects)) {
+            for (const objectRaw of image.detected_objects) {
+              if (typeof objectRaw !== "object" || objectRaw === null) continue;
+              const name = (objectRaw as Record<string, unknown>).class_name;
+              if (typeof name === "string" && name) objectCounts.set(name, (objectCounts.get(name) ?? 0) + 1);
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      analyzedText,
+      textModel,
+      textRuleOnly,
+      terms: topCounts(termCounts),
+      intents: topCounts(intentCounts),
+      imageTotal,
+      withOcr,
+      withoutOcr: imageTotal - withOcr,
+      objects: topCounts(objectCounts, 8),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export type DetectionDetailResult =
