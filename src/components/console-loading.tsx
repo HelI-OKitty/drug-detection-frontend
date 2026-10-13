@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import {
-  ArrowLeft, BarChart3, Bell, Hash, KeyRound, Radar, ScanSearch, Timer, TriangleAlert, UserCog,
+  ArrowLeft, BarChart3, Bell, Hash, KeyRound, Power, Radar, ScanSearch, Timer, TriangleAlert, UserCog,
 } from "lucide-react";
 import { ConsoleShell } from "./console-shell";
 import styles from "./console.module.css";
@@ -195,6 +195,12 @@ function AccountSkeleton() {
 function SettingsSkeleton() {
   return (
     <div className={formStyles.page}>
+      <CardSkeleton Icon={Power} title="자동 크롤링">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ flex: 1, display: "grid", gap: 8 }}><Sk w={110} h={14} /><Sk w="70%" h={12} /></div>
+          <Sk w={46} h={26} r={99} />
+        </div>
+      </CardSkeleton>
       <CardSkeleton Icon={Hash} title="탐지 키워드">
         <div className={formStyles.chipGrid}>
           {Array.from({ length: 11 }, (_, index) => <Sk key={index} w={58 + (index % 4) * 12} h={40} r={10} />)}
@@ -202,7 +208,7 @@ function SettingsSkeleton() {
       </CardSkeleton>
       <CardSkeleton Icon={Timer} title="탐지 간격">
         <div className={formStyles.chipGrid}>
-          {Array.from({ length: 7 }, (_, index) => <Sk key={index} w={60} h={40} r={10} />)}
+          {Array.from({ length: 4 }, (_, index) => <Sk key={index} w={60} h={40} r={10} />)}
         </div>
       </CardSkeleton>
       <CardSkeleton Icon={Hash} title="탐지 갯수">

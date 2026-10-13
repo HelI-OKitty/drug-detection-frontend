@@ -1,40 +1,60 @@
 "use client";
 
-import { Check, Hash, Minus, Plus, Save, Timer, X } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Check, Hash, Minus, Plus, Power, Save, Timer, X } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
 import {
-  DEFAULT_SETTINGS,
   INTERVAL_OPTIONS,
   MAX_CUSTOM_KEYWORDS,
   MAX_DETECTION_COUNT,
   MIN_DETECTION_COUNT,
   PRESET_KEYWORDS,
-  loadDetectionSettings,
-  saveDetectionSettings,
+  intervalLabel,
 } from "@/lib/detection-settings";
+import {
+  toggleCrawlEnabled,
+  updateCrawlSettings,
+  type CrawlSettings,
+} from "@/app/settings/detection/actions";
 import styles from "./settings.module.css";
 
-export default function DetectionSettings() {
-  const [enabledPresets, setEnabledPresets] = useState(DEFAULT_SETTINGS.enabledPresets);
-  const [customKeywords, setCustomKeywords] = useState(DEFAULT_SETTINGS.customKeywords);
-  const [intervalMinutes, setIntervalMinutes] = useState(DEFAULT_SETTINGS.intervalMinutes);
-  const [countInput, setCountInput] = useState(String(DEFAULT_SETTINGS.detectionCount));
+const DEFAULT_COUNT = 100;
+const DEFAULT_INTERVAL = 60;
+const PRESETS: readonly string[] = PRESET_KEYWORDS;
+
+export default function DetectionSettings({ initial }: { initial: CrawlSettings | null }) {
+  const [enabledPresets, setEnabledPresets] = useState<string[]>(
+    initial ? PRESETS.filter((word) => initial.keywords.includes(word)) : [...PRESETS],
+  );
+  const [customKeywords, setCustomKeywords] = useState<string[]>(
+    initial ? initial.keywords.filter((word) => !PRESETS.includes(word)) : [],
+  );
+  const [intervalMinutes, setIntervalMinutes] = useState(
+    initial && INTERVAL_OPTIONS.some((option) => option.minutes === initial.scheduleInterval)
+      ? initial.scheduleInterval
+      : DEFAULT_INTERVAL,
+  );
+  const [countInput, setCountInput] = useState(String(initial?.maxResults ?? DEFAULT_COUNT));
+  const [crawlEnabled, setCrawlEnabled] = useState(initial?.crawlEnabled ?? false);
   const [keywordInput, setKeywordInput] = useState("");
   const [keywordError, setKeywordError] = useState("");
+  const [error, setError] = useState(
+    initial ? "" : "서버에서 설정을 불러오지 못해 기본값을 표시합니다. 저장하면 다시 연결을 시도합니다.",
+  );
+  const [saving, setSaving] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [savedAt, setSavedAt] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
-  // localStorage는 클라이언트에만 있으므로 마운트 후에 읽어 하이드레이션 불일치를 막는다.
-  useEffect(() => {
-    const stored = loadDetectionSettings();
-    setEnabledPresets(stored.enabledPresets);
-    setCustomKeywords(stored.customKeywords);
-    setIntervalMinutes(stored.intervalMinutes);
-    setCountInput(String(stored.detectionCount));
-    return () => {
-      if (savedTimer.current) clearTimeout(savedTimer.current);
-    };
-  }, []);
+  /** 서버가 돌려준 설정으로 화면 상태를 맞춘다. */
+  function syncFrom(settings: CrawlSettings) {
+    setEnabledPresets(PRESETS.filter((word) => settings.keywords.includes(word)));
+    setCustomKeywords(settings.keywords.filter((word) => !PRESETS.includes(word)));
+    if (INTERVAL_OPTIONS.some((option) => option.minutes === settings.scheduleInterval)) {
+      setIntervalMinutes(settings.scheduleInterval);
+    }
+    setCountInput(String(settings.maxResults));
+    setCrawlEnabled(settings.crawlEnabled);
+  }
 
   function togglePreset(word: string) {
     setEnabledPresets((current) =>
@@ -50,7 +70,7 @@ export default function DetectionSettings() {
       setKeywordError(`커스텀 키워드는 최대 ${MAX_CUSTOM_KEYWORDS}개까지 추가할 수 있습니다.`);
       return;
     }
-    if ((PRESET_KEYWORDS as readonly string[]).includes(word)) {
+    if (PRESETS.includes(word)) {
       setKeywordError("기본 제공 키워드에 이미 포함된 단어입니다.");
       return;
     }
@@ -74,28 +94,81 @@ export default function DetectionSettings() {
 
   function stepCount(delta: number) {
     const current = Number(countInput);
-    setCountInput(String(clampCount(Number.isFinite(current) ? current + delta : DEFAULT_SETTINGS.detectionCount)));
+    setCountInput(String(clampCount(Number.isFinite(current) ? current + delta : DEFAULT_COUNT)));
   }
 
   function normalizeCount() {
     const value = Number(countInput);
-    setCountInput(String(Number.isFinite(value) && countInput.trim() !== "" ? clampCount(value) : DEFAULT_SETTINGS.detectionCount));
+    setCountInput(String(Number.isFinite(value) && countInput.trim() !== "" ? clampCount(value) : DEFAULT_COUNT));
   }
 
-  function handleSave() {
+  async function handleToggle() {
+    if (toggling) return;
+    setError("");
+    setToggling(true);
+    const result = await toggleCrawlEnabled(!crawlEnabled);
+    if (result.success) {
+      syncFrom(result.settings);
+    } else {
+      setError(result.message);
+    }
+    setToggling(false);
+  }
+
+  async function handleSave() {
+    if (saving) return;
     const value = Number(countInput);
-    const detectionCount = Number.isFinite(value) && countInput.trim() !== "" ? clampCount(value) : DEFAULT_SETTINGS.detectionCount;
-    setCountInput(String(detectionCount));
-    saveDetectionSettings({ enabledPresets, customKeywords, intervalMinutes, detectionCount });
-    setSavedAt(true);
-    if (savedTimer.current) clearTimeout(savedTimer.current);
-    savedTimer.current = setTimeout(() => setSavedAt(false), 2500);
+    const maxResults = Number.isFinite(value) && countInput.trim() !== "" ? clampCount(value) : DEFAULT_COUNT;
+    setCountInput(String(maxResults));
+    const keywords = [...enabledPresets, ...customKeywords];
+    if (keywords.length === 0) {
+      setError("크롤링에 사용할 키워드를 1개 이상 선택해 주세요.");
+      return;
+    }
+    setError("");
+    setSaving(true);
+    const result = await updateCrawlSettings({ keywords, maxResults, scheduleInterval: intervalMinutes });
+    if (result.success) {
+      syncFrom(result.settings);
+      setSavedAt(true);
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => setSavedAt(false), 2500);
+    } else {
+      setError(result.message);
+    }
+    setSaving(false);
   }
 
   const activeKeywordCount = enabledPresets.length + customKeywords.length;
 
   return (
     <div className={styles.page}>
+      <section className={styles.card} aria-labelledby="auto-crawl-title">
+        <header className={styles.cardHeader}>
+          <h2 id="auto-crawl-title"><Power aria-hidden="true" />자동 크롤링</h2>
+          <small>{crawlEnabled ? `${intervalLabel(intervalMinutes)} 주기로 사용 중` : "꺼짐"}</small>
+        </header>
+        <div className={styles.cardBody}>
+          <div className={styles.switchRow}>
+            <div>
+              <p className={styles.switchLabel}>자동 크롤링 사용</p>
+              <p className={styles.help}>
+                켜면 설정한 주기마다 자동으로 게시글 수집과 AI 분석이 실행됩니다. 이 스위치는 변경 즉시 서버에 반영됩니다.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={crawlEnabled}
+              aria-label="자동 크롤링 사용"
+              className={styles.switch}
+              onClick={handleToggle}
+              disabled={toggling}
+            />
+          </div>
+        </div>
+      </section>
+
       <section className={styles.card} aria-labelledby="keywords-title">
         <header className={styles.cardHeader}>
           <h2 id="keywords-title"><Hash aria-hidden="true" />탐지 키워드</h2>
@@ -163,10 +236,10 @@ export default function DetectionSettings() {
       <section className={styles.card} aria-labelledby="interval-title">
         <header className={styles.cardHeader}>
           <h2 id="interval-title"><Timer aria-hidden="true" />탐지 간격</h2>
-          <small>{INTERVAL_OPTIONS.find((option) => option.minutes === intervalMinutes)?.label} 주기</small>
+          <small>{intervalLabel(intervalMinutes)} 주기</small>
         </header>
         <div className={styles.cardBody}>
-          <p className={styles.help}>선택한 주기마다 대상 게시글을 수집하고 분석합니다.</p>
+          <p className={styles.help}>자동 크롤링이 켜져 있으면 선택한 주기마다 대상 게시글을 수집하고 분석합니다.</p>
           <div className={styles.chipGrid} role="radiogroup" aria-label="탐지 간격 선택">
             {INTERVAL_OPTIONS.map((option) => (
               <button
@@ -194,7 +267,7 @@ export default function DetectionSettings() {
             1회 탐지에서 수집할 최대 게시글 수입니다. ({MIN_DETECTION_COUNT}~{MAX_DETECTION_COUNT}개)
           </p>
           <div className={styles.stepper}>
-            <button type="button" onClick={() => stepCount(-5)} aria-label="탐지 갯수 5 줄이기"><Minus aria-hidden="true" /></button>
+            <button type="button" onClick={() => stepCount(-10)} aria-label="탐지 갯수 10 줄이기"><Minus aria-hidden="true" /></button>
             <input
               type="number"
               inputMode="numeric"
@@ -205,18 +278,19 @@ export default function DetectionSettings() {
               onBlur={normalizeCount}
               aria-label="탐지 갯수"
             />
-            <button type="button" onClick={() => stepCount(5)} aria-label="탐지 갯수 5 늘리기"><Plus aria-hidden="true" /></button>
+            <button type="button" onClick={() => stepCount(10)} aria-label="탐지 갯수 10 늘리기"><Plus aria-hidden="true" /></button>
             <span>개 / 회</span>
           </div>
         </div>
       </section>
 
       <div className={styles.footer}>
-        <p role="status" aria-live="polite" className={styles.savedNote}>
-          {savedAt && <><Check aria-hidden="true" />설정이 저장되었습니다.</>}
+        <p role="status" aria-live="polite" className={error ? styles.error : styles.savedNote}>
+          {error}
+          {!error && savedAt && <><Check aria-hidden="true" />설정이 저장되었습니다.</>}
         </p>
-        <button type="button" className={styles.saveButton} onClick={handleSave}>
-          <Save aria-hidden="true" />설정 저장
+        <button type="button" className={styles.saveButton} onClick={handleSave} disabled={saving}>
+          <Save aria-hidden="true" />{saving ? "저장 중…" : "설정 저장"}
         </button>
       </div>
     </div>
