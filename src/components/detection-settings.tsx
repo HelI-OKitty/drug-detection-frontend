@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Hash, Minus, Plus, Power, Save, Timer, X } from "lucide-react";
+import { Check, Hash, Minus, Plus, Power, RotateCcw, Save, Timer, X } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import {
   INTERVAL_OPTIONS,
@@ -43,9 +43,11 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [savedAt, setSavedAt] = useState(false);
+  // 마지막으로 서버와 동기화된 값. 이 값과 달라졌을 때만 저장 버튼이 활성화된다.
+  const [baseline, setBaseline] = useState<CrawlSettings | null>(initial);
   const savedTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
-  /** 서버가 돌려준 설정으로 화면 상태를 맞춘다. */
+  /** 서버가 돌려준 설정으로 화면 상태와 기준선을 맞춘다. */
   function syncFrom(settings: CrawlSettings) {
     setEnabledPresets(PRESETS.filter((word) => settings.keywords.includes(word)));
     setCustomKeywords(settings.keywords.filter((word) => !PRESETS.includes(word)));
@@ -54,6 +56,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
     }
     setCountInput(String(settings.maxResults));
     setCrawlEnabled(settings.crawlEnabled);
+    setBaseline(settings);
   }
 
   function togglePreset(word: string) {
@@ -139,7 +142,28 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
     setSaving(false);
   }
 
+  /** 변경 사항을 버리고 마지막으로 서버와 동기화된 값으로 되돌린다. */
+  function handleReset() {
+    if (!baseline || saving) return;
+    syncFrom(baseline);
+    setKeywordInput("");
+    setKeywordError("");
+    setError("");
+  }
+
   const activeKeywordCount = enabledPresets.length + customKeywords.length;
+
+  // 저장 대상 값(키워드·주기·수집 건수)이 서버 기준선과 다를 때만 저장을 허용한다.
+  const countValue = Number(countInput);
+  const normalizedCount =
+    Number.isFinite(countValue) && countInput.trim() !== "" ? clampCount(countValue) : DEFAULT_COUNT;
+  const currentKeywords = [...enabledPresets, ...customKeywords];
+  const dirty =
+    baseline === null ||
+    normalizedCount !== baseline.maxResults ||
+    intervalMinutes !== baseline.scheduleInterval ||
+    currentKeywords.length !== baseline.keywords.length ||
+    [...currentKeywords].sort().join("\n") !== [...baseline.keywords].sort().join("\n");
 
   return (
     <div className={styles.page}>
@@ -175,7 +199,25 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
           <small>사용 중 {activeKeywordCount}개</small>
         </header>
         <div className={styles.cardBody}>
-          <p className={styles.help}>탐지에 사용할 키워드를 선택하세요. 선택을 해제한 키워드는 탐지에서 제외됩니다.</p>
+          <div className={styles.helpRow}>
+            <p className={styles.help}>탐지에 사용할 키워드를 선택하세요. 선택을 해제한 키워드는 탐지에서 제외됩니다.</p>
+            <div className={styles.bulkButtons}>
+              <button
+                type="button"
+                onClick={() => setEnabledPresets([...PRESETS])}
+                disabled={enabledPresets.length === PRESETS.length}
+              >
+                전체 선택
+              </button>
+              <button
+                type="button"
+                onClick={() => setEnabledPresets([])}
+                disabled={enabledPresets.length === 0}
+              >
+                전체 해제
+              </button>
+            </div>
+          </div>
           <div className={styles.chipGrid} role="group" aria-label="기본 제공 키워드">
             {PRESET_KEYWORDS.map((word) => (
               <button
@@ -289,7 +331,15 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
           {error}
           {!error && savedAt && <><Check aria-hidden="true" />설정이 저장되었습니다.</>}
         </p>
-        <button type="button" className={styles.saveButton} onClick={handleSave} disabled={saving}>
+        <button
+          type="button"
+          className={styles.resetButton}
+          onClick={handleReset}
+          disabled={saving || !dirty || baseline === null}
+        >
+          <RotateCcw aria-hidden="true" />되돌리기
+        </button>
+        <button type="button" className={styles.saveButton} onClick={handleSave} disabled={saving || !dirty}>
           <Save aria-hidden="true" />{saving ? "저장 중…" : "설정 저장"}
         </button>
       </div>

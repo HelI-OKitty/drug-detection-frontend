@@ -11,6 +11,12 @@
 .error { margin:10px 0 0; font-size:12px; color:#cf2548; }
 
 /* ───────── 키워드 칩 ───────── */
+.helpRow { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.helpRow .help { margin-bottom:16px; }
+.bulkButtons { display:flex; flex-shrink:0; gap:6px; }
+.bulkButtons button { padding:6px 11px; border:1px solid #e0e7ee; border-radius:8px; background:#fff; font-size:12px; color:#52657b; white-space:nowrap; transition:background .12s; }
+.bulkButtons button:hover:not(:disabled) { background:#f5f8fa; }
+.bulkButtons button:disabled { opacity:.45; cursor:default; }
 .chipGrid { display:flex; flex-wrap:wrap; gap:8px; }
 .keywordChip, .intervalChip { display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:9px 16px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; color:#52657b; font-size:13px; transition:background .12s,color .12s,border-color .12s; }
 .keywordChip:hover, .intervalChip:hover { background:#f5f8fa; }
@@ -154,8 +160,13 @@
 .footer { display:flex; align-items:center; justify-content:flex-end; gap:16px; }
 .savedNote { display:flex; align-items:center; gap:6px; margin:0; min-height:20px; font-size:12px; color:#059d69; }
 .savedNote > svg { width:14px; height:14px; stroke-width:2.4; }
+.resetButton { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:48px; padding:12px 20px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; color:#52657b; font-size:14px; font-weight:600; transition:background .14s; }
+.resetButton:hover:not(:disabled) { background:#f5f8fa; }
+.resetButton:disabled { opacity:.45; cursor:default; }
+.resetButton > svg { width:15px; height:15px; stroke-width:1.9; }
 .saveButton { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:48px; padding:12px 26px; border:1px solid transparent; border-radius:10px; background:#09a96d; color:#fff; font-size:14px; font-weight:600; transition:background .14s; }
-.saveButton:hover { background:#07885a; }
+.saveButton:hover:not(:disabled) { background:#07885a; }
+.saveButton:disabled { background:#e4eaf0; color:#9aa8b9; cursor:default; }
 .saveButton > svg { width:16px; height:16px; stroke-width:1.9; }
 
 @media(max-width:760px) {
