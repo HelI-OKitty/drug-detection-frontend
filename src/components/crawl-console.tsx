@@ -10,7 +10,7 @@ import styles from "./settings.module.css";
 
 const MIN_RESULTS = 10;
 const MAX_RESULTS = 100;
-const DEFAULT_RESULTS = 100;
+const DEFAULT_RESULTS = 10;
 
 export default function CrawlConsole({
   adminName,
