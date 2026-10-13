@@ -31,6 +31,7 @@
 .metric[data-tone=blue] { --tone:#3c82f6; --tint:#eef5ff; }
 .metric[data-tone=amber] { --tone:#c48a20; --tint:#fff8ea; }
 .metric[data-tone=green] { --tone:#0aaa75; --tint:#ebfaf4; }
+.metric[data-tone=slate] { --tone:#64748b; --tint:#f1f5f9; }
 .metricTop { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .metricTop h2 { margin:0; font-size:11px; font-weight:400; letter-spacing:2px; color:#8a9bb1; }
 .metricTop > span { display:grid; place-items:center; width:32px; height:32px; border-radius:9px; color:var(--tone); background:var(--tint); }
@@ -40,6 +41,29 @@
 .metricFoot { display:flex; align-items:center; gap:4px; margin:0; font-size:11px; line-height:1.6; color:var(--tone); }
 .metricFoot > svg { width:12px; height:12px; flex-shrink:0; stroke-width:2.2; }
 .panels { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:20px; margin-top:24px; }
+.panelsEven { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.panelsSingle { grid-template-columns:minmax(0,1fr); }
+
+/* 수집 추이 시리즈 켜기/끄기 범례 버튼 */
+.trendToggles { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+.trendToggles button { display:inline-flex; align-items:center; gap:7px; padding:6px 13px; border:1px solid #e0e7ee; border-radius:9px; background:#fff; font-size:12px; color:#243447; cursor:pointer; transition:opacity .12s, border-color .12s, background .12s; }
+.trendToggles button:hover { background:#f8fafc; }
+.trendToggles button i { width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+.trendToggles button[aria-pressed=false] { opacity:.45; }
+.trendToggles button[aria-pressed=true] { border-color:#b9c7d4; }
+
+/* 날짜 열 호버 시 세로 가이드선 + 값 툴팁 */
+.hoverCol { position:absolute; top:-12px; bottom:-28px; width:44px; transform:translateX(-50%); }
+.hoverCol::before { content:""; position:absolute; top:0; bottom:28px; left:50%; border-left:1px dashed #b9c7d4; opacity:0; transition:opacity .1s; }
+.hoverCol:hover::before { opacity:1; }
+/* 해당 날짜의 최고점 바로 위에 뜬다 (top은 인라인으로 지정) */
+.chartTip { position:absolute; left:50%; transform:translate(-50%,-100%); z-index:6; display:none; flex-direction:column; gap:6px; padding:10px 13px; border-radius:10px; background:#1d2a3a; color:#eef3f8; font:11px ui-monospace,SFMono-Regular,Consolas,monospace; white-space:nowrap; box-shadow:0 10px 26px rgba(15,25,38,.28); pointer-events:none; }
+.hoverCol:hover .chartTip { display:flex; }
+.chartTip strong { font-size:10px; letter-spacing:1px; color:#9fb0c4; }
+.chartTip span { display:inline-flex; align-items:center; gap:7px; }
+.chartTip span i { width:8px; height:8px; border-radius:3px; flex-shrink:0; }
+.hoverCol[data-edge=start] .chartTip { left:0; transform:translate(0,-100%); }
+.hoverCol[data-edge=end] .chartTip { left:auto; right:0; transform:translate(0,-100%); }
 .panel { border:1px solid #e0e7ee; background:white; border-radius:15px; overflow:hidden; scroll-margin-top:20px; }
 .panel header { display:flex; gap:10px; align-items:center; justify-content:space-between; padding:20px; border-bottom:1px solid #e6edf3; }
 .panel header h2 { display:flex; align-items:center; gap:10px; margin:0; font-size:14px; font-weight:600; }
@@ -59,11 +83,29 @@
 .status { font-size:10px; font-weight:600; line-height:1.5; white-space:nowrap; padding:3px 8px; background:#fce3e8; color:#cf2548; border-radius:8px; }
 .status[data-status=reviewing] { background:#fff0ce; color:#ad720e; }
 .status[data-status=confirmed] { background:#d9f6e9; color:#008f61; }
+/* 통계 패널 (비율 막대 + 항목별 건수 막대) */
+.statBody { padding:20px; }
+.statLabel { margin:0 0 12px; font:500 10px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:2px; color:#8a9bb1; }
+.statLabel:not(:first-child) { margin-top:24px; }
+.ratio { display:flex; flex-direction:column; gap:10px; }
+.ratioBar { display:flex; height:10px; border-radius:99px; background:#eef2f6; overflow:hidden; }
+.ratioBar i { display:block; height:100%; }
+.ratioLegend { display:flex; flex-wrap:wrap; gap:8px 18px; font-size:12px; color:#52657b; }
+.ratioLegend span { display:inline-flex; align-items:center; gap:7px; }
+.ratioLegend i { width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+.countBars { display:flex; flex-direction:column; gap:11px; margin:0; padding:0; list-style:none; }
+.countBars li { display:flex; align-items:center; gap:11px; }
+.countName { flex-shrink:0; width:72px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 12px ui-monospace,SFMono-Regular,Consolas,monospace; color:#243447; }
+.countTrack { flex:1; height:8px; border-radius:99px; background:#eef2f6; overflow:hidden; }
+.countTrack b { display:block; height:100%; border-radius:99px; }
+.countValue { flex-shrink:0; min-width:76px; text-align:right; font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; color:#52657b; white-space:nowrap; }
+.statEmpty { margin:0; font-size:12px; color:#9aa8b9; }
+
 .lineChart { padding:34px 26px 10px; }
 .chartArea { position:relative; height:150px; }
 .chartArea svg { position:absolute; inset:0; width:100%; height:100%; display:block; overflow:visible; }
 .trendDot { position:absolute; width:9px; height:9px; border:2px solid #0aaa75; border-radius:50%; background:#fff; transform:translate(-50%,-50%); }
-.trendValue { position:absolute; transform:translate(-50%,calc(-100% - 9px)); font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; color:#52657b; white-space:nowrap; }
+.trendValue { position:absolute; transform:translate(-50%,calc(-100% - 9px)); font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; color:#52657b; white-space:nowrap; text-shadow:0 1px 0 #fff,0 -1px 0 #fff,1px 0 0 #fff,-1px 0 0 #fff; }
 .trendDates { position:relative; height:16px; margin-top:10px; }
 .trendDates span { position:absolute; transform:translateX(-50%); font:9px ui-monospace,SFMono-Regular,Consolas,monospace; color:#8a9bb1; white-space:nowrap; }
 /* ───────── 스켈레톤 로딩: 틀은 실제 UI를 쓰고 데이터 자리만 쉬머 블록으로 채운다 ───────── */

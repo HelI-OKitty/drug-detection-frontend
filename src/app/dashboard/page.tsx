@@ -3,19 +3,19 @@ import Link from "next/link";
 import { ConsoleShell } from "@/components/console-shell";
 import DashboardView from "@/components/dashboard-view";
 import MemberInfo from "@/components/member-info";
-import { fetchDashboard } from "@/lib/detections-api";
+import { fetchAnalysisStats, fetchDashboard } from "@/lib/detections-api";
 import guardStyles from "@/components/settings.module.css";
 
 export const metadata: Metadata = { title: "탐지 대시보드 | SENTINEL" };
 
 export default async function DashboardPage() {
-  const result = await fetchDashboard();
+  const [result, stats] = await Promise.all([fetchDashboard(), fetchAnalysisStats()]);
 
   return (
     <ConsoleShell memberInfo={<MemberInfo />}>
       <main>
         {result.ok ? (
-          <DashboardView summary={result.summary} recent={result.recent} />
+          <DashboardView summary={result.summary} stats={stats} />
         ) : (
           <div className={guardStyles.page}>
             <div className={guardStyles.guard} role="status">

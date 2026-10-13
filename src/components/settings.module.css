@@ -11,6 +11,20 @@
 .error { margin:10px 0 0; font-size:12px; color:#cf2548; }
 
 /* ───────── 키워드 칩 ───────── */
+/* 서버 오류 알림 배너 */
+.alertBanner { display:flex; align-items:flex-start; gap:11px; padding:14px 16px; border:1px solid #f3c0cc; border-radius:12px; background:#fdf2f5; color:#a21f3f; font-size:13px; }
+.alertBanner > svg { width:17px; height:17px; flex-shrink:0; margin-top:2px; stroke-width:1.9; }
+.alertBanner p { flex:1; margin:0; line-height:1.6; word-break:keep-all; }
+.alertBanner button { display:grid; place-items:center; width:26px; height:26px; flex-shrink:0; border:0; border-radius:7px; background:transparent; color:#a21f3f; cursor:pointer; transition:background .12s; }
+.alertBanner button:hover { background:#f9dde4; }
+.alertBanner button > svg { width:14px; height:14px; stroke-width:2; }
+
+.helpRow { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.helpRow .help { margin-bottom:16px; }
+.bulkButtons { display:flex; flex-shrink:0; gap:6px; }
+.bulkButtons button { padding:6px 11px; border:1px solid #e0e7ee; border-radius:8px; background:#fff; font-size:12px; color:#52657b; white-space:nowrap; transition:background .12s; }
+.bulkButtons button:hover:not(:disabled) { background:#f5f8fa; }
+.bulkButtons button:disabled { opacity:.45; cursor:default; }
 .chipGrid { display:flex; flex-wrap:wrap; gap:8px; }
 .keywordChip, .intervalChip { display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:9px 16px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; color:#52657b; font-size:13px; transition:background .12s,color .12s,border-color .12s; }
 .keywordChip:hover, .intervalChip:hover { background:#f5f8fa; }
@@ -76,22 +90,23 @@
 
 /* ───────── 텍스트 분석 ───────── */
 .formStack { display:flex; flex-direction:column; gap:20px; }
-.textarea { width:100%; min-height:220px; resize:vertical; padding:14px 16px; border:1px solid #e0e7ee; border-radius:11px; background:#fff; font-size:14px; line-height:1.8; color:#172535; }
+.textarea { width:100%; min-height:120px; resize:vertical; padding:14px 16px; border:1px solid #e0e7ee; border-radius:11px; background:#fff; font-size:14px; line-height:1.8; color:#172535; }
 .textarea::placeholder { color:#a3b0c0; }
 .textarea:focus-visible { outline:2px solid #0aaf75; outline-offset:-1px; }
 .textarea:disabled { background:#f3f6f8; color:#9aa8b9; }
-.resultCard { display:flex; gap:16px; align-items:flex-start; border:1px solid #e0e7ee; border-radius:15px; padding:22px 24px; background:#fff; }
-.resultCard[data-tone=danger] { border-color:#f3cdd6; background:#fdf4f6; }
-.resultCard[data-tone=safe] { border-color:#cdeee0; background:#effaf5; }
+.resultCard { border:1px solid #e0e7ee; border-radius:15px; padding:22px 24px; background:#fff; }
+.resultHead { display:flex; align-items:center; gap:14px; margin:0 0 10px; }
+.resultCard[data-tone=danger] { border-color:#f3cdd6; }
+.resultCard[data-tone=safe] { border-color:#cdeee0; }
 .resultIcon { display:grid; place-items:center; width:42px; height:42px; flex-shrink:0; border-radius:11px; }
 .resultCard[data-tone=danger] .resultIcon { background:#fce3e8; color:#cf2548; }
 .resultCard[data-tone=safe] .resultIcon { background:#d9f6e9; color:#059d69; }
 .resultIcon > svg { width:20px; height:20px; stroke-width:1.8; }
-.resultKicker { margin:0 0 7px; font:10px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:2px; color:#8a9bb1; }
-.resultTitle { margin:0 0 7px; font-size:16px; font-weight:600; color:#172535; }
+.resultTitle { margin:0; font-size:16px; font-weight:600; color:#172535; }
 .resultCard[data-tone=danger] .resultTitle { color:#8c1f38; }
 .resultCard[data-tone=safe] .resultTitle { color:#0b5c40; }
-.resultBody { margin:0; font-size:13px; line-height:1.7; color:#52657b; }
+/* 분석 결과 카드 내부의 입력별 스코어 목록 */
+.scoreList { display:flex; flex-direction:column; margin:16px 0 0; padding:16px 0 0; border-top:1px solid rgba(23,37,53,.08); list-style:none; }
 
 /* ───────── 단순 분석: 이미지 첨부·항목별 결과 ───────── */
 .addImage { display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:10px 16px; border:1px dashed #c7d3de; border-radius:10px; background:#fff; color:#52657b; font-size:13px; transition:background .12s; }
@@ -109,6 +124,8 @@
 .itemRow:first-child { padding-top:0; }
 .itemRow:last-child { border-bottom:0; padding-bottom:0; }
 .itemThumb { width:52px; height:52px; flex-shrink:0; border:1px solid #e0e7ee; border-radius:9px; object-fit:cover; }
+.thumbZoom { flex-shrink:0; padding:0; border:0; background:none; line-height:0; cursor:zoom-in; }
+.thumbZoom:hover .itemThumb { border-color:#b9c7d4; }
 .itemIcon { display:grid; place-items:center; width:52px; height:52px; flex-shrink:0; border:1px solid #e0e7ee; border-radius:9px; background:#f3f6f8; color:#8a9bb1; }
 .itemIcon > svg { width:20px; height:20px; stroke-width:1.7; }
 .itemBody { min-width:0; flex:1; }
@@ -117,9 +134,24 @@
 .itemBadge[data-tone=danger] { background:#fce3e8; color:#cf2548; }
 .itemBadge[data-tone=safe] { background:#d9f6e9; color:#008f61; }
 .itemBadge[data-tone=error] { background:#eef2f6; color:#7d8b9c; }
+.itemBadge[data-tone=muted] { background:#eef2f6; color:#7d8b9c; }
 .itemMeta { margin:0 0 4px; font-size:12px; line-height:1.7; color:#52657b; overflow-wrap:anywhere; }
-.objectChips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-.objectChip { padding:4px 10px; border:1px solid #cdeee0; border-radius:7px; background:#effaf5; color:#0a9d6a; font-size:11px; }
+/* 모델 점수 없이 규칙 매칭으로 판정된 결과 안내 */
+.ruleNote { margin:6px 0 4px; font-size:12px; color:#8a9bb1; }
+.probRow { display:flex; align-items:center; gap:10px; margin:8px 0 4px; max-width:420px; }
+.probLabel { flex-shrink:0; font-size:11px; color:#8a9bb1; white-space:nowrap; }
+.probTrack { flex:1; height:7px; border-radius:99px; background:#eef2f6; overflow:hidden; }
+.probTrack > b { display:block; height:100%; border-radius:99px; }
+.probValue { min-width:38px; text-align:right; font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace; }
+/* 이미지 행 내부의 세부 결과(객체 탐지 / OCR 텍스트 분석) 블록 */
+.subBlock { margin-top:14px; }
+.subBlock + .subBlock { padding-top:14px; border-top:1px solid #f0f4f8; }
+.subTitle { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 7px; font-size:11px; font-weight:600; letter-spacing:.3px; color:#8a9bb1; }
+.subEmpty { margin:0; font-size:12px; color:#9aa8b9; }
+.ocrText { margin:0 0 8px; font-size:12px; line-height:1.7; color:#52657b; overflow-wrap:anywhere; }
+.objectList { display:flex; flex-direction:column; gap:9px; margin:4px 0 0; padding:0; list-style:none; max-width:420px; }
+.objectRow { display:flex; align-items:center; gap:10px; }
+.objectName { flex-shrink:0; max-width:42%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:#52657b; }
 
 /* ───────── 크롤링 관리 ───────── */
 .scheduleNote { display:flex; align-items:center; gap:9px; margin-bottom:20px; padding:12px 16px; border:1px solid #d6e9f8; border-radius:11px; background:#f0f7fd; color:#2d6da8; font-size:12px; line-height:1.6; }
@@ -138,8 +170,13 @@
 .footer { display:flex; align-items:center; justify-content:flex-end; gap:16px; }
 .savedNote { display:flex; align-items:center; gap:6px; margin:0; min-height:20px; font-size:12px; color:#059d69; }
 .savedNote > svg { width:14px; height:14px; stroke-width:2.4; }
+.resetButton { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:48px; padding:12px 20px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; color:#52657b; font-size:14px; font-weight:600; transition:background .14s; }
+.resetButton:hover:not(:disabled) { background:#f5f8fa; }
+.resetButton:disabled { opacity:.45; cursor:default; }
+.resetButton > svg { width:15px; height:15px; stroke-width:1.9; }
 .saveButton { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:48px; padding:12px 26px; border:1px solid transparent; border-radius:10px; background:#09a96d; color:#fff; font-size:14px; font-weight:600; transition:background .14s; }
-.saveButton:hover { background:#07885a; }
+.saveButton:hover:not(:disabled) { background:#07885a; }
+.saveButton:disabled { background:#e4eaf0; color:#9aa8b9; cursor:default; }
 .saveButton > svg { width:16px; height:16px; stroke-width:1.9; }
 
 @media(max-width:760px) {

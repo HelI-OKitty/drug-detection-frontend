@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import {
   STATUS_FILTERS,
   STATUS_LABEL,
-  scoreColors,
   sourceHost,
   type DetectionRow,
   type StatusFilter,
@@ -14,6 +13,16 @@ import {
 import styles from "./detections.module.css";
 
 const PER_PAGE = 10;
+
+/** 의심/정상 판정 배지. 분석이 없으면 회색 대시 */
+function VerdictBadge({ flagged }: { flagged: boolean | null }) {
+  if (flagged === null) return <span className={styles.cellNone}>–</span>;
+  return (
+    <span className={styles.verdictBadge} data-flagged={flagged}>
+      {flagged ? "의심" : "정상"}
+    </span>
+  );
+}
 
 export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const [query, setQuery] = useState("");
@@ -81,7 +90,8 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th scope="col">SCORE</th>
+                <th scope="col">텍스트 결과</th>
+                <th scope="col">이미지 결과</th>
                 <th scope="col">게시글</th>
                 <th scope="col">닉네임</th>
                 <th scope="col">출처</th>
@@ -90,44 +100,41 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((item) => (
-                <tr key={item.id} className={styles.row}>
-                  <td>
-                    <span
-                      className={styles.score}
-                      style={{
-                        background: scoreColors(item.score).bg,
-                        color: scoreColors(item.score).fg,
-                        borderColor: scoreColors(item.score).border,
-                      }}
-                    >
-                      {item.score.toFixed(2)}
-                    </span>
-                  </td>
-                  <td className={styles.summaryCell}>
-                    <Link href={`/detections/${item.id}`} className={styles.summaryLink}>
-                      {item.summary}
-                    </Link>
-                  </td>
-                  <td><span className={styles.nickname}>{item.nickname}</span></td>
-                  <td>
-                    <a
-                      className={styles.sourceLink}
-                      href={item.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                    >
-                      {sourceHost(item.sourceUrl)}
-                    </a>
-                  </td>
-                  <td><span className={styles.detectedAt}>{item.detectedAt.slice(5)}</span></td>
-                  <td>
-                    <span className={styles.status} data-status={item.status}>
-                      {STATUS_LABEL[item.status]}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {rows.map((item) => {
+                // 이미지 결과는 장별 판정 중 하나라도 의심이면 의심으로 요약. 세부는 상세에서 확인한다.
+                const imageFlagged =
+                  item.imageAnalyses.length > 0
+                    ? item.imageAnalyses.some((image) => image.flagged)
+                    : null;
+                return (
+                  <tr className={styles.row} key={item.id}>
+                    <td><VerdictBadge flagged={item.textFlagged} /></td>
+                    <td><VerdictBadge flagged={imageFlagged} /></td>
+                    <td className={styles.summaryCell}>
+                      <Link href={`/detections/${item.id}`} className={styles.summaryLink}>
+                        {item.summary}
+                      </Link>
+                    </td>
+                    <td><span className={styles.nickname}>{item.nickname}</span></td>
+                    <td>
+                      <a
+                        className={styles.sourceLink}
+                        href={item.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        {sourceHost(item.sourceUrl)}
+                      </a>
+                    </td>
+                    <td><span className={styles.detectedAt}>{item.detectedAt.slice(5)}</span></td>
+                    <td>
+                      <span className={styles.status} data-status={item.status}>
+                        {STATUS_LABEL[item.status]}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

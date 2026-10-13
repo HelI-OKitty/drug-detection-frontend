@@ -1,5 +1,6 @@
-// POST /public/analyze 호출. 텍스트·이미지(base64) 단건 분석을 담당하며
-// 브라우저와 서버 어디서든 쓸 수 있도록 fetch만 사용한다.
+// 텍스트·이미지(base64) 단순 분석 호출. 함께 보내면 서버가 OCR 텍스트까지 묶어 분석한다.
+// 브라우저에서는 백엔드 CORS allowlist를 타지 않도록 same-origin 프록시(/api/analyze)를 거치고,
+// 서버(테스트 포함)에서는 백엔드 /public/analyze를 직접 호출한다.
 
 const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run.app";
 
@@ -23,9 +24,11 @@ export async function analyzeContent(payload: { text?: string; image?: string })
   if (Object.keys(body).length === 0) throw new Error("분석할 텍스트나 이미지를 입력해 주세요.");
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.BACKEND_API_URL || DEFAULT_API_URL;
+  const endpoint =
+    typeof window === "undefined" ? `${baseUrl.replace(/\/$/, "")}/public/analyze` : "/api/analyze";
   let response: Response;
   try {
-    response = await fetch(`${baseUrl.replace(/\/$/, "")}/public/analyze`, {
+    response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

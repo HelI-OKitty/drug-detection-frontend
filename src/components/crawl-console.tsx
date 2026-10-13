@@ -4,13 +4,21 @@ import Link from "next/link";
 import { CircleAlert, Clock, Minus, Plus, Radar } from "lucide-react";
 import { useRef, useState } from "react";
 import { triggerCrawl, type CrawlResult } from "@/app/admin/crawl/actions";
+import type { CrawlSettings } from "@/app/settings/detection/actions";
+import { intervalLabel } from "@/lib/detection-settings";
 import styles from "./settings.module.css";
 
 const MIN_RESULTS = 10;
 const MAX_RESULTS = 100;
-const DEFAULT_RESULTS = 100;
+const DEFAULT_RESULTS = 10;
 
-export default function CrawlConsole({ adminName }: { adminName: string }) {
+export default function CrawlConsole({
+  adminName,
+  settings,
+}: {
+  adminName: string;
+  settings: CrawlSettings | null;
+}) {
   const [countInput, setCountInput] = useState(String(DEFAULT_RESULTS));
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<CrawlResult | null>(null);
@@ -69,7 +77,12 @@ export default function CrawlConsole({ adminName }: { adminName: string }) {
             대상 플랫폼에서 게시글을 수집하고 AI 분석까지 실행합니다. 수집된 결과는 탐지 게시글 목록에 저장됩니다.
           </p>
           <div className={styles.scheduleNote}>
-            <Clock aria-hidden="true" />자동 크롤링이 1시간마다 실행되고 있습니다. 아래 버튼은 즉시 1회 추가 실행합니다.
+            <Clock aria-hidden="true" />
+            {settings
+              ? settings.crawlEnabled
+                ? `자동 크롤링이 ${intervalLabel(settings.scheduleInterval)}마다 실행되고 있습니다. 아래 버튼은 즉시 1회 추가 실행합니다.`
+                : "자동 크롤링이 꺼져 있습니다. 탐지 설정에서 켜거나, 아래 버튼으로 즉시 1회 실행할 수 있습니다."
+              : "아래 버튼은 즉시 1회 크롤링을 실행합니다."}
           </div>
           <div className={styles.field}>
             <label htmlFor="crawl-max">최대 수집 건수 ({MIN_RESULTS}~{MAX_RESULTS})</label>

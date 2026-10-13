@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import {
-  ArrowLeft, BarChart3, Bell, Hash, KeyRound, Radar, ScanSearch, Timer, TriangleAlert, UserCog,
+  ArrowLeft, BarChart3, Bell, FileText, Hash, Images, KeyRound, Power, Radar, ScanSearch, ShieldCheck, Timer, TrendingUp, TriangleAlert, UserCog,
 } from "lucide-react";
 import { ConsoleShell } from "./console-shell";
 import styles from "./console.module.css";
@@ -17,10 +17,10 @@ function Sk({ w = "100%", h = 12, r = 7, style }: { w?: number | string; h?: num
 
 function DashboardSkeleton() {
   const metrics = [
-    { title: "오늘 탐지", tone: "red", Icon: TriangleAlert },
-    { title: "누적 탐지", tone: "blue", Icon: BarChart3 },
-    { title: "미확인", tone: "amber", Icon: Bell },
-    { title: "최근 7일", tone: "green", Icon: BarChart3 },
+    { title: "전체 수집", tone: "blue", Icon: BarChart3 },
+    { title: "양성 (의심)", tone: "red", Icon: TriangleAlert },
+    { title: "음성 (정상)", tone: "green", Icon: ShieldCheck },
+    { title: "오늘 수집", tone: "slate", Icon: TrendingUp },
   ];
   return (
     <div className={styles.dashboard}>
@@ -33,26 +33,32 @@ function DashboardSkeleton() {
           </section>
         ))}
       </div>
-      <div className={styles.panels}>
+      <div className={`${styles.panels} ${styles.panelsSingle}`}>
         <section className={styles.panel}>
-          <header><h2><TriangleAlert aria-hidden="true" />최근 탐지 게시글</h2><small>최신 5건</small></header>
-          <ul className={styles.posts}>
-            {Array.from({ length: 5 }, (_, index) => (
-              <li key={index}>
-                <Sk w={48} h={33} r={9} />
-                <div className={styles.postBody}>
-                  <p><Sk w={`${88 - (index % 3) * 14}%`} h={12} /></p>
-                  <div><Sk w={150} h={10} /></div>
-                </div>
-                <Sk w={48} h={22} r={8} />
-              </li>
-            ))}
-          </ul>
+          <header><h2><BarChart3 aria-hidden="true" />수집 추이</h2><small>최근 7일</small></header>
+          <div className={styles.lineChart}>
+            <div className={styles.trendToggles}>
+              <Sk w={64} h={30} r={9} /><Sk w={92} h={30} r={9} /><Sk w={92} h={30} r={9} />
+            </div>
+            <Sk h={176} r={11} />
+          </div>
         </section>
-        <section className={styles.panel}>
-          <header><h2><BarChart3 aria-hidden="true" />최근 7일 탐지 추이</h2><small>일별 건수</small></header>
-          <div className={styles.lineChart}><Sk h={176} r={11} /></div>
-        </section>
+      </div>
+      <div className={`${styles.panels} ${styles.panelsEven}`}>
+        {[
+          { title: "텍스트 분석 통계", Icon: FileText },
+          { title: "이미지 분석 통계", Icon: Images },
+        ].map(({ title, Icon }) => (
+          <section className={styles.panel} key={title}>
+            <header><h2><Icon aria-hidden="true" />{title}</h2><small><Sk w={52} h={10} /></small></header>
+            <div className={styles.statBody}>
+              <Sk h={10} r={99} />
+              <div style={{ display: "grid", gap: 11, marginTop: 24 }}>
+                {Array.from({ length: 4 }, (_, index) => <Sk key={index} h={12} w={`${96 - index * 14}%`} />)}
+              </div>
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
@@ -74,7 +80,8 @@ function DetectionsSkeleton() {
           <table className={listStyles.table}>
             <thead>
               <tr>
-                <th scope="col">SCORE</th>
+                <th scope="col">텍스트 결과</th>
+                <th scope="col">이미지 결과</th>
                 <th scope="col">게시글</th>
                 <th scope="col">닉네임</th>
                 <th scope="col">출처</th>
@@ -85,7 +92,8 @@ function DetectionsSkeleton() {
             <tbody>
               {Array.from({ length: 10 }, (_, index) => (
                 <tr key={index}>
-                  <td><Sk w={56} h={32} r={9} /></td>
+                  <td><Sk w={56} h={30} r={9} /></td>
+                  <td><Sk w={56} h={30} r={9} /></td>
                   <td className={listStyles.summaryCell}><Sk w={`${92 - (index % 4) * 10}%`} h={14} /></td>
                   <td><Sk w={92} h={13} /></td>
                   <td><Sk w={48} h={13} /></td>
@@ -106,33 +114,52 @@ function DetectionDetailSkeleton() {
     <div className={listStyles.page}>
       <Link href="/detections" className={listStyles.backLink}><ArrowLeft aria-hidden="true" />목록으로</Link>
       <div className={listStyles.detailLayout}>
-        <article className={listStyles.postCard}>
-          <header className={listStyles.postHeader}>
-            <div className={listStyles.postIdentity} style={{ flex: 1 }}>
-              <Sk w={150} h={16} />
-              <Sk w={210} h={12} style={{ marginTop: 9 }} />
+        <div className={listStyles.mainColumn}>
+          <article className={listStyles.postCard}>
+            <header className={listStyles.postHeader}>
+              <div className={listStyles.postIdentity} style={{ flex: 1 }}>
+                <Sk w={150} h={16} />
+                <Sk w={210} h={12} style={{ marginTop: 9 }} />
+              </div>
+              <Sk w={52} h={23} r={8} />
+            </header>
+            <div style={{ marginTop: 24, display: "grid", gap: 13 }}>
+              <Sk h={14} /><Sk h={14} /><Sk w="72%" h={14} />
             </div>
-            <Sk w={52} h={23} r={8} />
-          </header>
-          <div style={{ marginTop: 24, display: "grid", gap: 13 }}>
-            <Sk h={14} /><Sk h={14} /><Sk w="72%" h={14} />
-          </div>
-          <div className={listStyles.images}>
-            {Array.from({ length: 3 }, (_, index) => <Sk key={index} h={150} r={11} style={{ aspectRatio: "1/1.02", height: "auto" }} />)}
-          </div>
-        </article>
+            <div className={listStyles.postKeywords}>
+              <Sk w={220} h={13} />
+            </div>
+          </article>
+          <section className={listStyles.analysisCard}>
+            <h2 className={listStyles.asideTitle}>텍스트 분석 결과</h2>
+            <div style={{ display: "grid", gap: 14 }}>
+              <Sk h={8} r={99} />
+              <div style={{ display: "flex", gap: 8 }}><Sk w={64} h={28} r={8} /><Sk w={78} h={28} r={8} /><Sk w={56} h={28} r={8} /></div>
+            </div>
+          </section>
+          <section className={listStyles.analysisCard}>
+            <h2 className={listStyles.asideTitle}>이미지 분석 결과</h2>
+            <div style={{ display: "grid", gap: 18 }}>
+              {Array.from({ length: 2 }, (_, index) => (
+                <div key={index} style={{ display: "flex", gap: 18 }}>
+                  <Sk w={110} h={110} r={11} />
+                  <div style={{ flex: 1, display: "grid", gap: 10, alignContent: "start" }}>
+                    <Sk w={64} h={11} />
+                    <Sk h={12} /><Sk w="62%" h={12} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
         <aside className={listStyles.aside}>
           <section className={listStyles.asideCard}>
-            <h2 className={listStyles.asideTitle}>AI 위험 점수</h2>
-            <div className={listStyles.gaugeWrap}><Sk w={150} h={150} r="50%" /></div>
+            <h2 className={listStyles.asideTitle}>분석 요약</h2>
+            <div style={{ display: "grid", gap: 15 }}><Sk h={13} /><Sk h={13} /><Sk h={13} /></div>
           </section>
           <section className={listStyles.asideCard}>
             <h2 className={listStyles.asideTitle}>메타데이터</h2>
             <div style={{ display: "grid", gap: 15 }}><Sk h={13} /><Sk h={13} /><Sk h={13} /><Sk w="70%" h={13} /></div>
-          </section>
-          <section className={listStyles.asideCard}>
-            <h2 className={listStyles.asideTitle}>탐지 키워드</h2>
-            <div className={listStyles.keywords}><Sk w={64} h={32} r={8} /><Sk w={78} h={32} r={8} /><Sk w={56} h={32} r={8} /></div>
           </section>
           <section className={listStyles.asideCard}>
             <h2 className={listStyles.asideTitle}>처리</h2>
@@ -177,6 +204,12 @@ function AccountSkeleton() {
 function SettingsSkeleton() {
   return (
     <div className={formStyles.page}>
+      <CardSkeleton Icon={Power} title="자동 크롤링">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ flex: 1, display: "grid", gap: 8 }}><Sk w={110} h={14} /><Sk w="70%" h={12} /></div>
+          <Sk w={46} h={26} r={99} />
+        </div>
+      </CardSkeleton>
       <CardSkeleton Icon={Hash} title="탐지 키워드">
         <div className={formStyles.chipGrid}>
           {Array.from({ length: 11 }, (_, index) => <Sk key={index} w={58 + (index % 4) * 12} h={40} r={10} />)}
@@ -184,7 +217,7 @@ function SettingsSkeleton() {
       </CardSkeleton>
       <CardSkeleton Icon={Timer} title="탐지 간격">
         <div className={formStyles.chipGrid}>
-          {Array.from({ length: 7 }, (_, index) => <Sk key={index} w={60} h={40} r={10} />)}
+          {Array.from({ length: 4 }, (_, index) => <Sk key={index} w={60} h={40} r={10} />)}
         </div>
       </CardSkeleton>
       <CardSkeleton Icon={Hash} title="탐지 갯수">
