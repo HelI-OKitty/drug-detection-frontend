@@ -71,11 +71,13 @@ export const STATUS_FILTERS = [
 export type StatusFilter = (typeof STATUS_FILTERS)[number]["key"];
 
 /**
- * 점수를 0.5~1 구간에서 초록(0.5)→노랑(0.75)→빨강(1.0)으로 연속 매핑한 색상.
- * 0.5 미만은 초록으로 고정된다. fg는 글자, bg는 배지 배경, border는 배지 테두리, stroke는 게이지 선 색.
+ * 점수를 min~1 구간에서 초록(min)→노랑→빨강(1.0)으로 연속 매핑한 색상.
+ * min 미만은 초록으로 고정된다. 탐지 게시글은 점수가 대부분 0.5 이상이라 기본 min이 0.5이고,
+ * 단순 분석처럼 0~1 전체를 쓰는 화면은 min=0을 넘긴다.
+ * fg는 글자, bg는 배지 배경, border는 배지 테두리, stroke는 게이지 선 색.
  */
-export function scoreColors(score: number) {
-  const t = Math.min(1, Math.max(0, (score - 0.5) / 0.5));
+export function scoreColors(score: number, min = 0.5) {
+  const t = Math.min(1, Math.max(0, (score - min) / (1 - min)));
   const hue = Math.round(140 * (1 - t));
   return {
     fg: `hsl(${hue} 78% 34%)`,
