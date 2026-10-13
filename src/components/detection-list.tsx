@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   STATUS_FILTERS,
   STATUS_LABEL,
-  scoreColors,
   sourceHost,
-  toPercent,
   type DetectionRow,
   type StatusFilter,
 } from "@/lib/detections";
@@ -16,19 +14,12 @@ import styles from "./detections.module.css";
 
 const PER_PAGE = 10;
 
-/** 퍼센트 배지. 값이 없으면 회색 대시 */
-function ScoreBadge({ score }: { score: number | null }) {
-  if (score === null) return <span className={styles.cellNone}>–</span>;
+/** 의심/정상 판정 배지. 분석이 없으면 회색 대시 */
+function VerdictBadge({ flagged }: { flagged: boolean | null }) {
+  if (flagged === null) return <span className={styles.cellNone}>–</span>;
   return (
-    <span
-      className={styles.score}
-      style={{
-        background: scoreColors(score).bg,
-        color: scoreColors(score).fg,
-        borderColor: scoreColors(score).border,
-      }}
-    >
-      {toPercent(score)}
+    <span className={styles.verdictBadge} data-flagged={flagged}>
+      {flagged ? "의심" : "정상"}
     </span>
   );
 }
@@ -37,35 +28,6 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
-  // 이미지별 분석 요약 팝오버: 열려 있는 행 id와 화면 좌표
-  const [popover, setPopover] = useState<{ id: string; x: number; y: number } | null>(null);
-  const selected = popover !== null ? items.find((item) => item.id === popover.id) ?? null : null;
-
-  // 팝오버는 Esc 키로도 닫는다.
-  useEffect(() => {
-    if (!popover) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setPopover(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [popover]);
-
-  /** N장 버튼 위치 기준으로 팝오버를 띄운다. 화면 밖으로 나가면 위/왼쪽으로 뒤집는다. */
-  function openPopover(event: MouseEvent<HTMLButtonElement>, item: DetectionRow) {
-    if (popover?.id === item.id) {
-      setPopover(null);
-      return;
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    const width = 440;
-    const height = 76 + item.imageAnalyses.length * 40;
-    const x = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
-    const y = rect.bottom + 8 + height > window.innerHeight
-      ? Math.max(12, rect.top - height - 8)
-      : rect.bottom + 8;
-    setPopover({ id: item.id, x, y });
-  }
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -128,10 +90,8 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th scope="col">텍스트</th>
-                <th scope="col">검출 객체</th>
-                <th scope="col">OCR(최대)</th>
-                <th scope="col">이미지</th>
+                <th scope="col">텍스트 결과</th>
+                <th scope="col">이미지 결과</th>
                 <th scope="col">게시글</th>
                 <th scope="col">닉네임</th>
                 <th scope="col">출처</th>
@@ -141,40 +101,15 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
             </thead>
             <tbody>
               {rows.map((item) => {
-                const objectNames = [...new Set(item.imageAnalyses.flatMap((image) => image.objects.map((object) => object.name)))];
-                const ocrScores = item.imageAnalyses
-                  .map((image) => image.ocrScore)
-                  .filter((score): score is number => score !== null);
-                const open = popover?.id === item.id;
+                // 이미지 결과는 장별 판정 중 하나라도 의심이면 의심으로 요약. 세부는 상세에서 확인한다.
+                const imageFlagged =
+                  item.imageAnalyses.length > 0
+                    ? item.imageAnalyses.some((image) => image.flagged)
+                    : null;
                 return (
                   <tr className={styles.row} key={item.id}>
-                    <td><ScoreBadge score={item.textScore} /></td>
-                    <td>
-                      {objectNames.length > 0 ? (
-                        <span className={styles.objectText}>
-                          {objectNames[0]}
-                          {objectNames.length > 1 && <small>+{objectNames.length - 1}종</small>}
-                        </span>
-                      ) : (
-                        <span className={styles.cellNone}>–</span>
-                      )}
-                    </td>
-                    <td><ScoreBadge score={ocrScores.length > 0 ? Math.max(...ocrScores) : null} /></td>
-                    <td>
-                      {item.imageAnalyses.length > 0 ? (
-                        <button
-                          type="button"
-                          className={styles.imageToggle}
-                          aria-expanded={open}
-                          onClick={(event) => openPopover(event, item)}
-                        >
-                          {item.imageAnalyses.length}장
-                          <ChevronDown aria-hidden="true" />
-                        </button>
-                      ) : (
-                        <span className={styles.cellNone}>–</span>
-                      )}
-                    </td>
+                    <td><VerdictBadge flagged={item.textFlagged} /></td>
+                    <td><VerdictBadge flagged={imageFlagged} /></td>
                     <td className={styles.summaryCell}>
                       <Link href={`/detections/${item.id}`} className={styles.summaryLink}>
                         {item.summary}
@@ -242,50 +177,6 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
           </nav>
         )}
       </div>
-
-      {popover && selected && (
-        <>
-          <div className={styles.popoverBackdrop} onClick={() => setPopover(null)} aria-hidden="true" />
-          <div
-            className={styles.popover}
-            style={{ left: popover.x, top: popover.y }}
-            role="dialog"
-            aria-label="이미지별 분석 요약"
-          >
-            <header className={styles.popoverHeader}>
-              <h2 className={styles.popoverTitle}>이미지별 분석 요약</h2>
-              <button type="button" className={styles.popoverClose} onClick={() => setPopover(null)} aria-label="닫기">
-                <X aria-hidden="true" />
-              </button>
-            </header>
-            <ul className={styles.popoverList}>
-              {selected.imageAnalyses.map((image, index) => (
-                <li className={styles.popoverRow} key={index}>
-                  <em>이미지 {index + 1}</em>
-                  <span className={styles.popoverObjects}>
-                    {image.objects.length > 0
-                      ? image.objects.map((object) => object.name).join(" · ")
-                      : "미검출"}
-                  </span>
-                  {image.ocrScore !== null ? (
-                    <span
-                      className={styles.ocrBadge}
-                      style={{
-                        background: scoreColors(image.ocrScore).bg,
-                        color: scoreColors(image.ocrScore).fg,
-                      }}
-                    >
-                      OCR {toPercent(image.ocrScore)}
-                    </span>
-                  ) : (
-                    <span className={styles.ocrBadge}>OCR –</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </>
-      )}
     </div>
   );
 }

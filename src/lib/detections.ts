@@ -20,11 +20,16 @@ export type DetectionImage = {
 
 /** 백엔드 text_ai_result에서 화면에 쓰는 값만 추린 것 */
 export type TextAnalysis = {
-  /** 텍스트 AI가 마약 관련으로 판정(prediction=1)했는지 */
+  /** 종합 의심 판정(prediction=1). 모델·규칙 어느 쪽이든 의심이면 1 */
   flagged: boolean;
-  /** 마약일 확률 0~1 */
-  probDrug: number;
+  /**
+   * ML 모델의 마약 확률 0~1. 모델 점수 없이 규칙 매칭만 수행된 경우 null.
+   * 규칙 양성을 임의의 확률(100%)로 바꿔 보여주지 않는다.
+   */
+  probDrug: number | null;
+  /** 단어 사전과 매칭된 용어 (규칙 결과) */
   matchedTerms: string[];
+  /** 동사(의도) 사전과 매칭된 표현 (규칙 결과) */
   matchedIntents: string[];
 };
 
@@ -32,6 +37,8 @@ export type TextAnalysis = {
 export type ImageAnalysisSummary = {
   /** 이미지 URL. 썸네일 표시용 (없으면 빈 문자열) */
   url: string;
+  /** 이미지 AI의 의심 판정(prediction=1) */
+  flagged: boolean;
   /** 검출된 객체들(이름 + 객체별 confidence) */
   objects: DetectedObject[];
   /** OCR 텍스트 분석 점수 0~1. 추출된 텍스트가 없으면 null */
@@ -41,8 +48,10 @@ export type ImageAnalysisSummary = {
 export type DetectionRow = {
   id: string;
   score: number;
-  /** 텍스트 AI의 마약 확률(0~1). 텍스트 분석이 없으면 null */
+  /** 텍스트 AI 모델의 마약 확률(0~1). 모델 점수가 없으면 null */
   textScore: number | null;
+  /** 텍스트 분석의 종합 의심 판정. 분석 자체가 없으면 null */
+  textFlagged: boolean | null;
   /** 이미지별 분석 요약. 이미지가 없으면 빈 배열 */
   imageAnalyses: ImageAnalysisSummary[];
   /** 목록에 보여줄 한 줄 요약 */

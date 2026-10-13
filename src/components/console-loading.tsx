@@ -74,10 +74,8 @@ function DetectionsSkeleton() {
           <table className={listStyles.table}>
             <thead>
               <tr>
-                <th scope="col">텍스트</th>
-                <th scope="col">검출 객체</th>
-                <th scope="col">OCR(최대)</th>
-                <th scope="col">이미지</th>
+                <th scope="col">텍스트 결과</th>
+                <th scope="col">이미지 결과</th>
                 <th scope="col">게시글</th>
                 <th scope="col">닉네임</th>
                 <th scope="col">출처</th>
@@ -88,10 +86,8 @@ function DetectionsSkeleton() {
             <tbody>
               {Array.from({ length: 10 }, (_, index) => (
                 <tr key={index}>
-                  <td><Sk w={56} h={32} r={9} /></td>
-                  <td><div style={{ display: "flex", gap: 5 }}><Sk w={48} h={27} r={8} /><Sk w={56} h={27} r={8} /></div></td>
-                  <td><Sk w={56} h={32} r={9} /></td>
-                  <td><Sk w={58} h={32} r={9} /></td>
+                  <td><Sk w={56} h={30} r={9} /></td>
+                  <td><Sk w={56} h={30} r={9} /></td>
                   <td className={listStyles.summaryCell}><Sk w={`${92 - (index % 4) * 10}%`} h={14} /></td>
                   <td><Sk w={92} h={13} /></td>
                   <td><Sk w={48} h={13} /></td>
@@ -124,6 +120,9 @@ function DetectionDetailSkeleton() {
             <div style={{ marginTop: 24, display: "grid", gap: 13 }}>
               <Sk h={14} /><Sk h={14} /><Sk w="72%" h={14} />
             </div>
+            <div className={listStyles.postKeywords}>
+              <Sk w={220} h={13} />
+            </div>
           </article>
           <section className={listStyles.analysisCard}>
             <h2 className={listStyles.asideTitle}>텍스트 분석 결과</h2>
@@ -134,23 +133,27 @@ function DetectionDetailSkeleton() {
           </section>
           <section className={listStyles.analysisCard}>
             <h2 className={listStyles.asideTitle}>이미지 분석 결과</h2>
-            <div className={listStyles.images}>
-              {Array.from({ length: 3 }, (_, index) => <Sk key={index} h={150} r={11} style={{ aspectRatio: "1/1.02", height: "auto" }} />)}
+            <div style={{ display: "grid", gap: 18 }}>
+              {Array.from({ length: 2 }, (_, index) => (
+                <div key={index} style={{ display: "flex", gap: 18 }}>
+                  <Sk w={110} h={110} r={11} />
+                  <div style={{ flex: 1, display: "grid", gap: 10, alignContent: "start" }}>
+                    <Sk w={64} h={11} />
+                    <Sk h={12} /><Sk w="62%" h={12} />
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         </div>
         <aside className={listStyles.aside}>
           <section className={listStyles.asideCard}>
-            <h2 className={listStyles.asideTitle}>마약 의심 비율</h2>
-            <div style={{ display: "grid", gap: 15 }}><Sk h={13} /><Sk h={13} /></div>
+            <h2 className={listStyles.asideTitle}>분석 요약</h2>
+            <div style={{ display: "grid", gap: 15 }}><Sk h={13} /><Sk h={13} /><Sk h={13} /></div>
           </section>
           <section className={listStyles.asideCard}>
             <h2 className={listStyles.asideTitle}>메타데이터</h2>
             <div style={{ display: "grid", gap: 15 }}><Sk h={13} /><Sk h={13} /><Sk h={13} /><Sk w="70%" h={13} /></div>
-          </section>
-          <section className={listStyles.asideCard}>
-            <h2 className={listStyles.asideTitle}>탐지 키워드</h2>
-            <div className={listStyles.keywords}><Sk w={64} h={32} r={8} /><Sk w={78} h={32} r={8} /><Sk w={56} h={32} r={8} /></div>
           </section>
           <section className={listStyles.asideCard}>
             <h2 className={listStyles.asideTitle}>처리</h2>

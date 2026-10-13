@@ -53,6 +53,7 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
   const images = toImages(raw.image_ai_results);
   let imageAnalyses = images.map((image, index) => ({
     url: image.url,
+    flagged: image.flagged,
     objects: image.detectedObjects,
     // OCR 텍스트별 분석 점수는 백엔드가 아직 안 내려줘서 ocr_text가 있는 이미지에 mock 점수를 부여한다.
     ocrScore: image.ocrText ? mockScore(id, 31 + index) : null,
@@ -68,6 +69,7 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
       const ocr = mockScore(id, 59 + index);
       return {
         url: "",
+        flagged: mockScore(id, 97 + index) >= 0.5,
         objects: names.map((name, j) => ({ name, confidence: mockScore(id, 83 + index * 3 + j) })),
         ocrScore: ocr > 0.8 ? null : ocr,
       };
@@ -77,6 +79,7 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
     id,
     score: typeof raw.score === "number" ? raw.score : 0,
     textScore: textAnalysis ? textAnalysis.probDrug : mockScore(id, 7),
+    textFlagged: textAnalysis ? textAnalysis.flagged : mockScore(id, 7) >= 0.5,
     imageAnalyses,
     summary: raw.content.replace(/\s+/g, " ").trim().slice(0, 80) || "(내용 없음)",
     nickname: author ? (author.startsWith("@") ? author : `@${author}`) : "(작성자 미상)",
@@ -128,7 +131,8 @@ function toTextAnalysis(raw: unknown): TextAnalysis | null {
   const text = raw as Record<string, unknown>;
   return {
     flagged: text.prediction === 1,
-    probDrug: typeof text.prob_drug === "number" ? text.prob_drug : text.prediction === 1 ? 1 : 0,
+    // prob_drug는 모델 점수라 없을 수 있다. 규칙 양성(prediction=1)을 확률로 둔갑시키지 않는다.
+    probDrug: typeof text.prob_drug === "number" ? text.prob_drug : null,
     matchedTerms: toStringList(text.matched_terms),
     matchedIntents: toStringList(text.matched_intents),
   };

@@ -136,6 +136,8 @@
 .itemBadge[data-tone=error] { background:#eef2f6; color:#7d8b9c; }
 .itemBadge[data-tone=muted] { background:#eef2f6; color:#7d8b9c; }
 .itemMeta { margin:0 0 4px; font-size:12px; line-height:1.7; color:#52657b; overflow-wrap:anywhere; }
+/* 모델 점수 없이 규칙 매칭으로 판정된 결과 안내 */
+.ruleNote { margin:6px 0 4px; font-size:12px; color:#8a9bb1; }
 .probRow { display:flex; align-items:center; gap:10px; margin:8px 0 4px; max-width:420px; }
 .probLabel { flex-shrink:0; font-size:11px; color:#8a9bb1; white-space:nowrap; }
 .probTrack { flex:1; height:7px; border-radius:99px; background:#eef2f6; overflow:hidden; }

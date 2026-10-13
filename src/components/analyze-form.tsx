@@ -271,6 +271,10 @@ export default function AnalyzeForm() {
                       {item.error && <span className={styles.itemBadge} data-tone="error">실패</span>}
                     </p>
                     {item.error && <p className={styles.itemMeta}>{item.error}</p>}
+                    {/* prob_drug는 모델 점수라 없을 수 있다. 없으면 규칙 판정임을 안내한다. */}
+                    {!item.thumb && item.outcome && item.outcome.probDrug === null && (
+                      <p className={styles.ruleNote}>모델 확률 점수가 제공되지 않아 규칙(사전 매칭)으로 판정되었습니다.</p>
+                    )}
                     {!item.thumb && item.outcome?.probDrug !== null && item.outcome?.probDrug !== undefined && (
                       <div className={styles.probRow}>
                         <span className={styles.probLabel}>마약 의심 비율</span>
@@ -341,6 +345,9 @@ export default function AnalyzeForm() {
                           {item.outcome.ocrText ? (
                             <>
                               <p className={styles.ocrText}>{item.outcome.ocrText}</p>
+                              {item.ocrOutcome && item.ocrOutcome.probDrug === null && (
+                                <p className={styles.ruleNote}>모델 확률 점수가 제공되지 않아 규칙(사전 매칭)으로 판정되었습니다.</p>
+                              )}
                               {item.ocrOutcome?.probDrug !== null && item.ocrOutcome?.probDrug !== undefined && (
                                 <div className={styles.probRow}>
                                   <span className={styles.probLabel}>마약 의심 비율</span>
