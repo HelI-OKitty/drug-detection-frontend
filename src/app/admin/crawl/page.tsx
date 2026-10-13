@@ -5,6 +5,7 @@ import { ConsoleShell } from "@/components/console-shell";
 import CrawlConsole from "@/components/crawl-console";
 import MemberInfo from "@/components/member-info";
 import { parseProfile, type Profile } from "@/lib/profile";
+import { fetchCrawlSettings, type CrawlSettings } from "@/app/settings/detection/actions";
 import styles from "@/components/settings.module.css";
 
 export const metadata: Metadata = { title: "크롤링 관리 | SENTINEL" };
@@ -33,11 +34,17 @@ export default async function CrawlAdminPage() {
     }
   }
 
+  let crawlSettings: CrawlSettings | null = null;
+  if (profile) {
+    const settingsResult = await fetchCrawlSettings();
+    if (settingsResult.success) crawlSettings = settingsResult.settings;
+  }
+
   return (
     <ConsoleShell memberInfo={<MemberInfo />}>
       <main>
         {profile ? (
-          <CrawlConsole adminName={`${profile.name} (${profile.email})`} />
+          <CrawlConsole adminName={`${profile.name} (${profile.email})`} settings={crawlSettings} />
         ) : (
           <div className={styles.page}>
             <div className={styles.guard} role="status">
