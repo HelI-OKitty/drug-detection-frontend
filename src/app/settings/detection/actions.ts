@@ -56,11 +56,27 @@ async function callSettings(path: string, init: RequestInit = {}): Promise<Crawl
     if (response.status === 401 || response.status === 403) {
       return { success: false, message: "로그인이 만료되었습니다. 다시 로그인해 주세요." };
     }
-    if (response.status === 422) {
-      return { success: false, message: "설정 값을 확인해 주세요. 키워드는 최대 13개, 수집 건수는 10~100 사이여야 합니다." };
-    }
     if (!response.ok) {
-      return { success: false, message: "설정을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요." };
+      // 백엔드가 내려주는 detail 메시지(예: 환경 변수 설정 오류)를 그대로 보여줘 원인을 파악할 수 있게 한다.
+      const body: unknown = await response.json().catch(() => null);
+      const detail =
+        typeof body === "object" && body !== null && typeof (body as Record<string, unknown>).detail === "string"
+          ? ((body as Record<string, unknown>).detail as string)
+          : null;
+      if (response.status === 422) {
+        return {
+          success: false,
+          message: detail
+            ? `설정 값을 확인해 주세요: ${detail}`
+            : "설정 값을 확인해 주세요. 키워드는 최대 13개, 수집 건수는 10~100 사이여야 합니다.",
+        };
+      }
+      return {
+        success: false,
+        message: detail
+          ? `서버 오류: ${detail}`
+          : "설정을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      };
     }
     const settings = parseSettings(await response.json().catch(() => null));
     if (!settings) return { success: false, message: "서버 응답을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요." };

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Hash, Minus, Plus, Power, RotateCcw, Save, Timer, X } from "lucide-react";
+import { Check, Hash, Minus, Plus, Power, RotateCcw, Save, Timer, TriangleAlert, X } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import {
   INTERVAL_OPTIONS,
@@ -167,6 +167,16 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
 
   return (
     <div className={styles.page}>
+      {error && (
+        <div className={styles.alertBanner} role="alert">
+          <TriangleAlert aria-hidden="true" />
+          <p>{error}</p>
+          <button type="button" onClick={() => setError("")} aria-label="오류 알림 닫기">
+            <X aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       <section className={styles.card} aria-labelledby="auto-crawl-title">
         <header className={styles.cardHeader}>
           <h2 id="auto-crawl-title"><Power aria-hidden="true" />자동 크롤링</h2>
@@ -327,9 +337,8 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
       </section>
 
       <div className={styles.footer}>
-        <p role="status" aria-live="polite" className={error ? styles.error : styles.savedNote}>
-          {error}
-          {!error && savedAt && <><Check aria-hidden="true" />설정이 저장되었습니다.</>}
+        <p role="status" aria-live="polite" className={styles.savedNote}>
+          {savedAt && <><Check aria-hidden="true" />설정이 저장되었습니다.</>}
         </p>
         <button
           type="button"

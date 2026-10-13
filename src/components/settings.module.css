@@ -11,6 +11,14 @@
 .error { margin:10px 0 0; font-size:12px; color:#cf2548; }
 
 /* ───────── 키워드 칩 ───────── */
+/* 서버 오류 알림 배너 */
+.alertBanner { display:flex; align-items:flex-start; gap:11px; padding:14px 16px; border:1px solid #f3c0cc; border-radius:12px; background:#fdf2f5; color:#a21f3f; font-size:13px; }
+.alertBanner > svg { width:17px; height:17px; flex-shrink:0; margin-top:2px; stroke-width:1.9; }
+.alertBanner p { flex:1; margin:0; line-height:1.6; word-break:keep-all; }
+.alertBanner button { display:grid; place-items:center; width:26px; height:26px; flex-shrink:0; border:0; border-radius:7px; background:transparent; color:#a21f3f; cursor:pointer; transition:background .12s; }
+.alertBanner button:hover { background:#f9dde4; }
+.alertBanner button > svg { width:14px; height:14px; stroke-width:2; }
+
 .helpRow { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
 .helpRow .help { margin-bottom:16px; }
 .bulkButtons { display:flex; flex-shrink:0; gap:6px; }
