@@ -20,7 +20,7 @@ function DashboardSkeleton() {
     { title: "전체 수집", tone: "blue", Icon: BarChart3 },
     { title: "양성 (의심)", tone: "red", Icon: TriangleAlert },
     { title: "음성 (정상)", tone: "green", Icon: ShieldCheck },
-    { title: "오늘 수집", tone: "amber", Icon: TrendingUp },
+    { title: "오늘 수집", tone: "slate", Icon: TrendingUp },
   ];
   return (
     <div className={styles.dashboard}>

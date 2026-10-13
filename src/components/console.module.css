@@ -31,6 +31,7 @@
 .metric[data-tone=blue] { --tone:#3c82f6; --tint:#eef5ff; }
 .metric[data-tone=amber] { --tone:#c48a20; --tint:#fff8ea; }
 .metric[data-tone=green] { --tone:#0aaa75; --tint:#ebfaf4; }
+.metric[data-tone=slate] { --tone:#64748b; --tint:#f1f5f9; }
 .metricTop { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .metricTop h2 { margin:0; font-size:11px; font-weight:400; letter-spacing:2px; color:#8a9bb1; }
 .metricTop > span { display:grid; place-items:center; width:32px; height:32px; border-radius:9px; color:var(--tone); background:var(--tint); }

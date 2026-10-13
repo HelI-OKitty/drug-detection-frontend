@@ -78,6 +78,18 @@ function percent(part: number, total: number) {
   return total > 0 ? Math.round((part / total) * 100) : 0;
 }
 
+/**
+ * 대시보드 공통 팔레트. 역할당 색 하나만 쓴다.
+ * 파랑=전체·모델(집계) / 연파랑=규칙(모델의 보조) / 빨강=양성·마약 신호 / 초록=음성·정상 / 연회색=없음
+ */
+const COLOR = {
+  total: "#3c82f6",
+  secondary: "#9fc4fa",
+  positive: "#ee4765",
+  negative: "#0aaa75",
+  none: "#d4dde6",
+} as const;
+
 /** 두 값의 비율을 누적 막대 + 범례로 보여준다. */
 function RatioBar({
   a,
@@ -154,7 +166,7 @@ export default function DashboardView({
     { title: "전체 수집", value: mock.total, tone: "blue", Icon: BarChart3, foot: "수집·분석된 게시글" },
     { title: "양성 (의심)", value: mock.positive, tone: "red", Icon: TriangleAlert, foot: `전체의 ${percent(mock.positive, mock.total)}%` },
     { title: "음성 (정상)", value: mock.negative, tone: "green", Icon: ShieldCheck, foot: `전체의 ${percent(mock.negative, mock.total)}%` },
-    { title: "오늘 수집", value: todayTotal, tone: "amber", Icon: TrendingUp, foot: `의심 ${summary.today}건 포함` },
+    { title: "오늘 수집", value: todayTotal, tone: "slate", Icon: TrendingUp, foot: `의심 ${summary.today}건 포함` },
   ];
 
   return (
@@ -191,15 +203,15 @@ export default function DashboardView({
             <RatioBar
               a={text.model}
               aLabel="모델 분석"
-              aColor="#3c82f6"
+              aColor={COLOR.total}
               b={text.ruleOnly}
               bLabel="규칙(사전) 판정"
-              bColor="#c48a20"
+              bColor={COLOR.secondary}
             />
             <p className={styles.statLabel}>단어 사전(용어) 매칭 TOP {Math.max(text.terms.length, 1)}</p>
-            <CountBars items={text.terms} color="#ee4765" />
+            <CountBars items={text.terms} color={COLOR.positive} />
             <p className={styles.statLabel}>동사 사전(의도) 매칭 TOP {Math.max(text.intents.length, 1)}</p>
-            <CountBars items={text.intents} color="#ee4765" />
+            <CountBars items={text.intents} color={COLOR.positive} />
           </div>
         </section>
         <section className={styles.panel}>
@@ -212,13 +224,13 @@ export default function DashboardView({
             <RatioBar
               a={image.withOcr}
               aLabel="텍스트 포함"
-              aColor="#3c82f6"
+              aColor={COLOR.total}
               b={image.withoutOcr}
               bLabel="텍스트 없음"
-              bColor="#aebbc9"
+              bColor={COLOR.none}
             />
             <p className={styles.statLabel}>검출 객체 분포</p>
-            <CountBars items={image.objects} color="#ee4765" />
+            <CountBars items={image.objects} color={COLOR.positive} />
           </div>
         </section>
       </div>
