@@ -1,8 +1,33 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
+import { LogOut } from "lucide-react";
+import { logout } from "@/app/auth-actions";
 import styles from "./member-info.module.css";
 
-export default async function MemberInfo() {
+/** /profile 조회가 페이지 렌더링을 막지 않도록 Suspense로 감싸 스트리밍한다. */
+export default function MemberInfo() {
+  return (
+    <Suspense fallback={<MemberInfoFallback />}>
+      <MemberInfoContent />
+    </Suspense>
+  );
+}
+
+/** 회원 정보가 로드되기 전까지 같은 크기의 자리를 차지하는 스켈레톤 */
+function MemberInfoFallback() {
+  return (
+    <div className={styles.member} aria-hidden="true">
+      <span className={`${styles.skeleton} ${styles.skeletonAvatar}`} />
+      <div className={styles.details}>
+        <span className={`${styles.skeleton} ${styles.skeletonName}`} />
+        <span className={`${styles.skeleton} ${styles.skeletonEmail}`} />
+      </div>
+    </div>
+  );
+}
+
+async function MemberInfoContent() {
   const token = (await cookies()).get("sentinel_access_token")?.value;
   let member: { name: string; email: string } | null = null;
   let unavailable = false;
@@ -35,6 +60,9 @@ export default async function MemberInfo() {
       <div className={styles.member} aria-label="로그인한 회원 정보">
         <span className={styles.avatar} aria-hidden="true">{member.name.slice(0, 1)}</span>
         <div className={styles.details}><span className={styles.name}>{member.name}님</span><span className={styles.email} title={member.email}>{member.email}</span></div>
+        <form action={logout}>
+          <button type="submit" className={styles.logout}><LogOut aria-hidden="true" />로그아웃</button>
+        </form>
       </div>
     );
   }
