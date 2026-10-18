@@ -9,6 +9,7 @@ import { fetchCrawlSettings, type CrawlSettings } from "@/app/settings/detection
 import styles from "@/components/settings.module.css";
 
 export const metadata: Metadata = { title: "크롤링 관리 | SENTINEL" };
+export const maxDuration = 300;
 
 export default async function CrawlAdminPage() {
   const token = (await cookies()).get("sentinel_access_token")?.value;
