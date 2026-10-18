@@ -84,6 +84,12 @@ drug-detection-frontend/
 
 ## 개발 참고
 
+### 회원가입 임시 중단
+
+`SIGNUP_ENABLED`는 기본적으로 비활성화됩니다. `/signup`에 중단 안내를 표시하고, 회원가입 서버 액션도 백엔드 호출 전에 거절합니다. 로그인은 계속 사용할 수 있습니다. 다시 열려면 배포 환경에 `SIGNUP_ENABLED=true`를 설정하고 재배포합니다.
+
+프론트 차단만으로 백엔드 URL에 대한 직접 요청을 막을 수는 없습니다. 백엔드의 `POST /auth/signup`에서도 계정 생성 전에 가입 허용 여부를 검사하고, 중단 중에는 `403`과 안내용 `detail`을 반환해야 합니다.
+
 인증 폼은 `src/components/auth-form.tsx`, 서버 액션은 `src/app/auth-actions.ts`, 백엔드 요청은 `src/lib/auth-api.ts`에 있습니다.
 
 - 회원가입: `POST /auth/signup`에 이름·이메일·비밀번호를 전달합니다. 비밀번호 확인은 프론트에서 검증하며 API에는 보내지 않습니다. 가입 후 로그인을 별도로 진행합니다.

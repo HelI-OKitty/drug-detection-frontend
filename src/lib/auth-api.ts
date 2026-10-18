@@ -1,5 +1,11 @@
 const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run.app";
 
+/**
+ * 임시 회원가입 차단 플래그. 기본 차단이며, 다시 열 때는 SIGNUP_ENABLED=true 환경 변수를 설정한다.
+ * UI 안내(signup 페이지)와 서버 액션 차단이 같이 이 값을 본다. 최종 차단은 백엔드에서도 해야 한다.
+ */
+export const SIGNUP_ENABLED = process.env.SIGNUP_ENABLED === "true";
+
 export async function authRequest(path: string, init: RequestInit) {
   const baseUrl = process.env.BACKEND_API_URL || DEFAULT_API_URL;
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}${path}`, {
@@ -10,6 +16,15 @@ export async function authRequest(path: string, init: RequestInit) {
   });
 
   if (!response.ok) {
+    // 백엔드가 회원가입을 차단(403)한 경우는 로그인 실패 문구와 구분해서 보여준다.
+    if (path === "/auth/signup" && response.status === 403) {
+      const body: unknown = await response.json().catch(() => null);
+      const detail =
+        typeof body === "object" && body !== null && typeof (body as Record<string, unknown>).detail === "string"
+          ? ((body as Record<string, unknown>).detail as string)
+          : null;
+      throw new Error(detail ?? "현재는 회원가입을 받지 않습니다. 관리자에게 문의해 주세요.");
+    }
     if (response.status === 401 || response.status === 403) {
       throw new Error("이메일 또는 비밀번호를 확인해 주세요.");
     }
@@ -25,6 +40,10 @@ export async function authRequest(path: string, init: RequestInit) {
 }
 
 export async function submitAuth(mode: "signup" | "login", form: FormData) {
+  if (mode === "signup" && !SIGNUP_ENABLED) {
+    throw new Error("현재는 회원가입을 받지 않습니다. 관리자에게 문의해 주세요.");
+  }
+
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim();
