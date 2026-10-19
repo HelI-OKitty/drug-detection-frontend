@@ -14,12 +14,13 @@ import styles from "./detections.module.css";
 
 const PER_PAGE = 10;
 
-/** 의심/정상 판정 배지. 분석이 없으면 회색 대시 */
-function VerdictBadge({ flagged }: { flagged: boolean | null }) {
+/** 판정 배지. 분석이 없으면 회색 대시. 이미지 결과는 "정상" 대신 검출 여부로 표현한다. */
+function VerdictBadge({ flagged, kind = "text" }: { flagged: boolean | null; kind?: "text" | "image" }) {
   if (flagged === null) return <span className={styles.cellNone}>–</span>;
+  const label = kind === "image" ? (flagged ? "검출" : "미검출") : flagged ? "의심" : "정상";
   return (
     <span className={styles.verdictBadge} data-flagged={flagged}>
-      {flagged ? "의심" : "정상"}
+      {label}
     </span>
   );
 }
@@ -109,7 +110,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
                 return (
                   <tr className={styles.row} key={item.id}>
                     <td><VerdictBadge flagged={item.textFlagged} /></td>
-                    <td><VerdictBadge flagged={imageFlagged} /></td>
+                    <td><VerdictBadge flagged={imageFlagged} kind="image" /></td>
                     <td className={styles.summaryCell}>
                       <Link href={`/detections/${item.id}`} className={styles.summaryLink}>
                         {item.summary}
