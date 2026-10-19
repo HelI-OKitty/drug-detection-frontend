@@ -1,0 +1,78 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { ConsoleShell } from "@/components/console-shell";
+import CrawlConsole from "@/components/crawl-console";
+import MemberInfo from "@/components/member-info";
+import { parseProfile, type Profile } from "@/lib/profile";
+import { fetchCrawlSettings, type CrawlSettings } from "@/app/settings/detection/actions";
+import { fetchCrawlRuns, type CrawlRun } from "@/lib/detections-api";
+import styles from "@/components/settings.module.css";
+
+export const metadata: Metadata = { title: "크롤링 모니터링 | SENTINEL" };
+export const maxDuration = 300;
+
+export default async function CrawlMonitoringPage() {
+  const token = (await cookies()).get("sentinel_access_token")?.value;
+  let profile: Profile | null = null;
+  let unavailable = false;
+
+  if (token) {
+    try {
+      const baseUrl = process.env.BACKEND_API_URL || "https://drug-detection-671085027854.asia-northeast3.run.app";
+      const response = await fetch(`${baseUrl.replace(/\/$/, "")}/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (response.ok) {
+        profile = parseProfile(await response.json());
+        if (!profile) unavailable = true;
+      } else if (response.status !== 401 && response.status !== 403) {
+        unavailable = true;
+      }
+    } catch {
+      unavailable = true;
+    }
+  }
+
+  let crawlSettings: CrawlSettings | null = null;
+  let runs: CrawlRun[] = [];
+  let runsLoaded = false;
+  if (profile) {
+    const [settingsResult, runsResult] = await Promise.all([fetchCrawlSettings(), fetchCrawlRuns(10)]);
+    if (settingsResult.success) crawlSettings = settingsResult.settings;
+    if (runsResult.ok) {
+      runs = runsResult.runs;
+      runsLoaded = true;
+    }
+  }
+
+  return (
+    <ConsoleShell memberInfo={<MemberInfo />}>
+      <main>
+        {profile ? (
+          <CrawlConsole
+            adminName={`${profile.name} (${profile.email})`}
+            settings={crawlSettings}
+            runs={runs}
+            runsLoaded={runsLoaded}
+          />
+        ) : (
+          <div className={styles.page}>
+            <div className={styles.guard} role="status">
+              {unavailable ? (
+                <p>회원 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+              ) : (
+                <>
+                  <p>크롤링 모니터링을 사용하려면 로그인이 필요합니다.</p>
+                  <Link href="/login">로그인하러 가기</Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+    </ConsoleShell>
+  );
+}

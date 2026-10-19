@@ -331,6 +331,97 @@ export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
   }
 }
 
+/** 크롤링 회차(수집 기록). 저장된 탐지의 detected_at을 시간 간격으로 묶어 1회 실행으로 본다. */
+export type CrawlRun = {
+  /** 회차의 마지막 수집 시각 (KST "YYYY-MM-DD HH:mm") */
+  finishedAt: string;
+  /** 회차의 마지막 수집 시각 (epoch ms) — 다음 자동 실행 추정에 쓴다 */
+  finishedAtMs: number;
+  /** 이 회차에서 새로 저장된 탐지 수 */
+  count: number;
+  /** 종합 점수 0.5 이상(양성 판정) 건수 */
+  positive: number;
+  /** 종합 점수 0.5 미만(음성 판정) 건수 */
+  negative: number;
+  /** 매칭 빈도 상위 키워드 (최대 3개) */
+  keywords: string[];
+  /** 수집된 플랫폼 라벨 */
+  platforms: string[];
+};
+
+export type CrawlRunsResult =
+  | { ok: true; runs: CrawlRun[] }
+  | { ok: false; reason: "unauthorized" | "error" };
+
+/**
+ * 같은 실행에서 저장된 탐지는 수집 시각이 몰려 있다. 간격이 이 값을 넘으면 다른 회차로 본다.
+ * (자동 크롤링 최소 주기 10분, 실행 자체는 수 분 안에 끝나는 전제의 휴리스틱.
+ *  백엔드에 실행 이력 API가 생기면 이 집계를 교체한다.)
+ */
+const RUN_GAP_MS = 5 * 60 * 1000;
+
+/** 탐지 목록을 수집 시각 기준으로 묶어 최근 크롤링 회차 기록을 만든다. */
+export async function fetchCrawlRuns(limit = 10): Promise<CrawlRunsResult> {
+  try {
+    const { status, data } = await request("/detections");
+    if (status === 401 || status === 403) return { ok: false, reason: "unauthorized" };
+    if (!Array.isArray(data)) return { ok: false, reason: "error" };
+
+    const items = data
+      .flatMap((item) => {
+        if (typeof item !== "object" || item === null) return [];
+        const raw = item as Record<string, unknown>;
+        if (typeof raw.detected_at !== "string") return [];
+        const at = new Date(raw.detected_at).getTime();
+        if (!Number.isFinite(at)) return [];
+        return [{
+          at,
+          iso: raw.detected_at,
+          keywords: toStringList(raw.keyword),
+          platform: typeof raw.platform === "string" ? raw.platform : "",
+          flagged: typeof raw.score === "number" && raw.score >= 0.5,
+        }];
+      })
+      .sort((a, b) => b.at - a.at);
+
+    const runs: CrawlRun[] = [];
+    let group: typeof items = [];
+    const flush = () => {
+      if (group.length === 0) return;
+      const keywordCounts = new Map<string, number>();
+      const platforms = new Set<string>();
+      let positive = 0;
+      for (const item of group) {
+        for (const word of item.keywords) keywordCounts.set(word, (keywordCounts.get(word) ?? 0) + 1);
+        if (item.platform) platforms.add(PLATFORM_LABEL[item.platform.toLowerCase()] ?? item.platform);
+        if (item.flagged) positive += 1;
+      }
+      runs.push({
+        finishedAt: formatDateTime(group[0].iso),
+        finishedAtMs: group[0].at,
+        count: group.length,
+        positive,
+        negative: group.length - positive,
+        keywords: [...keywordCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([word]) => word),
+        platforms: [...platforms],
+      });
+      group = [];
+    };
+
+    for (const item of items) {
+      if (group.length > 0 && group[group.length - 1].at - item.at > RUN_GAP_MS) {
+        flush();
+        if (runs.length >= limit) break;
+      }
+      group.push(item);
+    }
+    if (runs.length < limit) flush();
+    return { ok: true, runs: runs.slice(0, limit) };
+  } catch {
+    return { ok: false, reason: "error" };
+  }
+}
+
 export type DetectionDetailResult =
   | { ok: true; detection: DetectionDetailData }
   | { ok: false; reason: "unauthorized" | "notfound" | "error" };

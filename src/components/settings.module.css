@@ -22,7 +22,8 @@
 .helpRow { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
 .helpRow .help { margin-bottom:16px; }
 .bulkButtons { display:flex; flex-shrink:0; gap:6px; }
-.bulkButtons button { padding:6px 11px; border:1px solid #e0e7ee; border-radius:8px; background:#fff; font-size:12px; color:#52657b; white-space:nowrap; transition:background .12s; }
+.bulkButtons button { display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border:1px solid #e0e7ee; border-radius:8px; background:#fff; font-size:12px; color:#52657b; white-space:nowrap; transition:background .12s; }
+.bulkButtons button > svg { width:13px; height:13px; stroke-width:1.9; }
 .bulkButtons button:hover:not(:disabled) { background:#f5f8fa; }
 .bulkButtons button:disabled { opacity:.45; cursor:default; }
 .chipGrid { display:flex; flex-wrap:wrap; gap:8px; }
@@ -165,6 +166,56 @@
 .stat[data-tone=muted] strong { color:#8a9bb1; }
 .inlineLink { color:#059d69; font-weight:600; }
 .inlineLink:hover { text-decoration:underline; }
+
+/* ───────── 크롤링 모니터링 ───────── */
+/* 자동 크롤링·진행 로그·수집 기록 묶음. 박스 대신 라벨과 좁은 간격으로만 묶음을 표현한다. */
+.group { display:flex; flex-direction:column; gap:12px; }
+.groupLabel { margin:0 2px; font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.8px; color:#8a9bb1; }
+/* 다음 자동 실행 카운트다운 */
+.nextRunNote { display:flex; align-items:center; gap:9px; margin-bottom:16px; padding:12px 16px; border:1px solid #cdeee0; border-radius:11px; background:#effaf5; color:#0a7d58; font-size:12px; line-height:1.6; }
+.nextRunNote > svg { width:15px; height:15px; flex-shrink:0; stroke-width:1.8; }
+/* 수동 실행 버튼 행 (카드 내부 하단) */
+.runRow { display:flex; align-items:center; justify-content:flex-end; gap:16px; margin-top:20px; padding-top:16px; border-top:1px solid #f0f4f8; }
+.runRow > p { flex:1; }
+/* 수집 기록 테이블 */
+.tableWrap { overflow-x:auto; }
+.historyTable { width:100%; border-collapse:collapse; font-size:12px; }
+.historyTable th { padding:8px 10px; border-bottom:1px solid #e6edf3; text-align:left; font:600 10px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.4px; color:#8a9bb1; white-space:nowrap; }
+.historyTable td { padding:10px; border-bottom:1px solid #f0f4f8; color:#52657b; vertical-align:top; }
+.historyTable tr:last-child td { border-bottom:0; }
+.runTime { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; white-space:nowrap; color:#243447; }
+.runCount { font:700 13px ui-monospace,SFMono-Regular,Consolas,monospace; color:#059d69; }
+.runTags { display:inline-flex; flex-wrap:wrap; gap:4px; }
+.runTag { padding:2px 7px; border-radius:6px; background:#eef3f7; color:#52657b; font-size:11px; white-space:nowrap; }
+.runNote { color:#8a9bb1; }
+.historyEmpty { margin:0; padding:18px 0; text-align:center; color:#8a9bb1; font-size:12px; }
+/* 실행 상태 — 배경·점 없이 색 글자로만 구분하고, 진행 중 행은 옅은 파란 배경을 깐다 */
+.statusCell { white-space:nowrap; }
+.statusText { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; }
+.statusSpinner { width:12px; height:12px; flex-shrink:0; stroke-width:2.4; animation:spin 1s linear infinite; }
+.spin { animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.statusText[data-tone=start] { color:#52657b; }
+.statusText[data-tone=running] { color:#2d6da8; }
+.statusText[data-tone=image] { color:#6d4fc4; }
+.statusText[data-tone=text] { color:#0b7ea8; }
+.statusText[data-tone=ocr] { color:#c2641f; }
+.statusText[data-tone=done] { color:#059d69; }
+.statusText[data-tone=error] { color:#cf2548; }
+.historyTable tr[data-running] td { background:#f7fbfe; }
+/* 진행 중 행의 실행 단계 미니 바 (시작→이미지→텍스트→OCR) */
+.stageDots { display:flex; gap:3px; margin-top:5px; }
+.stageDots i { width:12px; height:3px; border-radius:2px; background:#e4eaf0; }
+.stageDots i[data-state=done] { background:#9fc3e2; }
+.stageDots i[data-state=current] { background:#2d6da8; }
+.runCount[data-tone=danger] { color:#cf2548; }
+/* 오류·미완료 사유 보기 (빨간 돋보기 → 작은 다이얼로그) */
+.reasonButton { display:inline-grid; place-items:center; width:22px; height:22px; margin-left:6px; border:0; border-radius:6px; background:transparent; color:#cf2548; vertical-align:middle; transition:background .12s; }
+.reasonButton:hover { background:#fce3e8; }
+.reasonButton > svg { width:14px; height:14px; stroke-width:2.1; }
+.reasonPopover { position:fixed; z-index:60; width:300px; padding:12px 14px; border:1px solid #f3c0cc; border-radius:11px; background:#fff; box-shadow:0 10px 30px rgba(23,37,53,.18); transform:translateY(-100%); }
+.reasonPopoverTime { margin:0 0 6px; font:11px ui-monospace,SFMono-Regular,Consolas,monospace; color:#8a9bb1; }
+.reasonPopoverBody { margin:0; font-size:12px; line-height:1.7; color:#8c1f38; word-break:keep-all; }
 
 /* ───────── 저장 ───────── */
 .footer { display:flex; align-items:center; justify-content:flex-end; gap:16px; }
