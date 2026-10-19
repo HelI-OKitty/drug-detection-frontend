@@ -234,10 +234,9 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                         <div className={styles.analysisSub}>
                           <p className={styles.analysisSubTitle}>
                             객체 탐지 결과
+                            {/* "정상" 표기는 마약 의심 여부로 읽혀서, 객체 검출 여부(검출됨/미검출)로 표현한다. */}
                             {image.detectedObjects.length > 0 ? (
-                              <span className={styles.analysisBadge} data-flagged={image.flagged}>
-                                {image.flagged ? "마약 의심" : "정상"}
-                              </span>
+                              <span className={styles.analysisBadge} data-flagged={true}>검출됨</span>
                             ) : (
                               <span className={styles.mutedBadge}>미검출</span>
                             )}

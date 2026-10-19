@@ -296,10 +296,9 @@ export default function AnalyzeForm() {
                         <div className={styles.subBlock}>
                           <p className={styles.subTitle}>
                             객체 탐지 결과
+                            {/* "정상" 표기는 마약 의심 여부로 읽혀서, 객체 검출 여부(검출됨/미검출)로 표현한다. */}
                             {item.outcome.detectedObjects.length > 0 ? (
-                              <span className={styles.itemBadge} data-tone={item.outcome.isDrug ? "danger" : "safe"}>
-                                {item.outcome.isDrug ? "의심" : "정상"}
-                              </span>
+                              <span className={styles.itemBadge} data-tone="danger">검출됨</span>
                             ) : (
                               <span className={styles.itemBadge} data-tone="muted">미검출</span>
                             )}
