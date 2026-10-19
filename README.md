@@ -84,6 +84,25 @@ drug-detection-frontend/
 
 ## 개발 참고
 
+### 회원가입 임시 중단
+
+`SIGNUP_ENABLED`는 기본적으로 비활성화됩니다. `/signup`에 중단 안내를 표시하고, 회원가입 서버 액션도 백엔드 호출 전에 거절합니다. 로그인은 계속 사용할 수 있습니다. 다시 열려면 배포 환경에 `SIGNUP_ENABLED=true`를 설정하고 재배포합니다.
+
+프론트 차단만으로 백엔드 URL에 대한 직접 요청을 막을 수는 없습니다. 백엔드의 `POST /auth/signup`에서도 계정 생성 전에 가입 허용 여부를 검사하고, 중단 중에는 `403`과 안내용 `detail`을 반환해야 합니다.
+
+### 배포 환경에서 수동 크롤링
+
+`/admin/crawl`의 서버 액션은 `BACKEND_API_URL`과 `INTERNAL_API_KEY`를 사용합니다. 로컬 `.env.local` 값은 배포 서버에 자동으로 전달되지 않으므로 배포 플랫폼의 서버 환경 변수에도 설정해야 합니다. 내부 키는 백엔드 값과 일치해야 하며 공개 환경 변수로 설정하지 않습니다.
+
+- 내부 키 미설정: 프론트 서버 환경 변수 설정을 확인합니다.
+- 내부 API 인증 오류(401/403): 백엔드와 프론트의 내부 키가 같은지 확인합니다.
+- 서버 오류(500): 백엔드 로그에서 해당 요청의 예외를 확인합니다. 프론트는 백엔드가 반환한 문자열 `detail` 또는 상태 코드를 표시합니다. 백엔드는 사용자에게 공개 가능한 오류 설명만 `detail`에 넣어야 합니다.
+- 응답 시간 초과: 크롤링 요청은 최대 270초 대기하며, `/admin/crawl`의 Vercel 실행 제한은 300초입니다. 프로필 조회와 오류 응답에 필요한 시간을 남깁니다. 수집이 계속될 수 있으므로 목록을 확인한 뒤 재시도합니다. 장시간 작업이 필요하면 백엔드가 작업을 접수하고 별도 워커에서 실행하도록 변경해야 합니다.
+
+Vercel 프로젝트의 Settings → Environment Variables에서 배포 대상(Production/Preview)에 `BACKEND_API_URL`, 백엔드와 동일한 `INTERNAL_API_KEY`, `SIGNUP_ENABLED=false`를 설정하고 재배포합니다. 키에는 `NEXT_PUBLIC_` 접두사를 붙이지 않습니다. Fluid Compute 활성화 여부와 해당 플랜의 [실행 시간 제한](https://vercel.com/docs/functions/configuring-functions/duration)을 확인합니다.
+
+백엔드 저장소는 https://github.com/HelI-OKitty/drug-detection-backend 입니다. 수동 수집은 Cloud Run의 `/internal/crawl`에서 실행하므로 X API 토큰과 AI 서버 설정은 백엔드에 필요합니다. Vercel은 이 요청을 중계합니다.
+
 인증 폼은 `src/components/auth-form.tsx`, 서버 액션은 `src/app/auth-actions.ts`, 백엔드 요청은 `src/lib/auth-api.ts`에 있습니다.
 
 - 회원가입: `POST /auth/signup`에 이름·이메일·비밀번호를 전달합니다. 비밀번호 확인은 프론트에서 검증하며 API에는 보내지 않습니다. 가입 후 로그인을 별도로 진행합니다.

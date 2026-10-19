@@ -48,8 +48,8 @@ export async function triggerCrawl(maxResults: number): Promise<
       headers: { "Content-Type": "application/json", "X-Internal-Key": apiKey },
       body: JSON.stringify({ admin_id: profile.id, max_results: max }),
       cache: "no-store",
-      // 수집·AI 분석까지 돌기 때문에 오래 걸릴 수 있다.
-      signal: AbortSignal.timeout(300_000),
+      // 프로필 조회(최대 15초)와 오류 응답 시간을 Vercel의 300초 제한 안에 확보한다.
+      signal: AbortSignal.timeout(270_000),
     });
     if (response.status === 401 || response.status === 403) {
       return { success: false, message: "내부 API 키가 올바르지 않습니다. 서버 설정을 확인해 주세요." };
@@ -58,7 +58,18 @@ export async function triggerCrawl(maxResults: number): Promise<
       return { success: false, message: "요청 값을 확인해 주세요. 수집 건수는 10~100 사이여야 합니다." };
     }
     if (!response.ok) {
-      return { success: false, message: "크롤링 실행에 실패했습니다. 잠시 후 다시 시도해 주세요." };
+      // 백엔드가 detail을 주면 그대로, 없으면(처리 안 된 500 등) 상태 코드라도 보여줘 원인 추적을 돕는다.
+      const body: unknown = await response.json().catch(() => null);
+      const detail =
+        typeof body === "object" && body !== null && typeof (body as Record<string, unknown>).detail === "string"
+          ? ((body as Record<string, unknown>).detail as string)
+          : null;
+      return {
+        success: false,
+        message: detail
+          ? `크롤링 실행에 실패했습니다: ${detail}`
+          : `크롤링 실행에 실패했습니다 (서버 오류 ${response.status}). 백엔드 로그를 확인해 주세요.`,
+      };
     }
 
     const data = await response.json();

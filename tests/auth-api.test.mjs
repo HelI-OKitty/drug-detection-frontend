@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { authRequest, submitAuth } from "../src/lib/auth-api.ts";
+const originalSignupEnabled = process.env.SIGNUP_ENABLED;
+process.env.SIGNUP_ENABLED = "true";
+const { authRequest, submitAuth } = await import("../src/lib/auth-api.ts");
+delete process.env.SIGNUP_ENABLED;
+const disabledAuth = await import("../src/lib/auth-api.ts?signup-disabled");
+if (originalSignupEnabled === undefined) delete process.env.SIGNUP_ENABLED;
+else process.env.SIGNUP_ENABLED = originalSignupEnabled;
 
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
@@ -13,6 +19,22 @@ function signupForm(overrides = {}) {
   })) form.set(key, value);
   return form;
 }
+
+test("signup is disabled by default and never reaches the backend", async () => {
+  assert.equal(disabledAuth.SIGNUP_ENABLED, false);
+  globalThis.fetch = async () => assert.fail("must not call backend");
+  await assert.rejects(disabledAuth.submitAuth("signup", signupForm()), /회원가입을 받지 않습니다/);
+});
+
+test("backend signup closure handles JSON and plain-text responses", async () => {
+  for (const response of [
+    Response.json({ detail: "회원가입 일시 중단" }, { status: 403 }),
+    new Response("Forbidden", { status: 403 }),
+  ]) {
+    globalThis.fetch = async () => response;
+    await assert.rejects(submitAuth("signup", signupForm()), /회원가입/);
+  }
+});
 
 test("signup sends only the three backend fields, never password confirmation", async () => {
   globalThis.fetch = async (url, init) => {
@@ -35,13 +57,13 @@ test("invalid signup never reaches the backend", async () => {
   await assert.rejects(submitAuth("signup", signupForm({ email: "invalid" })), /이메일/);
 });
 
-test("login sends email and password without applying signup-only checks", async () => {
+test("login remains available while signup is disabled", async () => {
   globalThis.fetch = async (url, init) => {
     assert.equal(new URL(url).pathname, "/auth/login");
     assert.deepEqual(JSON.parse(init.body), { email: "test@example.com", password: "short" });
     return Response.json({ access_token: "test-token", refresh_token: "test-refresh" });
   };
-  await submitAuth("login", signupForm({ password: "short" }));
+  await disabledAuth.submitAuth("login", signupForm({ password: "short" }));
 });
 
 test("backend errors become user-facing messages without exposing raw responses", async () => {
