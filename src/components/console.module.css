@@ -123,7 +123,8 @@
 .preview .metricValue { font-size:26px; margin:10px 0 6px; }
 .preview .metricFoot { font-size:8px; gap:2px; }
 .preview .metricFoot > svg { width:9px; height:9px; }
-.preview .panels { gap:10px; margin-top:12px; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); }
+.preview .panels { gap:10px; margin-top:12px; grid-template-columns:minmax(0,1fr); }
+.preview .panelsEven { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .preview .panel { border-radius:8px; }
 .preview .panel header { padding:12px; }
 .preview .panel header h2 { font-size:10px; gap:6px; }
@@ -135,12 +136,28 @@
 .preview .postBody p { font-size:9px; margin-bottom:4px; }
 .preview .postBody > div { font-size:8px; gap:5px; }
 .preview .postBody em,.preview .status { display:none; }
-.preview .lineChart { padding:18px 14px 4px; }
+.preview .lineChart { padding:18px 24px 4px; }
 .preview .chartArea { height:76px; }
 .preview .trendDot { width:6px; height:6px; border-width:1.5px; }
 .preview .trendValue { font-size:8px; transform:translate(-50%,calc(-100% - 5px)); }
 .preview .trendDates { height:10px; margin-top:5px; }
 .preview .trendDates span { font-size:7px; }
 @media(max-width:1100px) { .shell { grid-template-columns:205px minmax(0,1fr); } .dashboard { padding:20px; } .panels { grid-template-columns:1fr; } .metric { padding:16px; } }
-@media(max-width:760px) { .shell { display:block; } .sidebar { padding:18px; border-right:0; border-bottom:1px solid #e0e7ee; } .caption,.sidebarFooter,.nav > p,.nav button { display:none; } .nav { flex-direction:row; flex-wrap:wrap; margin-top:16px; } .nav a { font-size:12px; padding:8px 10px; min-height:38px; } .nav a > svg { width:15px; height:15px; } .topbar { padding:0 20px; } .breadcrumb { display:none; } .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .preview .metrics { grid-template-columns:repeat(4,minmax(0,1fr)); } .dashboard { padding:20px 16px; } }
+@media(max-width:760px) { .shell { display:block; } .sidebar { padding:18px; border-right:0; border-bottom:1px solid #e0e7ee; } .caption,.sidebarFooter,.nav > p,.nav button { display:none; } .nav { flex-direction:row; flex-wrap:wrap; margin-top:16px; } .nav a { font-size:12px; padding:8px 10px; min-height:38px; } .nav a > svg { width:15px; height:15px; } .topbar { padding:0 20px; } .breadcrumb { display:none; } .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .preview .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .dashboard { padding:20px 16px; } }
 @media(max-width:400px) { .status { display:none; } .panel header,.posts { padding-left:14px; padding-right:14px; } }
+
+@media(max-width:1100px) {
+  .preview .panelsEven { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:600px) {
+  .preview { padding:16px 12px; }
+  .preview .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .preview .metricTop h2,.preview .metricFoot { font-size:12px; }
+  .preview .demoLabel { justify-content:flex-start; font-size:11px; line-height:1.5; }
+  .preview .panel header h2 { font-size:13px; }
+  .preview .statBody { padding:16px 12px; }
+  .preview .statLabel { font-size:11px; letter-spacing:1px; }
+  .preview .trendToggles { gap:6px; }
+  .preview .trendToggles button { min-height:44px; padding:6px 8px; }
+  .preview .chartArea { height:120px; }
+}

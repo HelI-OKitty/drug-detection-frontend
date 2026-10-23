@@ -9,7 +9,7 @@ const features = [
   { Icon: ScanText, title: "게시글 텍스트 분석", text: <>게시글을 입력하고 마약 거래<br />의심 여부를 간편하게 확인하세요.</> },
   { Icon: Radar, title: "마약 은어 탐지", text: <>AI 기반 텍스트 분석으로<br />은어와 거래 정황을 살펴보세요.</> },
   { Icon: BarChart3, title: "직관적인 대시보드", text: <>탐지 현황과 검토 흐름을<br />한눈에 확인하는 화면입니다.</> },
-  { Icon: ShieldCheck, title: "안전한 시작", text: <>계정을 만들고 로그인해<br />SENTINEL을 시작하세요.</> },
+  { Icon: ShieldCheck, title: "간편한 체험", text: <>로그인·회원가입 없이<br />분석 결과를 확인하세요.</> },
 ];
 
 const trustItems = [
@@ -47,11 +47,12 @@ export default async function Home() {
               <h1><span>마약 거래 의심 게시글</span>,<br />지금 감지하고 더 안전한 내일을 만듭니다.</h1>
               <p className={styles.description}>게시글 속 은어와 거래 정황, 혼자 판단하지 마세요.<br />SENTINEL의 텍스트 분석이 마약 거래 의심 여부를 판별해<br className={styles.desktopBreak} /> 더 안전한 온라인 환경을 만들어 갑니다.</p>
               <div className={styles.heroActions}>
+                <Link href="/try" className={styles.button}>체험하기 <ArrowRight aria-hidden="true" /></Link>
                 {loggedIn
-                  ? <Link href="/dashboard" className={styles.button}>대시보드로 이동 <ArrowRight aria-hidden="true" /></Link>
-                  : <Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link>}
+                  ? <Link href="/dashboard" className={styles.outlineButton}>대시보드로 이동 <ArrowRight aria-hidden="true" /></Link>
+                  : <Link href="/login" className={styles.outlineButton}>로그인 <ArrowRight aria-hidden="true" /></Link>}
               </div>
-              <p className={styles.trustLabel}>복잡한 설정 없이, 게시글 텍스트 입력부터 시작하세요.</p>
+              <p className={styles.trustLabel}>로그인·회원가입 없이, 게시글을 입력하고 분석 결과를 확인하세요.</p>
               <div className={styles.trustItems}>{trustItems.map(({ Icon, label }) => <span key={label}><Icon aria-hidden="true" />{label}</span>)}</div>
             </div>
             <div className={styles.previewFrame}>
@@ -68,9 +69,7 @@ export default async function Home() {
         <section className={styles.cta} aria-labelledby="cta-title">
           <div className={styles.ctaArt} aria-hidden="true"><div><i /><i /><i /></div><span /><section><b /><b /><b /></section></div>
           <div><h2 id="cta-title">보안의 새로운 기준, SENTINEL</h2><p>지금 바로 시작하고,<br />한층 더 안전한 환경을 만들어 보세요.</p></div>
-          {loggedIn
-            ? <Link href="/dashboard" className={styles.button}>대시보드로 이동 <ArrowRight aria-hidden="true" /></Link>
-            : <Link href="/signup" className={styles.button}>시작하기 <ArrowRight aria-hidden="true" /></Link>}
+          <Link href="/try" className={styles.button}>체험하기 <ArrowRight aria-hidden="true" /></Link>
         </section>
       </main>
 
