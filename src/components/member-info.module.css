@@ -1,13 +1,14 @@
 .member { display:flex; align-items:center; gap:10px; min-width:0; }
 .avatar { flex-shrink:0; display:grid; place-items:center; width:36px; height:36px; border:1px solid #c8e8da; border-radius:50%; background:#e3f4ec; color:#07815b; font-size:14px; font-weight:600; }
 .details { display:flex; flex-direction:column; gap:4px; min-width:0; }
-.name { color:#283b4c; font-size:13px; font-weight:600; }
+.name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#283b4c; font-size:13px; font-weight:600; }
 .email { max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#7b8a9d; font-size:11px; }
 .links { display:flex; align-items:center; gap:28px; font-size:12px; white-space:nowrap; }
+.links > a:first-child { display:inline-flex; align-items:center; min-height:44px; }
 .links > a:first-child:hover { color:#059d69; }
-.start { display:inline-flex; justify-content:center; align-items:center; min-height:40px; padding:9px 22px; background:#26343f; color:white; border-radius:8px; font-weight:600; }
+.start { display:inline-flex; justify-content:center; align-items:center; min-height:44px; padding:9px 22px; background:#26343f; color:white; border-radius:8px; font-weight:600; }
 .start:hover { background:#0a7859; }
-.logout { display:inline-flex; align-items:center; gap:6px; margin-left:12px; min-height:36px; padding:8px 14px; border:1px solid #e0e7ee; border-radius:9px; background:#fff; color:#52657b; font-size:12px; white-space:nowrap; transition:background .12s,color .12s,border-color .12s; }
+.logout { display:inline-flex; align-items:center; gap:6px; margin-left:12px; min-height:44px; padding:8px 14px; border:1px solid #e0e7ee; border-radius:9px; background:#fff; color:#52657b; font-size:12px; white-space:nowrap; transition:background .12s,color .12s,border-color .12s; }
 .logout:hover { border-color:#f0cdd5; background:#fdf3f5; color:#cf2548; }
 .logout > svg { width:14px; height:14px; flex-shrink:0; stroke-width:1.8; }
 .skeleton { position:relative; overflow:hidden; background:#e7edf2; border-radius:6px; }
