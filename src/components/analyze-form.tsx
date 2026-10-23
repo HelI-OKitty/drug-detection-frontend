@@ -38,7 +38,7 @@ function readImage(file: File): Promise<PickedImage> {
   });
 }
 
-export default function AnalyzeForm() {
+export default function AnalyzeForm({ title = "단순 분석" }: { title?: string }) {
   const [text, setText] = useState("");
   const [images, setImages] = useState<PickedImage[]>([]);
   const [pending, setPending] = useState(false);
@@ -157,7 +157,7 @@ export default function AnalyzeForm() {
       <form className={styles.formStack} onSubmit={handleSubmit}>
         <section className={styles.card} aria-labelledby="analyze-title">
           <header className={styles.cardHeader}>
-            <h2 id="analyze-title"><ScanSearch aria-hidden="true" />단순 분석</h2>
+            <h2 id="analyze-title"><ScanSearch aria-hidden="true" />{title}</h2>
             <small>텍스트 {text.length.toLocaleString("ko-KR")}자 · 이미지 {images.length}/{MAX_IMAGES}</small>
           </header>
           <div className={styles.cardBody}>
