@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Hash, Minus, Plus, Power, RotateCcw, Save, Timer, TriangleAlert, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Check, Hash, Minus, Plus, Power, Radar, RotateCcw, Save, Timer, TriangleAlert, X } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import {
   INTERVAL_OPTIONS,
@@ -200,6 +201,14 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
               disabled={toggling}
             />
           </div>
+          {crawlEnabled && <Link href="/monitoring" className={styles.monitoringLink}>
+            <span className={styles.monitoringIcon}><Radar aria-hidden="true" /></span>
+            <span className={styles.monitoringText}>
+              <strong>크롤링 모니터링</strong>
+              <span>실행 상태와 수집 기록을 확인하세요</span>
+            </span>
+            <ArrowRight className={styles.monitoringArrow} aria-hidden="true" />
+          </Link>}
         </div>
       </section>
 
