@@ -110,7 +110,7 @@ export async function updateCrawlSettings(input: {
   });
 }
 
-/** 자동 크롤링 켜기/끄기 (켜면 since_id 리셋 + Scheduler job 생성, 끄면 job 삭제) */
+/** 자동 크롤링 켜기/끄기 (켜면 최신 source_id로 since_id 복원 + Scheduler job 생성, 끄면 job 삭제) */
 export async function toggleCrawlEnabled(enabled: boolean): Promise<CrawlSettingsResult> {
   return callSettings("/crawl-settings/toggle", {
     method: "PATCH",

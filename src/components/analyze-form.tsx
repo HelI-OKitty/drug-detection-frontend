@@ -20,6 +20,16 @@ type ItemResult = {
   error?: string;
 };
 
+function AnalysisMethod({ result }: { result: AnalyzeResult }) {
+  return <>
+    <p className={styles.ruleNote}>
+      {result.textSource === "rule" ? "규칙(사전 매칭) 판정" : result.textSource === "model" ? "모델 판정" : "판정 방식 미제공"}
+    </p>
+    {result.matchedTerms.length > 0 && <p className={styles.itemMeta}>매칭 용어: {result.matchedTerms.join(", ")}</p>}
+    {result.matchedIntents.length > 0 && <p className={styles.itemMeta}>매칭 의도: {result.matchedIntents.join(", ")}</p>}
+  </>;
+}
+
 function readImage(file: File): Promise<PickedImage> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -271,9 +281,9 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                       {item.error && <span className={styles.itemBadge} data-tone="error">실패</span>}
                     </p>
                     {item.error && <p className={styles.itemMeta}>{item.error}</p>}
-                    {/* prob_drug는 모델 점수라 없을 수 있다. 없으면 규칙 판정임을 안내한다. */}
-                    {!item.thumb && item.outcome && item.outcome.probDrug === null && (
-                      <p className={styles.ruleNote}>모델 확률 점수가 제공되지 않아 규칙(사전 매칭)으로 판정되었습니다.</p>
+                    {/* 판정 방식은 점수 유무가 아닌 서버의 text_source를 사용한다. */}
+                    {!item.thumb && item.outcome && (
+                      <AnalysisMethod result={item.outcome} />
                     )}
                     {!item.thumb && item.outcome?.probDrug !== null && item.outcome?.probDrug !== undefined && (
                       <div className={styles.probRow}>
@@ -344,8 +354,8 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                           {item.outcome.ocrText ? (
                             <>
                               <p className={styles.ocrText}>{item.outcome.ocrText}</p>
-                              {item.ocrOutcome && item.ocrOutcome.probDrug === null && (
-                                <p className={styles.ruleNote}>모델 확률 점수가 제공되지 않아 규칙(사전 매칭)으로 판정되었습니다.</p>
+                              {item.ocrOutcome && (
+                                <AnalysisMethod result={item.ocrOutcome} />
                               )}
                               {item.ocrOutcome?.probDrug !== null && item.ocrOutcome?.probDrug !== undefined && (
                                 <div className={styles.probRow}>

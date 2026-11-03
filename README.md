@@ -101,7 +101,7 @@ drug-detection-frontend/
 
 Vercel 프로젝트의 Settings → Environment Variables에서 배포 대상(Production/Preview)에 `BACKEND_API_URL`, 백엔드와 동일한 `INTERNAL_API_KEY`, `SIGNUP_ENABLED=false`를 설정하고 재배포합니다. 키에는 `NEXT_PUBLIC_` 접두사를 붙이지 않습니다. Fluid Compute 활성화 여부와 해당 플랜의 [실행 시간 제한](https://vercel.com/docs/functions/configuring-functions/duration)을 확인합니다.
 
-백엔드 저장소는 https://github.com/HelI-OKitty/drug-detection-backend 입니다. 수동 수집은 Cloud Run의 `/internal/crawl`에서 실행하므로 X API 토큰과 AI 서버 설정은 백엔드에 필요합니다. Vercel은 이 요청을 중계합니다.
+백엔드 저장소는 https://github.com/HelI-OKitty/drug-detection-backend 입니다. 수동 수집은 Cloud Run의 `/crawl/trigger`에서 실행하므로 X API 토큰과 AI 서버 설정은 백엔드에 필요합니다. Vercel은 이 요청을 중계합니다.
 
 인증 폼은 `src/components/auth-form.tsx`, 서버 액션은 `src/app/auth-actions.ts`, 백엔드 요청은 `src/lib/auth-api.ts`에 있습니다.
 
@@ -117,3 +117,12 @@ Vercel 프로젝트의 Settings → Environment Variables에서 배포 대상(Pr
 ```bash
 node --test tests/*.test.mjs
 ```
+
+
+### API 명세 기준 (2026-11-03)
+
+[헬로키티 API 명세서](https://app.notion.com/p/40db448bdf9d80d2bc6bf79627082ea5)의 요청·응답 형식을 사용합니다.
+- 탐지 판정은 `is_drug`로 읽습니다. 목록의 텍스트·이미지 결과 두 칸은 유지하며, 개별 분석이 제공되지 않으면 `–`로 표시합니다. 상세 응답의 분석 결과를 사용하고 없는 점수를 생성하지 않습니다.
+- 대시보드는 `total`, `today`, `unconfirmed`, `trend[].count`를 그대로 표시합니다.
+- 분석 방식은 상세의 `text_ai_result.source`, 단순 분석의 `text_source`로 구분합니다.
+- 수동 크롤링은 `POST /crawl/trigger`에 로그인한 관리자의 `admin_id`를 지정하며, `results`에서 해당 관리자의 결과와 `failed`·`error`를 확인합니다.

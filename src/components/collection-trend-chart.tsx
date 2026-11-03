@@ -3,7 +3,7 @@
 import { Fragment, useState } from "react";
 import styles from "./console.module.css";
 
-type Day = { date: string; positive: number; negative: number };
+type Day = { date: string; total?: number; positive: number; negative: number };
 type SeriesKey = "total" | "positive" | "negative";
 
 const SERIES: { key: SeriesKey; label: string; color: string }[] = [
@@ -13,7 +13,7 @@ const SERIES: { key: SeriesKey; label: string; color: string }[] = [
 ];
 
 function seriesValue(day: Day, key: SeriesKey) {
-  return key === "total" ? day.positive + day.negative : day[key];
+  return key === "total" ? (day.total ?? day.positive + day.negative) : day[key];
 }
 
 /** 점들을 Catmull-Rom 기반 베지어 곡선으로 잇는다. 제어점 y는 차트 범위로 눌러 과도한 출렁임을 막는다. */
@@ -39,16 +39,18 @@ function smoothPath(points: { x: number; y: number }[]) {
  * 범례 버튼으로 시리즈를 켜고 끌 수 있으며 최소 1개는 항상 켜져 있다.
  * 숫자 라벨은 선이 겹치면 읽기 어려워 1개만 켰을 때 표시한다.
  */
-export default function CollectionTrendChart({ trend }: { trend: Day[] }) {
+export default function CollectionTrendChart({ trend, totalOnly = false }: { trend: Day[]; totalOnly?: boolean }) {
   const [active, setActive] = useState<Record<SeriesKey, boolean>>({
     total: true,
     positive: true,
     negative: true,
   });
-  const activeSeries = SERIES.filter((series) => active[series.key]);
+  const seriesOptions = totalOnly ? SERIES.filter((series) => series.key === "total") : SERIES;
+  const activeSeries = seriesOptions.filter((series) => active[series.key]);
   const single = activeSeries.length === 1;
 
   function toggle(key: SeriesKey) {
+    if (totalOnly) return;
     setActive((current) => {
       const next = { ...current, [key]: !current[key] };
       // 최소 1개는 켜져 있어야 한다.
@@ -66,7 +68,7 @@ export default function CollectionTrendChart({ trend }: { trend: Day[] }) {
   return (
     <>
       <div className={styles.trendToggles} role="group" aria-label="표시할 추이 선택">
-        {SERIES.map((series) => (
+        {seriesOptions.map((series) => (
           <button
             key={series.key}
             type="button"
@@ -82,7 +84,7 @@ export default function CollectionTrendChart({ trend }: { trend: Day[] }) {
       <div className={styles.chartArea}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            {SERIES.map((series) => (
+            {seriesOptions.map((series) => (
               <linearGradient key={series.key} id={`trend-${series.key}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={series.color} stopOpacity="0.2" />
                 <stop offset="100%" stopColor={series.color} stopOpacity="0.02" />

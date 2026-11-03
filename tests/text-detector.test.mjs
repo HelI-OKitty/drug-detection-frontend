@@ -47,3 +47,18 @@ test("network failures and timeouts have actionable messages", async () => {
   globalThis.fetch = async () => { throw new DOMException("timeout", "TimeoutError"); };
   await assert.rejects(analyzeText("테스트"), /시간이 초과/);
 });
+
+test("documented text_source and rule matches are preserved without inventing probabilities", async () => {
+  const { analyzeContent } = await import("../src/lib/text-detector.ts");
+  for (const source of ["rule", "model"]) {
+    globalThis.fetch = async () => Response.json({
+      is_drug: true, text_source: source, matched_terms: ["용어"], matched_intents: ["판매"],
+      detected_objects: null, ocr_text: null,
+    });
+    const result = await analyzeContent({ text: "테스트" });
+    assert.equal(result.textSource, source);
+    assert.equal(result.probDrug, null);
+    assert.deepEqual(result.matchedTerms, ["용어"]);
+    assert.deepEqual(result.matchedIntents, ["판매"]);
+  }
+});

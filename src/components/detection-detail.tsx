@@ -159,7 +159,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                   </div>
                 ) : (
                   <p className={styles.ruleNote}>
-                    모델 확률 점수가 제공되지 않은 게시글입니다. 아래 사전(용어·의도) 규칙 매칭 결과로 판정되었습니다.
+                    {textAnalysis.source === "rule" ? "규칙(사전 매칭)으로 판정되었습니다." : textAnalysis.source === "model" ? "모델로 판정되었습니다. 확률 점수는 제공되지 않습니다." : "판정 방식과 확률 점수가 제공되지 않았습니다."}
                   </p>
                 )}
                 {textAnalysis.matchedTerms.length > 0 && (
@@ -311,7 +311,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                   ) : textAnalysis ? (
                     // 모델 점수 없이 규칙 매칭만 수행된 경우
                     <span className={styles.breakdownText}>
-                      {textAnalysis.flagged ? "의심 (규칙 매칭)" : "정상 (점수 없음)"}
+                      {textAnalysis.flagged ? "의심" : "정상"} (점수 없음)
                     </span>
                   ) : (
                     <span className={styles.breakdownEmpty}>분석 없음</span>

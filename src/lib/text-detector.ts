@@ -8,6 +8,9 @@ export type AnalyzedObject = { className: string; confidence: number };
 
 export interface AnalyzeResult {
   isDrug: boolean;
+  textSource: "rule" | "model" | null;
+  matchedTerms: string[];
+  matchedIntents: string[];
   /** 이미지 분석 시 탐지된 객체 목록 */
   detectedObjects: AnalyzedObject[];
   /** 이미지에서 추출된 OCR 텍스트 */
@@ -62,6 +65,9 @@ export async function analyzeContent(payload: { text?: string; image?: string })
     : [];
   return {
     isDrug: raw.is_drug === true,
+    textSource: raw.text_source === "model" || raw.text_source === "rule" ? raw.text_source : null,
+    matchedTerms: Array.isArray(raw.matched_terms) ? raw.matched_terms.filter((v): v is string => typeof v === "string") : [],
+    matchedIntents: Array.isArray(raw.matched_intents) ? raw.matched_intents.filter((v): v is string => typeof v === "string") : [],
     detectedObjects: objects,
     ocrText: typeof raw.ocr_text === "string" && raw.ocr_text.trim() ? raw.ocr_text : null,
     probDrug: typeof raw.prob_drug === "number" ? raw.prob_drug : null,
