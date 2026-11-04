@@ -98,11 +98,16 @@ function toStringList(raw: unknown): string[] {
 function toTextAnalysis(raw: unknown): TextAnalysis | null {
   if (typeof raw !== "object" || raw === null) return null;
   const text = raw as Record<string, unknown>;
+  // 공개 분석과 동일하게 백분율을 우선하고, 필드가 없는 응답만 0~1 값을 사용한다.
+  const probability = text.prob_drug_percent === undefined
+    ? text.prob_drug
+    : typeof text.prob_drug_percent === "number" ? text.prob_drug_percent / 100 : null;
   return {
     flagged: text.prediction === 1,
     source: text.source === "model" || text.source === "rule" ? text.source : null,
     // prob_drug는 모델 점수라 없을 수 있다. 규칙 양성(prediction=1)을 확률로 둔갑시키지 않는다.
-    probDrug: typeof text.prob_drug === "number" ? text.prob_drug : null,
+    probDrug: typeof probability === "number" && Number.isFinite(probability) && probability >= 0 && probability <= 1
+      ? probability : null,
     matchedTerms: toStringList(text.matched_terms),
     matchedIntents: toStringList(text.matched_intents),
   };

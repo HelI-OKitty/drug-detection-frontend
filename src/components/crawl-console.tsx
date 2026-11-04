@@ -302,8 +302,7 @@ export default function CrawlConsole({
           <div className={styles.cardBody}>
             <div className={styles.helpRow}>
               <p className={styles.help}>
-                저장된 탐지의 수집 시각을 기준으로 실행 회차를 묶은 기록입니다. 중복으로 건너뛴 게시글은 포함되지 않습니다.
-                실행 단계는 시작 → 이미지 검출 → 텍스트 분석 → OCR 텍스트 순으로 진행된 뒤 완료됩니다.
+                저장된 탐지의 수집 시각을 기준으로 묶은 기록입니다. 실제 실행 이력과는 차이가 있을 수 있으며, 중복 게시글과 저장 0건인 자동 실행은 표시되지 않습니다.
               </p>
               <div className={styles.bulkButtons}>
                 <button type="button" onClick={handleHistoryRefresh} disabled={refreshing}>
@@ -315,8 +314,8 @@ export default function CrawlConsole({
             {!runsLoaded && (
               <p className={styles.error} role="alert">서버 수집 기록을 불러오지 못했습니다. 새로고침으로 다시 시도해 주세요.</p>
             )}
-            {!hasRows ? (
-              <p className={styles.historyEmpty}>아직 수집 기록이 없습니다. 크롤링이 실행되면 회차별 기록이 여기에 쌓입니다.</p>
+            {!hasRows ? runsLoaded && (
+              <p className={styles.historyEmpty}>아직 저장된 수집 기록이 없습니다. 새 게시글이 저장되면 여기에 표시됩니다.</p>
             ) : (
               <div className={styles.tableWrap}>
                 <table className={styles.historyTable} aria-live="polite">
@@ -352,7 +351,9 @@ export default function CrawlConsole({
                         <td>—</td>
                         <td className={styles.runNote}>
                           {run.status === "running" && `${elapsed}초 경과 — 수 분이 걸릴 수 있습니다`}
-                          {run.status === "done" && `전체 수집 ${run.total} · 중복 ${run.skipped} (상세는 새로고침 후 반영)`}
+                          {run.status === "done" && (run.total === 0
+                            ? "조건에 맞는 새 게시글이 없어 정상 완료되었습니다"
+                            : `전체 수집 ${run.total} · 중복 ${run.skipped} (상세는 새로고침 후 반영)`)}
                           {run.status === "failed" && "실행에 실패했습니다"}
                         </td>
                         <td>—</td>
@@ -399,7 +400,7 @@ export default function CrawlConsole({
             <Clock aria-hidden="true" />
             {settings
               ? crawlEnabled
-                ? `자동 크롤링이 ${intervalLabel(settings.scheduleInterval)}마다 실행되고 있습니다. 아래 버튼은 즉시 1회 추가 실행합니다.`
+                ? `자동 크롤링이 ${intervalLabel(settings.scheduleInterval)} 주기로 설정되어 있습니다. 아래 버튼은 즉시 1회 추가 실행합니다.`
                 : "자동 크롤링이 꺼져 있습니다. 탐지 설정에서 켜거나, 아래 버튼으로 즉시 1회 실행할 수 있습니다."
               : "아래 버튼은 즉시 1회 크롤링을 실행합니다."}
           </div>
@@ -446,7 +447,11 @@ export default function CrawlConsole({
               <div className={styles.stat} data-tone="muted"><strong>{result.skipped}</strong><span>중복 건너뜀</span></div>
             </div>
             <p className={styles.help}>
-              새로 저장된 탐지 게시글은 <Link href="/detections" className={styles.inlineLink}>탐지 게시글 목록</Link>에서 확인할 수 있습니다.
+              {result.total === 0
+                ? "조건에 맞는 새 게시글이 없어 정상 완료되었습니다. 수집 0건은 오류가 아닙니다."
+                : result.saved === 0
+                  ? `크롤링은 정상 완료되었으며 새로 저장된 탐지는 없습니다. 중복으로 건너뛴 게시글은 ${result.skipped}건입니다.`
+                  : <>새로 저장된 탐지 게시글은 <Link href="/detections" className={styles.inlineLink}>탐지 게시글 목록</Link>에서 확인할 수 있습니다.</>}
             </p>
           </div>
         </section>

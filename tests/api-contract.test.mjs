@@ -71,6 +71,44 @@ test("dashboard preserves documented counts and does not turn failures into zero
   assert.deepEqual(await detections.fetchDashboard(), { ok: false, reason: "error" });
 });
 
+test("detail preserves restored percentage fields without deriving verdicts from scores", async () => {
+  for (const [fields, expected] of [
+    [{ prob_drug_percent: 12.18, prob_drug: 0.9 }, 12.18 / 100],
+    [{ prob_drug_percent: 0 }, 0],
+    [{ prob_drug_percent: 100 }, 1],
+    [{ prob_drug_percent: null, prob_drug: 0.9 }, null],
+    [{ prob_drug_percent: "12.18" }, null],
+    [{ prob_drug_percent: 101 }, null],
+    [{ prob_drug: -1 }, null],
+    [{ prob_drug: 12.18 }, null],
+    [{ prob_drug: 0.1218 }, 0.1218],
+    [{}, null],
+  ]) {
+    globalThis.fetch = async () => Response.json({
+      ...rows[0], text_ai_result: { prediction: 1, source: "rule", ...fields },
+      image_ai_results: [{ image_url: "https://example.com/test.png", prediction: 0 }],
+    });
+    const { detection } = await detections.fetchDetectionDetail(rows[0].id);
+    assert.equal(detection.textAnalysis.probDrug, expected);
+    assert.equal(detection.textScore, expected);
+    assert.equal(detection.textFlagged, true);
+    assert.equal(detection.imageAnalyses[0].flagged, false);
+  }
+});
+
+test("zero collected posts and duplicate-only crawls are successful completions", async () => {
+  process.env.INTERNAL_API_KEY = "test-internal-key";
+  for (const result of [
+    { total: 0, saved: 0, skipped: 0, failed: 0 },
+    { total: 10, saved: 0, skipped: 10, failed: 0 },
+  ]) {
+    globalThis.fetch = async (url) => Response.json(new URL(url).pathname === "/profile"
+      ? { id: "admin-1" }
+      : { results: [{ admin_id: "admin-1", ...result, error: null }] });
+    assert.deepEqual(await crawl.triggerCrawl(10), { success: true, result });
+  }
+});
+
 test("manual crawl targets the logged-in admin and parses the results envelope", async () => {
   process.env.INTERNAL_API_KEY = "test-internal-key";
   globalThis.fetch = async (url, init) => {

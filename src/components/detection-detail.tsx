@@ -154,7 +154,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                       />
                     </div>
                     <strong className={styles.probValue} style={{ color: scoreColors(textAnalysis.probDrug).fg }}>
-                      {toPercent(textAnalysis.probDrug)}
+                      {toPercent(textAnalysis.probDrug, 2)}
                     </strong>
                   </div>
                 ) : (
@@ -276,7 +276,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                                     />
                                   </div>
                                   <strong className={styles.probValue} style={{ color: scoreColors(ocrScore).fg }}>
-                                    {toPercent(ocrScore)}
+                                    {toPercent(ocrScore, 2)}
                                   </strong>
                                 </div>
                               )}
@@ -306,7 +306,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                       <i className={styles.breakdownTrack} aria-hidden="true">
                         <b style={{ width: toPercent(textScore), background: scoreColors(textScore).stroke }} />
                       </i>
-                      <span className={styles.breakdownValue} style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore)}</span>
+                      <span className={styles.breakdownValue} style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</span>
                     </>
                   ) : textAnalysis ? (
                     // 모델 점수 없이 규칙 매칭만 수행된 경우
@@ -339,7 +339,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                       <i className={styles.breakdownTrack} aria-hidden="true">
                         <b style={{ width: toPercent(ocrMax), background: scoreColors(ocrMax).stroke }} />
                       </i>
-                      <span className={styles.breakdownValue} style={{ color: scoreColors(ocrMax).fg }}>{toPercent(ocrMax)}</span>
+                      <span className={styles.breakdownValue} style={{ color: scoreColors(ocrMax).fg }}>{toPercent(ocrMax, 2)}</span>
                     </>
                   ) : (
                     <span className={styles.breakdownEmpty}>미검출</span>
