@@ -129,3 +129,23 @@ node --test tests/*.test.mjs
 
 - [단순 분석 최신 응답 예시](https://app.notion.com/p/0a7b448bdf9d821ab7c201c95bf3d2e3)의 `prob_drug_percent`는 백분율로 처리합니다. 예: `12.18` → `12.18%`. 텍스트·OCR 추가 분석에 모두 적용하며, 범위 밖 값이나 null은 확률 미제공으로 처리합니다. 해당 필드가 없는 구버전 응답에서는 `prob_drug`(0~1)를 사용합니다.
 - 새 명세에도 탐지 목록의 텍스트·이미지 개별 판정은 정의되어 있지 않습니다. 목록 두 열의 미제공 표시는 유지합니다. `개발 전`·`확정X`이고 요청·응답 정의가 없는 항목은 연동 대상에 포함하지 않습니다.
+
+## CI/CD
+
+Node.js 22 LTS를 사용합니다 (`.nvmrc`, `package.json`의 `engines`). 로컬에서 CI와 동일한 검증을 실행하려면:
+
+```bash
+nvm use
+npm ci
+npm run verify
+```
+
+`verify`는 린트 → API 계약 테스트 → Next.js 프로덕션 빌드(타입 검사 포함)를 순서대로 실행합니다. 하나라도 실패하면 이후 단계는 실행되지 않습니다. 테스트는 응답 대역을 사용하므로 실제 서버 계정이나 API 키가 필요하지 않습니다.
+
+- **CI:** `develop`·`release` 대상 PR과 두 브랜치의 push에서 GitHub Actions가 실행됩니다. Actions 화면에서 수동 실행도 가능합니다. 같은 브랜치의 이전 실행은 새 실행으로 대체됩니다.
+- **CD:** 기존 Vercel Git 연동을 사용합니다. 현재 Production 브랜치는 `release`이며 다른 브랜치는 Preview 배포입니다. `vercel.json`이 설치를 `npm ci`, 빌드를 `npm run verify`로 지정하므로 검증 실패 시 해당 배포는 실패하고 기존 운영 배포가 유지됩니다. GitHub CI 완료를 기다리는 방식이 아니라 Vercel에서도 같은 검증을 수행합니다.
+- `BACKEND_API_URL`, `INTERNAL_API_KEY`, `SIGNUP_ENABLED`는 Vercel의 각 환경에 설정합니다. GitHub Actions에는 운영 비밀값을 전달하지 않습니다.
+- 이 설정을 `release`에 반영한 뒤부터 Production 배포에도 적용됩니다. 기본 브랜치에 병합하기 전에는 Actions 수동 실행 메뉴가 보이지 않을 수 있습니다.
+- PR 병합 자체를 막으려면 GitHub 브랜치 보호에서 `Lint, test and build`를 필수 검사로 지정합니다. 워크플로 추가만으로 브랜치 보호가 활성화되지는 않습니다.
+
+[Vercel 빌드 설정 문서](https://vercel.com/docs/project-configuration/vercel-json#buildcommand)
