@@ -8,11 +8,14 @@ export type AnalyzedObject = { className: string; confidence: number };
 
 export interface AnalyzeResult {
   isDrug: boolean;
+  textSource: "rule" | "model" | null;
+  matchedTerms: string[];
+  matchedIntents: string[];
   /** 이미지 분석 시 탐지된 객체 목록 */
   detectedObjects: AnalyzedObject[];
   /** 이미지에서 추출된 OCR 텍스트 */
   ocrText: string | null;
-  /** 텍스트 마약 확률 (0~1) */
+  /** prob_drug_percent(0~100)를 화면 공통 단위(0~1)로 변환한 확률 */
   probDrug: number | null;
 }
 
@@ -52,6 +55,10 @@ export async function analyzeContent(payload: { text?: string; image?: string })
     throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
   }
   const raw = data as Record<string, unknown>;
+  // 최신 응답의 백분율을 우선한다. 필드가 없는 구버전 응답만 0~1 값을 사용한다.
+  const probability = raw.prob_drug_percent === undefined
+    ? raw.prob_drug
+    : typeof raw.prob_drug_percent === "number" ? raw.prob_drug_percent / 100 : null;
   const objects = Array.isArray(raw.detected_objects)
     ? raw.detected_objects.flatMap((item) => {
         if (typeof item !== "object" || item === null) return [];
@@ -62,9 +69,13 @@ export async function analyzeContent(payload: { text?: string; image?: string })
     : [];
   return {
     isDrug: raw.is_drug === true,
+    textSource: raw.text_source === "model" || raw.text_source === "rule" ? raw.text_source : null,
+    matchedTerms: Array.isArray(raw.matched_terms) ? raw.matched_terms.filter((v): v is string => typeof v === "string") : [],
+    matchedIntents: Array.isArray(raw.matched_intents) ? raw.matched_intents.filter((v): v is string => typeof v === "string") : [],
     detectedObjects: objects,
     ocrText: typeof raw.ocr_text === "string" && raw.ocr_text.trim() ? raw.ocr_text : null,
-    probDrug: typeof raw.prob_drug === "number" ? raw.prob_drug : null,
+    probDrug: typeof probability === "number" && Number.isFinite(probability) && probability >= 0 && probability <= 1
+      ? probability : null,
   };
 }
 

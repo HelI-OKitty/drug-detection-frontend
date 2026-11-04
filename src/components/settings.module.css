@@ -84,6 +84,15 @@
 .switch[aria-checked=true] { background:#0aaf75; border-color:#0aaf75; }
 .switch[aria-checked=true]::after { transform:translateX(20px); }
 .switch:disabled { opacity:.6; cursor:default; }
+.monitoringLink { display:flex; align-items:center; gap:12px; min-height:68px; padding:14px 16px; border:1px solid #dce9e2; border-radius:10px; background:#f5faf7; color:#243447; text-decoration:none; transition:background .15s,border-color .15s; }
+.monitoringLink:hover { border-color:#9fd6bc; background:#edf8f1; }
+.monitoringLink:focus-visible { outline:2px solid #0aaf75; outline-offset:3px; }
+.monitoringIcon { display:grid; place-items:center; flex-shrink:0; width:36px; height:36px; border-radius:9px; background:#e4f3eb; color:#07885a; }
+.monitoringIcon > svg { width:18px; height:18px; stroke-width:1.8; }
+.monitoringText { display:flex; flex:1; min-width:0; flex-direction:column; gap:4px; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
+.monitoringText > strong { font-size:13px; font-weight:600; }
+.monitoringText > span { font-size:12px; color:#52657b; }
+.monitoringArrow { width:17px; height:17px; flex-shrink:0; color:#07885a; }
 .guard { display:grid; place-items:center; gap:12px; padding:70px 20px; border:1px solid #e0e7ee; border-radius:15px; background:#fff; text-align:center; }
 .guard p { margin:0; font-size:14px; color:#52657b; }
 .guard a { display:inline-flex; align-items:center; min-height:44px; padding:10px 22px; border-radius:10px; background:#09a96d; color:#fff; font-size:13px; font-weight:600; }

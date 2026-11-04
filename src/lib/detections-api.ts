@@ -28,19 +28,6 @@ function formatDateTime(iso: unknown) {
   }).format(date);
 }
 
-/**
- * TODO(mock): 목록 응답이 개별 분석 결과(text_ai_result/image_ai_results)를 내려주기 전까지
- * id 기반 고정 mock 스코어로 채운다. API가 실제 값을 주면 이 함수와 호출부 fallback을 제거한다.
- */
-function mockScore(id: string, salt: number): number {
-  let hash = salt;
-  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) % 997;
-  return hash / 997;
-}
-
-/** TODO(mock): 검출 객체 이름 mock 풀. 실제 class_name이 내려오면 제거. */
-const MOCK_OBJECTS = ["알약", "주사기", "대마초", "흰 가루", "지퍼백"];
-
 function toRow(raw: Record<string, unknown>): DetectionRow | null {
   if (typeof raw.id !== "string" || typeof raw.content !== "string") return null;
   const id = raw.id;
@@ -51,35 +38,17 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
     : "unreviewed";
   const textAnalysis = toTextAnalysis(raw.text_ai_result);
   const images = toImages(raw.image_ai_results);
-  let imageAnalyses = images.map((image, index) => ({
+  const imageAnalyses = images.map((image) => ({
     url: image.url,
     flagged: image.flagged,
     objects: image.detectedObjects,
-    // OCR 텍스트별 분석 점수는 백엔드가 아직 안 내려줘서 ocr_text가 있는 이미지에 mock 점수를 부여한다.
-    ocrScore: image.ocrText ? mockScore(id, 31 + index) : null,
+    ocrScore: null,
   }));
-  if (images.length === 0) {
-    // mock 분포: 일부 행은 이미지 없음(빈 배열), 나머지는 1~4장. 객체 0~2개(각자 confidence), OCR은 일부만.
-    const count = mockScore(id, 13) > 0.75 ? 0 : 1 + Math.floor(mockScore(id, 29) * 4);
-    imageAnalyses = Array.from({ length: count }, (_, index) => {
-      const objectCount = Math.floor(mockScore(id, 71 + index) * 3);
-      const names = Array.from(
-        new Set(Array.from({ length: objectCount }, (_, j) => MOCK_OBJECTS[(id.length + index * 2 + j) % MOCK_OBJECTS.length])),
-      );
-      const ocr = mockScore(id, 59 + index);
-      return {
-        url: "",
-        flagged: mockScore(id, 97 + index) >= 0.5,
-        objects: names.map((name, j) => ({ name, confidence: mockScore(id, 83 + index * 3 + j) })),
-        ocrScore: ocr > 0.8 ? null : ocr,
-      };
-    });
-  }
   return {
     id,
-    score: typeof raw.score === "number" ? raw.score : 0,
-    textScore: textAnalysis ? textAnalysis.probDrug : mockScore(id, 7),
-    textFlagged: textAnalysis ? textAnalysis.flagged : mockScore(id, 7) >= 0.5,
+    isDrug: typeof raw.is_drug === "boolean" ? raw.is_drug : null,
+    textScore: textAnalysis ? textAnalysis.probDrug : null,
+    textFlagged: textAnalysis ? textAnalysis.flagged : null,
     imageAnalyses,
     summary: raw.content.replace(/\s+/g, " ").trim().slice(0, 80) || "(내용 없음)",
     nickname: author ? (author.startsWith("@") ? author : `@${author}`) : "(작성자 미상)",
@@ -129,10 +98,16 @@ function toStringList(raw: unknown): string[] {
 function toTextAnalysis(raw: unknown): TextAnalysis | null {
   if (typeof raw !== "object" || raw === null) return null;
   const text = raw as Record<string, unknown>;
+  // 공개 분석과 동일하게 백분율을 우선하고, 필드가 없는 응답만 0~1 값을 사용한다.
+  const probability = text.prob_drug_percent === undefined
+    ? text.prob_drug
+    : typeof text.prob_drug_percent === "number" ? text.prob_drug_percent / 100 : null;
   return {
     flagged: text.prediction === 1,
+    source: text.source === "model" || text.source === "rule" ? text.source : null,
     // prob_drug는 모델 점수라 없을 수 있다. 규칙 양성(prediction=1)을 확률로 둔갑시키지 않는다.
-    probDrug: typeof text.prob_drug === "number" ? text.prob_drug : null,
+    probDrug: typeof probability === "number" && Number.isFinite(probability) && probability >= 0 && probability <= 1
+      ? probability : null,
     matchedTerms: toStringList(text.matched_terms),
     matchedIntents: toStringList(text.matched_intents),
   };
@@ -201,8 +176,7 @@ function toCount(value: unknown) {
 }
 
 /**
- * 응답이 비어 있어도 기본값(0·빈 목록)으로 채워 항상 대시보드를 그린다.
- * 로그인 문제(401/403)일 때만 실패로 처리한다.
+ * 조회 실패를 정상적인 0건으로 표시하지 않는다.
  */
 export async function fetchDashboard(): Promise<DashboardResult> {
   const fallback = { status: 0, data: null as unknown };
@@ -210,10 +184,14 @@ export async function fetchDashboard(): Promise<DashboardResult> {
   if (summaryRes.status === 401 || summaryRes.status === 403) {
     return { ok: false, reason: "unauthorized" };
   }
+  if (summaryRes.status !== 200 || !summaryRes.data || typeof summaryRes.data !== "object") {
+    return { ok: false, reason: "error" };
+  }
 
-  const summaryRaw = (
-    typeof summaryRes.data === "object" && summaryRes.data !== null ? summaryRes.data : {}
-  ) as Record<string, unknown>;
+  const summaryRaw = summaryRes.data as Record<string, unknown>;
+  if (![summaryRaw.total, summaryRaw.today, summaryRaw.unconfirmed].every(
+    (value) => typeof value === "number" && Number.isInteger(value) && value >= 0,
+  ) || !Array.isArray(summaryRaw.trend)) return { ok: false, reason: "error" };
   const trend = Array.isArray(summaryRaw.trend)
     ? summaryRaw.trend.flatMap((item) => {
         if (typeof item !== "object" || item === null) return [];
@@ -276,6 +254,8 @@ export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
       ids.map((id) => request(`/detections/${encodeURIComponent(id)}`).catch(() => ({ status: 0, data: null as unknown }))),
     );
 
+    if (details.some(({ status, data }) => status !== 200 || !data || typeof data !== "object")) return null;
+
     let analyzedText = 0;
     let textModel = 0;
     let textRuleOnly = 0;
@@ -293,8 +273,8 @@ export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
       if (typeof text === "object" && text !== null) {
         analyzedText += 1;
         const t = text as Record<string, unknown>;
-        if (typeof t.prob_drug === "number") textModel += 1;
-        else textRuleOnly += 1;
+        if (t.source === "model") textModel += 1;
+        else if (t.source === "rule") textRuleOnly += 1;
         for (const word of toStringList(t.matched_terms)) termCounts.set(word, (termCounts.get(word) ?? 0) + 1);
         for (const word of toStringList(t.matched_intents)) intentCounts.set(word, (intentCounts.get(word) ?? 0) + 1);
       }
@@ -339,9 +319,9 @@ export type CrawlRun = {
   finishedAtMs: number;
   /** 이 회차에서 새로 저장된 탐지 수 */
   count: number;
-  /** 종합 점수 0.5 이상(양성 판정) 건수 */
+  /** is_drug=true(양성 판정) 건수 */
   positive: number;
-  /** 종합 점수 0.5 미만(음성 판정) 건수 */
+  /** is_drug=false(음성 판정) 건수 */
   negative: number;
   /** 매칭 빈도 상위 키워드 (최대 3개) */
   keywords: string[];
@@ -379,7 +359,7 @@ export async function fetchCrawlRuns(limit = 10): Promise<CrawlRunsResult> {
           iso: raw.detected_at,
           keywords: toStringList(raw.keyword),
           platform: typeof raw.platform === "string" ? raw.platform : "",
-          flagged: typeof raw.score === "number" && raw.score >= 0.5,
+          flagged: typeof raw.is_drug === "boolean" ? raw.is_drug : null,
         }];
       })
       .sort((a, b) => b.at - a.at);
@@ -391,17 +371,19 @@ export async function fetchCrawlRuns(limit = 10): Promise<CrawlRunsResult> {
       const keywordCounts = new Map<string, number>();
       const platforms = new Set<string>();
       let positive = 0;
+      let negative = 0;
       for (const item of group) {
         for (const word of item.keywords) keywordCounts.set(word, (keywordCounts.get(word) ?? 0) + 1);
         if (item.platform) platforms.add(PLATFORM_LABEL[item.platform.toLowerCase()] ?? item.platform);
-        if (item.flagged) positive += 1;
+        if (item.flagged === true) positive += 1;
+        if (item.flagged === false) negative += 1;
       }
       runs.push({
         finishedAt: formatDateTime(group[0].iso),
         finishedAtMs: group[0].at,
         count: group.length,
         positive,
-        negative: group.length - positive,
+        negative,
         keywords: [...keywordCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([word]) => word),
         platforms: [...platforms],
       });

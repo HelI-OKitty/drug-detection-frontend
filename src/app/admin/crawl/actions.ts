@@ -8,9 +8,10 @@ export interface CrawlResult {
   total: number;
   saved: number;
   skipped: number;
+  failed: number;
 }
 
-/** POST /internal/crawl 수동 실행. X-Internal-Key는 서버 환경 변수(INTERNAL_API_KEY)에서만 읽는다. */
+/** POST /crawl/trigger 수동 실행. X-Internal-Key는 서버 환경 변수(INTERNAL_API_KEY)에서만 읽는다. */
 export async function triggerCrawl(maxResults: number): Promise<
   { success: true; result: CrawlResult } | { success: false; message: string }
 > {
@@ -43,7 +44,7 @@ export async function triggerCrawl(maxResults: number): Promise<
       return { success: false, message: "회원 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요." };
     }
 
-    const response = await fetch(`${baseUrl}/internal/crawl`, {
+    const response = await fetch(`${baseUrl}/crawl/trigger`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Internal-Key": apiKey },
       body: JSON.stringify({ admin_id: profile.id, max_results: max }),
@@ -57,26 +58,22 @@ export async function triggerCrawl(maxResults: number): Promise<
     if (response.status === 422) {
       return { success: false, message: "요청 값을 확인해 주세요. 수집 건수는 10~100 사이여야 합니다." };
     }
-    if (!response.ok) {
-      // 백엔드가 detail을 주면 그대로, 없으면(처리 안 된 500 등) 상태 코드라도 보여줘 원인 추적을 돕는다.
-      const body: unknown = await response.json().catch(() => null);
-      const detail =
-        typeof body === "object" && body !== null && typeof (body as Record<string, unknown>).detail === "string"
-          ? ((body as Record<string, unknown>).detail as string)
-          : null;
+    const body: unknown = await response.json().catch(() => null);
+    const envelope = typeof body === "object" && body !== null ? body as Record<string, unknown> : {};
+    const results = Array.isArray(envelope.results) ? envelope.results : [];
+    const data = results.find((item) => item && typeof item === "object" && item.admin_id === profile.id);
+    if (!response.ok || (data && (data.error || data.failed > 0))) {
+      const detail = typeof data?.error === "string" ? data.error : typeof envelope.detail === "string" ? envelope.detail : null;
+      const partial = typeof data?.saved === "number" ? ` (저장 ${data.saved}건, 실패 ${data.failed ?? 0}건)` : "";
       return {
         success: false,
-        message: detail
-          ? `크롤링 실행에 실패했습니다: ${detail}`
-          : `크롤링 실행에 실패했습니다 (서버 오류 ${response.status}). 백엔드 로그를 확인해 주세요.`,
+        message: `크롤링 실행에 실패했습니다${partial}: ${detail || (response.ok ? "일부 게시글을 처리하지 못했습니다" : `서버 오류 ${response.status}`)}. 탐지 게시글 목록에서 저장 결과를 확인해 주세요.`,
       };
     }
-
-    const data = await response.json();
-    if (typeof data?.total !== "number" || typeof data?.saved !== "number" || typeof data?.skipped !== "number") {
+    if (!data || ![data.total, data.saved, data.skipped, data.failed].every((value) => Number.isInteger(value) && value >= 0)) {
       return { success: false, message: "서버의 응답을 확인할 수 없습니다. 탐지 게시글 목록에서 결과를 확인해 주세요." };
     }
-    return { success: true, result: { total: data.total, saved: data.saved, skipped: data.skipped } };
+    return { success: true, result: { total: data.total, saved: data.saved, skipped: data.skipped, failed: data.failed } };
   } catch (error) {
     if (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)) {
       return { success: false, message: "크롤링 응답 대기 시간이 초과되었습니다. 실행은 계속될 수 있으니 잠시 후 탐지 게시글 목록을 확인해 주세요." };
