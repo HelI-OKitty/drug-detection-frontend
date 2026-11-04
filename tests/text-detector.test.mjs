@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { analyzeText } from "../src/lib/text-detector.ts";
+import { analyzeContent, analyzeText } from "../src/lib/text-detector.ts";
 
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
@@ -60,5 +60,39 @@ test("documented text_source and rule matches are preserved without inventing pr
     assert.equal(result.probDrug, null);
     assert.deepEqual(result.matchedTerms, ["용어"]);
     assert.deepEqual(result.matchedIntents, ["판매"]);
+  }
+});
+
+
+test("percent response keeps two decimals and does not override the server verdict", async () => {
+  const { toPercent } = await import("../src/lib/detections.ts");
+  for (const payload of [{ text: "테스트" }, { text: "OCR 추출 텍스트" }, { image: "dGVzdA==" }]) {
+    globalThis.fetch = async () => Response.json({
+      is_drug: true, text_source: "rule", prob_drug_percent: 12.18, prob_drug: 0.9,
+      matched_terms: ["용어"], matched_intents: ["판매"],
+    });
+    const result = await analyzeContent(payload);
+    assert.ok(Math.abs(result.probDrug - 0.1218) < Number.EPSILON);
+    assert.equal(toPercent(result.probDrug, 2), "12.18%");
+    assert.equal(result.isDrug, true);
+    assert.equal(result.textSource, "rule");
+  }
+});
+
+test("percentage boundaries, missing values and legacy ratios are handled without invented scores", async () => {
+  for (const [body, expected] of [
+    [{ prob_drug_percent: 0 }, 0],
+    [{ prob_drug_percent: 100 }, 1],
+    [{ prob_drug_percent: 0.12 }, 0.0012],
+    [{ prob_drug_percent: null, prob_drug: 0.9 }, null],
+    [{ prob_drug_percent: "12.18" }, null],
+    [{ prob_drug_percent: -1 }, null],
+    [{ prob_drug_percent: 101 }, null],
+    [{ prob_drug: 0.1218 }, 0.1218],
+    [{ prob_drug: 12.18 }, null],
+    [{}, null],
+  ]) {
+    globalThis.fetch = async () => Response.json({ is_drug: false, ...body });
+    assert.equal((await analyzeContent({ text: "테스트" })).probDrug, expected);
   }
 });

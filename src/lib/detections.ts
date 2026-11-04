@@ -74,9 +74,9 @@ export type DetectionDetailData = DetectionRow & {
   textAnalysis: TextAnalysis | null;
 };
 
-/** 0~1 점수를 "92%" 형태의 비율 문자열로 바꾼다. */
-export function toPercent(score: number) {
-  return `${Math.round(Math.min(1, Math.max(0, score)) * 100)}%`;
+/** 0~1 점수를 비율 문자열로 바꾼다. 필요한 화면에서는 소수 자릿수를 지정한다. */
+export function toPercent(score: number, maximumFractionDigits = 0) {
+  return `${(Math.min(1, Math.max(0, score)) * 100).toLocaleString("ko-KR", { maximumFractionDigits })}%`;
 }
 
 export const STATUS_LABEL: Record<ReviewStatus, string> = {

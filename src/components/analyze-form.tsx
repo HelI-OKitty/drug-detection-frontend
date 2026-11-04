@@ -291,13 +291,13 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                         <i className={styles.probTrack} aria-hidden="true">
                           <b
                             style={{
-                              width: toPercent(item.outcome.probDrug),
+                              width: toPercent(item.outcome.probDrug, 2),
                               background: scoreColors(item.outcome.probDrug).stroke,
                             }}
                           />
                         </i>
                         <strong className={styles.probValue} style={{ color: scoreColors(item.outcome.probDrug).fg }}>
-                          {toPercent(item.outcome.probDrug)}
+                          {toPercent(item.outcome.probDrug, 2)}
                         </strong>
                       </div>
                     )}
@@ -363,7 +363,7 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                                   <i className={styles.probTrack} aria-hidden="true">
                                     <b
                                       style={{
-                                        width: toPercent(item.ocrOutcome.probDrug),
+                                        width: toPercent(item.ocrOutcome.probDrug, 2),
                                         background: scoreColors(item.ocrOutcome.probDrug).stroke,
                                       }}
                                     />
@@ -372,7 +372,7 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                                     className={styles.probValue}
                                     style={{ color: scoreColors(item.ocrOutcome.probDrug).fg }}
                                   >
-                                    {toPercent(item.ocrOutcome.probDrug)}
+                                    {toPercent(item.ocrOutcome.probDrug, 2)}
                                   </strong>
                                 </div>
                               )}
