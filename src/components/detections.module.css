@@ -308,3 +308,59 @@
 @media(max-width:760px) {
   .scrollHint { display:block; margin:0 0 10px; color:#64748b; font-size:11px; line-height:1.7; }
 }
+
+/* 관리자 상세 검토: 원문 → 근거 → 상태 처리 */
+.detailTopline { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
+.detailTopline .backLink { margin:0; }
+.originalLink { display:inline-flex; align-items:center; gap:8px; padding:9px 12px; border:1px solid #d9e4df; border-radius:8px; background:#fff; color:#087e56; font-size:12px; white-space:nowrap; }
+.srOnly { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+.detailHeading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:24px; }
+.detailHeading h1 { margin:0; font-size:24px; letter-spacing:-.6px; }
+.detailHeading p { margin:8px 0 0; color:#64748b; font-size:13px; line-height:1.7; }
+.detailHeading > .status { font-size:12px; padding:7px 12px; }
+.evidenceNav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+.evidenceNav a { display:flex; align-items:center; gap:7px; min-height:42px; padding:9px 13px; border:1px solid #dce5eb; border-radius:9px; background:#fff; color:#52657b; font-size:12px; }
+.evidenceNav a:hover { color:#087e56; border-color:#9bd6be; }
+.evidenceNav span { border-radius:5px; padding:2px 6px; background:#edf3f6; font-size:11px; }
+.evidenceTitle { margin:0 0 20px; font-size:15px; color:#243447; }
+.reviewLayout h2[id], .reviewLayout article[id] { scroll-margin-top:24px; }
+.reviewLayout .asideTitle { font-family:inherit; font-size:14px; letter-spacing:0; font-weight:600; color:#334155; }
+.platformTag { margin-left:auto; padding:6px 9px; border-radius:7px; background:#edf4f8; color:#52657b; font-size:11px; white-space:nowrap; }
+.evidenceNote { margin:0 0 18px; color:#64748b; font-size:12px; line-height:1.8; }
+.reviewAside { position:sticky; top:20px; }
+.reviewCard { border-top:3px solid #0aaf75; }
+.reviewCardHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.reviewCardHeader h2 { margin:0; font-size:15px; }
+.reviewCard > .confirmButton { width:100%; }
+.deleteArea { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:22px; padding-top:18px; border-top:1px solid #edf1f5; }
+.deleteArea > div { flex:1 1 180px; }
+.deleteArea strong { font-size:12px; color:#64748b; }
+.deleteArea p { margin:6px 0 0; color:#74849a; font-size:11px; line-height:1.7; }
+.deleteArea button { display:flex; align-items:center; gap:6px; min-height:40px; padding:8px 10px; border:1px solid #ebc6cd; border-radius:8px; background:#fff; color:#b7334e; font-size:12px; }
+.deleteArea button:disabled { opacity:.5; cursor:default; }
+.imageEvidenceTitle { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.imageEvidenceTitle .rowTitle { margin:0; font-family:inherit; font-size:13px; color:#334155; letter-spacing:0; }
+.reviewLayout .rowThumb,.reviewLayout .rowThumbBroken { width:144px; height:144px; }
+.reviewLayout .ocrText { padding:12px 14px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; color:#334155; font-size:13px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.ocrDisclaimer { font-size:11px; line-height:1.7; color:#74849a; margin:9px 0 0; }
+.reviewLayout .metaRow { align-items:start; }
+.reviewLayout .metaRow dt { flex-shrink:0; font-family:inherit; }
+.reviewLayout .metaRow dd { white-space:normal; overflow-wrap:anywhere; line-height:1.6; }
+.deleteDialog { padding:0; border:0; background:transparent; width:calc(100% - 32px); max-width:420px; border-radius:15px; }
+.deleteDialog::backdrop { background:rgba(15,23,32,.45); }
+.deleteDialog .modal { max-width:none; }
+@media(max-width:1180px) {
+  .reviewAside { position:static; }
+  .reviewLayout .asideCard { min-width:0; }
+}
+@media(max-width:600px) {
+  .detailHeading h1 { font-size:21px; }
+  .detailTopline .backLink { font-size:11px; gap:5px; }
+  .originalLink { padding:9px; }
+  .reviewLayout .analysisCard { padding:20px; }
+  .reviewLayout .rowThumb,.reviewLayout .rowThumbBroken { width:100%; height:190px; }
+  .reviewLayout .rowThumb > img { object-fit:contain; }
+  .reviewLayout .probRow { flex-wrap:wrap; }
+  .reviewLayout .probLabel { width:100%; }
+  .reviewLayout .probTrack { min-width:80px; }
+}

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, ImageOff, X } from "lucide-react";
-import { Fragment, useEffect, useState } from "react";
+import { ArrowLeft, Check, ExternalLink, FileText, Images, ImageOff, ScanText, Trash2, X } from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
 import {
   STATUS_LABEL,
@@ -40,6 +40,10 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
   const [error, setError] = useState("");
   // 로드에 실패한 이미지 URL 목록. 삭제 여부는 알 수 없으므로 "원본을 불러오지 못함"으로만 표시한다.
   const [brokenUrls, setBrokenUrls] = useState<string[]>([]);
+  const deleteDialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (confirmOpen) deleteDialog.current?.showModal();
+  }, [confirmOpen]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const listHref = `/detections${searchParams.size ? `?${searchParams}` : ""}`;
@@ -104,9 +108,11 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
 
   return (
     <div className={styles.page}>
-      <Link href={listHref} className={styles.backLink}>
-        <ArrowLeft aria-hidden="true" />목록으로
-      </Link>
+      <div className={styles.detailTopline}>
+        <Link href={listHref} className={styles.backLink}><ArrowLeft aria-hidden="true" />필터를 유지하고 목록으로</Link>
+        <a className={styles.originalLink} href={detection.sourceUrl} target="_blank" rel="noreferrer noopener">원문 열기<ExternalLink size={15} aria-hidden="true" /><span className={styles.srOnly}> (새 창)</span></a>
+      </div>
+      <div className={styles.detailHeading}><div><h1>탐지 게시글 검토</h1><p>원문과 분석 근거를 확인한 뒤 검토 상태를 확정하세요.</p></div><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></div>
 
       <section className={styles.verdictOverview} aria-label="판정 및 검토 요약">
         <div><span>종합 판정</span><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong><small>서버의 종합 분석 결과</small></div>
@@ -115,15 +121,21 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
         <div><span>OCR 판정</span><strong className={styles.pendingVerdict}>연동 대기</strong><small>추출 텍스트와 별도 판정</small></div>
         <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>AI 판정과 별도로 관리</small></div>
       </section>
-      <div className={styles.detailLayout}>
+      <nav className={styles.evidenceNav} aria-label="분석 근거 바로가기">
+        <a href="#post-original"><FileText size={16} aria-hidden="true" />게시글 원문</a>
+        <a href="#text-analysis-title"><ScanText size={16} aria-hidden="true" />텍스트 근거</a>
+        <a href="#image-analysis-title"><Images size={16} aria-hidden="true" />이미지 · OCR <span>{detection.images.length}</span></a>
+      </nav>
+      <div className={`${styles.detailLayout} ${styles.reviewLayout}`}>
         <div className={styles.mainColumn}>
-          <article className={styles.postCard}>
+          <article className={styles.postCard} id="post-original" aria-labelledby="post-title">
+            <h2 className={styles.evidenceTitle} id="post-title">게시글 원문</h2>
             <header className={styles.postHeader}>
               <div className={styles.postIdentity}>
                 <strong>{detection.nickname}</strong>
                 <span>{detection.platform} · 게시 {detection.postedAt}</span>
               </div>
-              <span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span>
+              <span className={styles.platformTag}>{detection.platform}</span>
             </header>
 
             <p className={styles.postContent}>
@@ -140,15 +152,16 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
 
           <section className={styles.analysisCard} aria-labelledby="text-analysis-title">
             <header className={styles.analysisHeader}>
-              <h2 className={styles.asideTitle} id="text-analysis-title">텍스트 분석 결과</h2>
+              <h2 className={styles.asideTitle} id="text-analysis-title">텍스트 분석 근거</h2>
               {textAnalysis && (
                 <span className={styles.analysisBadge} data-flagged={textAnalysis.flagged}>
-                  {textAnalysis.flagged ? "마약 의심" : "정상"}
+                  {textAnalysis.flagged ? "텍스트 양성" : "텍스트 음성"}
                 </span>
               )}
             </header>
             {textAnalysis ? (
               <>
+                <p className={styles.evidenceNote}>판정 방식: {textAnalysis.source === "rule" ? "규칙 · 사전 매칭" : textAnalysis.source === "model" ? "AI 모델" : "미제공"}. 모델 점수와 사전 매칭 결과를 함께 확인하세요.</p>
                 {/* prob_drug는 ML 모델 점수, matched_*는 사전 기반 규칙 결과로 서로 다른 분석이다. */}
                 {textAnalysis.probDrug !== null ? (
                   <div className={styles.probRow}>
@@ -207,10 +220,10 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
             <header className={styles.analysisHeader}>
               {/* 카드 레벨 종합 배지는 결합 정책(객체·OCR 합산 규칙) 확정 전까지 두지 않는다.
                   판정은 이미지별 객체 탐지/OCR 블록 배지로만 표시한다. */}
-              <h2 className={styles.asideTitle} id="image-analysis-title">이미지 분석 결과</h2>
+              <h2 className={styles.asideTitle} id="image-analysis-title">이미지 · OCR 분석 근거</h2>
             </header>
             {detection.images.length > 0 ? (
-              <ul className={styles.imageRows}>
+              <><p className={styles.evidenceNote}>이미지를 누르면 원본 크기로 볼 수 있습니다. 객체의 검출 신뢰도와 OCR 텍스트를 각각 확인하세요.</p><ul className={styles.imageRows}>
                 {detection.images.map((image, index) => {
                   const ocrScore = analyses ? analyses[index].ocrScore : null;
                   return (
@@ -238,7 +251,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                         </button>
                       )}
                       <div className={styles.rowBody}>
-                        <h3 className={styles.rowTitle}>이미지 {index + 1}</h3>
+                        <div className={styles.imageEvidenceTitle}><h3 className={styles.rowTitle}>이미지 {index + 1}</h3><span className={styles.analysisBadge} data-flagged={image.flagged}>{image.flagged ? "이미지 양성" : "이미지 음성"}</span></div>
 
                         <div className={styles.analysisSub}>
                           <p className={styles.analysisSubTitle}>
@@ -270,11 +283,12 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                         <div className={styles.analysisSub}>
                           <p className={styles.analysisSubTitle}>
                             이미지 속 텍스트 (OCR)
-                            {!image.ocrText && <span className={styles.mutedBadge}>미검출</span>}
+                            <span className={styles.mutedBadge}>{image.ocrText ? "텍스트 추출됨" : "추출 텍스트 없음"}</span>
                           </p>
                           {image.ocrText && (
                             <>
                               <p className={styles.ocrText}>{image.ocrText}</p>
+                              <p className={styles.ocrDisclaimer}>추출된 문구이며 OCR 양성 판정은 아닙니다. 별도 판정은 아직 제공되지 않습니다.</p>
                               {ocrScore !== null && (
                                 <div className={styles.probRow}>
                                   <span className={styles.probLabel}>마약 의심 비율</span>
@@ -296,14 +310,26 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                     </li>
                   );
                 })}
-              </ul>
+              </ul></>
             ) : (
               <p className={styles.noAnalysis}>제공된 이미지 분석 결과가 없습니다.</p>
             )}
           </section>
         </div>
 
-        <aside className={styles.aside}>
+        <aside className={`${styles.aside} ${styles.reviewAside}`}>
+          <section className={`${styles.asideCard} ${styles.reviewCard}`} aria-labelledby="action-title">
+            <div className={styles.reviewCardHeader}><h2 id="action-title">검토 처리</h2><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></div>
+            <p className={styles.evidenceNote}>원문과 분석 근거를 검토한 뒤 확정하세요. AI의 양성·음성 판정은 변경되지 않습니다.</p>
+            <button type="button" className={styles.confirmButton} onClick={handleConfirm} disabled={status === "confirmed" || pending !== null}>
+              <Check aria-hidden="true" />{pending === "confirm" ? "저장 중…" : status === "confirmed" ? "검토 확정됨" : "검토 확정"}
+            </button>
+            <p className={error ? styles.actionError : styles.actionNote} role="status">{error || (status === "confirmed" ? "검토 상태가 확정으로 저장되었습니다." : "확정 시 검토 상태를 서버에 저장합니다.")}</p>
+            <div className={styles.deleteArea}>
+              <div><strong>게시글 삭제</strong><p>이 기록을 완전히 삭제합니다. 되돌릴 수 없습니다.</p></div>
+              <button type="button" onClick={() => setConfirmOpen(true)} disabled={pending !== null}><Trash2 size={15} aria-hidden="true" />삭제…</button>
+            </div>
+          </section>
           <section className={styles.asideCard} aria-labelledby="risk-title">
             <h2 className={styles.asideTitle} id="risk-title">분석 요약</h2>
             <dl className={styles.breakdown}>
@@ -359,11 +385,11 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
           </section>
 
           <section className={styles.asideCard} aria-labelledby="meta-title">
-            <h2 className={styles.asideTitle} id="meta-title">메타데이터</h2>
+            <h2 className={styles.asideTitle} id="meta-title">수집 정보</h2>
             <dl className={styles.metaList}>
               <div className={styles.metaRow}><dt>게시글 ID</dt><dd>{detection.id}</dd></div>
-              <div className={styles.metaRow}><dt>게시 시각</dt><dd>{detection.postedAt.slice(5)}</dd></div>
-              <div className={styles.metaRow}><dt>탐지 시각</dt><dd>{detection.detectedAt.slice(5)}</dd></div>
+              <div className={styles.metaRow}><dt>게시 시각</dt><dd>{detection.postedAt}</dd></div>
+              <div className={styles.metaRow}><dt>탐지 시각</dt><dd>{detection.detectedAt}</dd></div>
               <div className={styles.metaRow}>
                 <dt>원문 링크</dt>
                 <dd>
@@ -379,32 +405,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
             </dl>
           </section>
 
-          <section className={styles.asideCard} aria-labelledby="action-title">
-            <h2 className={styles.asideTitle} id="action-title">처리</h2>
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.confirmButton}
-                onClick={handleConfirm}
-                disabled={status === "confirmed" || pending !== null}
-              >
-                <Check aria-hidden="true" />{pending === "confirm" ? "저장 중…" : "마약 게시글 확정"}
-              </button>
-              <button
-                type="button"
-                className={styles.excludeButton}
-                onClick={() => setConfirmOpen(true)}
-                disabled={pending !== null}
-              >
-                <X aria-hidden="true" />오탐 · 제외
-              </button>
-            </div>
-            <p className={error ? styles.actionError : styles.actionNote} role="status">
-              {error || (status === "confirmed"
-                ? "마약 게시글로 확정된 상태입니다."
-                : "확정하면 서버에 저장되며, 오탐 · 제외는 게시글을 완전히 삭제합니다.")}
-            </p>
-          </section>
+
         </aside>
       </div>
 
@@ -438,18 +439,14 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
       )}
 
       {confirmOpen && (
-        <div className={styles.modalOverlay} role="presentation" onClick={() => pending === null && setConfirmOpen(false)}>
+        <dialog ref={deleteDialog} className={styles.deleteDialog} onCancel={(event) => { if (pending !== null) event.preventDefault(); else setConfirmOpen(false); }} aria-labelledby="delete-title" aria-describedby="delete-desc">
           <div
             className={styles.modal}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="delete-title"
-            aria-describedby="delete-desc"
             onClick={(event) => event.stopPropagation()}
           >
-            <h2 id="delete-title">오탐 게시글 삭제</h2>
+            <h2 id="delete-title">탐지 게시글을 삭제할까요?</h2>
             <p id="delete-desc">
-              이 탐지 게시글을 오탐으로 처리하고 완전히 삭제합니다.
+              이 탐지 게시글을 서버에서 삭제합니다.
               <br />삭제한 데이터는 복구할 수 없습니다. 계속할까요?
             </p>
             <div className={styles.modalActions}>
@@ -459,7 +456,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
               </button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );
