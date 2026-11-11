@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, ImageOff, X } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
@@ -41,6 +41,8 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
   // 로드에 실패한 이미지 URL 목록. 삭제 여부는 알 수 없으므로 "원본을 불러오지 못함"으로만 표시한다.
   const [brokenUrls, setBrokenUrls] = useState<string[]>([]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listHref = `/detections${searchParams.size ? `?${searchParams}` : ""}`;
 
   function markBroken(url: string) {
     setBrokenUrls((current) => (current.includes(url) ? current : [...current, url]));
@@ -91,7 +93,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
     setPending("delete");
     const result = await deleteDetection(detection.id);
     if (result.success) {
-      router.push("/detections");
+      router.push(listHref);
       router.refresh();
       return;
     }
@@ -102,10 +104,17 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
 
   return (
     <div className={styles.page}>
-      <Link href="/detections" className={styles.backLink}>
+      <Link href={listHref} className={styles.backLink}>
         <ArrowLeft aria-hidden="true" />목록으로
       </Link>
 
+      <section className={styles.verdictOverview} aria-label="판정 및 검토 요약">
+        <div><span>종합 판정</span><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong><small>서버의 종합 분석 결과</small></div>
+        <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong><small>게시글 텍스트 분석</small></div>
+        <div><span>이미지 판정</span><strong data-positive={detection.images.some((image) => image.flagged)}>{!detection.images.length ? "미제공" : detection.images.some((image) => image.flagged) ? "양성" : "음성"}</strong><small>이미지 객체 탐지</small></div>
+        <div><span>OCR 판정</span><strong className={styles.pendingVerdict}>연동 대기</strong><small>추출 텍스트와 별도 판정</small></div>
+        <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>AI 판정과 별도로 관리</small></div>
+      </section>
       <div className={styles.detailLayout}>
         <div className={styles.mainColumn}>
           <article className={styles.postCard}>
@@ -289,7 +298,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                 })}
               </ul>
             ) : (
-              <p className={styles.noAnalysis}>첨부된 이미지가 없어 이미지 분석을 수행하지 않았습니다.</p>
+              <p className={styles.noAnalysis}>제공된 이미지 분석 결과가 없습니다.</p>
             )}
           </section>
         </div>
@@ -327,7 +336,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                       {detectedNames.length > 1 && ` 외 ${detectedNames.length - 1}종`}
                     </span>
                   ) : (
-                    <span className={styles.breakdownEmpty}>미검출</span>
+                    <span className={styles.breakdownEmpty}>{detection.images.length ? "미검출" : "미제공"}</span>
                   )}
                 </dd>
               </div>
@@ -342,7 +351,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                       <span className={styles.breakdownValue} style={{ color: scoreColors(ocrMax).fg }}>{toPercent(ocrMax, 2)}</span>
                     </>
                   ) : (
-                    <span className={styles.breakdownEmpty}>미검출</span>
+                    <span className={styles.breakdownEmpty}>판정 미제공</span>
                   )}
                 </dd>
               </div>
@@ -352,11 +361,11 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
           <section className={styles.asideCard} aria-labelledby="meta-title">
             <h2 className={styles.asideTitle} id="meta-title">메타데이터</h2>
             <dl className={styles.metaList}>
-              <div className={styles.metaRow}><dt>post_id</dt><dd>{detection.id}</dd></div>
-              <div className={styles.metaRow}><dt>posted_at</dt><dd>{detection.postedAt.slice(5)}</dd></div>
-              <div className={styles.metaRow}><dt>detected_at</dt><dd>{detection.detectedAt.slice(5)}</dd></div>
+              <div className={styles.metaRow}><dt>게시글 ID</dt><dd>{detection.id}</dd></div>
+              <div className={styles.metaRow}><dt>게시 시각</dt><dd>{detection.postedAt.slice(5)}</dd></div>
+              <div className={styles.metaRow}><dt>탐지 시각</dt><dd>{detection.detectedAt.slice(5)}</dd></div>
               <div className={styles.metaRow}>
-                <dt>source_url</dt>
+                <dt>원문 링크</dt>
                 <dd>
                   <a href={detection.sourceUrl} target="_blank" rel="noreferrer noopener">
                     {shortUrl(detection.sourceUrl)}
@@ -364,7 +373,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                 </dd>
               </div>
               <div className={styles.metaRow}>
-                <dt>status</dt>
+                <dt>검토 상태</dt>
                 <dd><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></dd>
               </div>
             </dl>
