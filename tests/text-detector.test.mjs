@@ -111,6 +111,25 @@ test('a skipped image result cannot be shown as a successful negative verdict', 
   await assert.rejects(analyzeContent({images:['aA==','aQ==']}), /이미지 2장.*1건.*누락/);
 });
 
+test('no_supported_characters input yields guidance-only results without inventing a verdict', async () => {
+  // 텍스트: 판정·점수·매칭 없이 source만 보존. prediction·점수가 없어도(빈 {}과 달리) 예외 없이 처리된다.
+  globalThis.fetch = async () => Response.json(response({ text_ai_result: { source: 'no_supported_characters' } }));
+  const text = (await analyzeContent({ text: '!@#$' })).textResult;
+  assert.deepEqual(text, { isDrug: null, source: 'no_supported_characters', score: null, matchedTerms: [], matchedIntents: [] });
+  // 잘못된 빈 응답은 여전히 거부되어야 한다(분석 불가와 구분).
+  globalThis.fetch = async () => Response.json(response({ text_ai_result: {} }));
+  await assert.rejects(analyzeContent({ text: '테스트' }), /결과를 확인/);
+  // OCR도 텍스트와 동일하게 분석 불가를 처리하고, model/rule source는 그대로 보존한다.
+  globalThis.fetch = async () => Response.json(response({ text_ai_result: null, image_ai_results: [imageResult({ ocr_text_results: [
+    { ocr_text: '깨진 문구', source: 'no_supported_characters' },
+    { ocr_text: 'OCR', prediction: 1, source: 'model', ocr_text_score: 90, matched_terms: ['용어'], matched_intents: ['판매'] },
+  ] })] }));
+  const ocrResults = (await analyzeContent({ images: ['aA=='] })).imageResults[0].ocrResults;
+  assert.deepEqual(ocrResults[0], { text: '깨진 문구', isDrug: null, source: 'no_supported_characters', score: null, matchedTerms: [], matchedIntents: [] });
+  assert.equal(ocrResults[1].source, 'model');
+  assert.equal(ocrResults[1].isDrug, true);
+  assert.equal(ocrResults[1].score, 0.9);
+});
 test('batch results preserve each image and every OCR entry exactly as single requests do', async () => {
   const images = [
     { prediction: 1, image_score: .3125, detected_objects: [{class_name:'Heroin',confidence:.8224}], ocr_text_results: [

@@ -1,9 +1,9 @@
 "use client";
 
-import { ChevronDown, FileText, ImagePlus, ListChecks, ScanSearch, ShieldCheck, Sparkles, TriangleAlert, X } from "lucide-react";
+import { ChevronDown, FileText, ImagePlus, Info, ListChecks, ScanSearch, ShieldCheck, Sparkles, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { scoreColors, toPercent } from "@/lib/detections";
-import { analyzeContent, type AnalyzeResult } from "@/lib/text-detector";
+import { analyzeContent, type AnalysisSource, type AnalyzeResult } from "@/lib/text-detector";
 import viewerStyles from "./detections.module.css";
 import styles from "./settings.module.css";
 
@@ -25,7 +25,7 @@ function Verdict({ positive }: { positive: boolean | null }) {
   if (positive === null) return <span className={styles.itemBadge} data-tone="muted">판정 미제공</span>;
   return <span className={styles.itemBadge} data-tone={positive ? "danger" : "safe"}>{positive ? "양성" : "음성"}</span>;
 }
-function SourceTag({ source }: { source: "rule" | "model" | null }) {
+function SourceTag({ source }: { source: AnalysisSource }) {
   if (source === "model") return <span className={styles.sourceTag}><Sparkles aria-hidden="true" />AI 모델</span>;
   if (source === "rule") return <span className={styles.sourceTag}><ListChecks aria-hidden="true" />규칙 매칭</span>;
   return null;
@@ -43,6 +43,22 @@ function MatchTags({ terms, intents }: { terms: string[]; intents: string[] }) {
         <span className={styles.matchGroupLabel}>매칭 의도</span>
         <span className={styles.matchTags}>{intents.map((intent, i) => <span key={`${intent}-${i}`} className={styles.matchTag} data-kind="intent">{intent}</span>)}</span>
       </div>}
+    </div>
+  );
+}
+// 분석 불가(no_supported_characters) 입력 안내. 원인과 다음 행동을 함께 보여준다.
+// retry=true면 사용자가 직접 고칠 수 있는 입력 텍스트라 재입력을 유도한다(OCR 추출 문구는 제외).
+function UnsupportedNote({ retry }: { retry?: boolean }) {
+  return (
+    <div className={styles.unsupportedNote} role="status">
+      <span className={styles.unsupportedIcon} aria-hidden="true"><Info /></span>
+      <div className={styles.unsupportedBody}>
+        <strong className={styles.unsupportedTitle}>분석할 수 있는 텍스트가 아니에요</strong>
+        <p className={styles.unsupportedDetail}>
+          특수문자·숫자·이모지만 있어 판정할 단어를 찾지 못했어요.{retry && " 한글이나 영문이 포함된 문장을 입력해 주세요."}
+        </p>
+        {retry && <p className={styles.unsupportedExample}>예: <b>이 약 어디서 구할 수 있나요?</b></p>}
+      </div>
     </div>
   );
 }
@@ -163,7 +179,11 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
   }
 
   const canSubmit = !pending && !reading && (Boolean(text.trim()) || images.length > 0);
-  const textResultMissing = Boolean(results && text.trim() && results.textResult?.isDrug == null);
+  // 텍스트 모델이 처리할 수 없는 입력. 안내만 하고 판정·점수·매칭은 보여주지 않는다.
+  const textUnsupported = results?.textResult?.source === "no_supported_characters";
+  // 텍스트만 입력했는데 분석 불가면 종합 판정 카드를 숨기고 폼 쪽 안내로 대신한다.
+  const unsupportedOnly = Boolean(results && textUnsupported && results.imageResults.length === 0);
+  const textResultMissing = Boolean(results && text.trim() && !textUnsupported && results.textResult?.isDrug == null);
 
   return (
     <div className={styles.page}>
@@ -247,7 +267,9 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
         </div>
       </form>
 
-      {results && (
+      {unsupportedOnly && <UnsupportedNote retry />}
+
+      {results && !unsupportedOnly && (
         <section className={styles.resultCard} data-tone={results.isDrug ? "danger" : textResultMissing ? "muted" : "safe"} aria-labelledby="overall-title" aria-live="polite">
           <div className={styles.resultHead}>
             <span className={styles.resultIcon} aria-hidden="true">{results.isDrug || textResultMissing ? <TriangleAlert /> : <ShieldCheck />}</span>
@@ -258,14 +280,16 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
             {Boolean(text.trim()) && <section className={styles.analysisPanel}>
               <div className={styles.analysisPanelHeader}>
               <span className={styles.itemIcon} aria-hidden="true"><FileText /></span>
-              <h3 className={styles.itemTitle}>텍스트 분석 <Verdict positive={results.textResult?.isDrug ?? null} /><SourceTag source={results.textResult?.source ?? null} /></h3>
+              <h3 className={styles.itemTitle}>텍스트 분석 {!textUnsupported && <><Verdict positive={results.textResult?.isDrug ?? null} /><SourceTag source={results.textResult?.source ?? null} /></>}</h3>
               </div>
               <div className={styles.itemBody}>
-                <DisclosureText text={text} label="입력한 텍스트" empty="입력한 텍스트가 없습니다." />
-                {results.textResult ? <>
-                  <Score label="텍스트 마약 확률" value={results.textResult.score} />
-                  <MatchTags terms={results.textResult.matchedTerms} intents={results.textResult.matchedIntents} />
-                </> : <p className={styles.subEmpty}>텍스트 분석 결과 미제공</p>}
+                {textUnsupported ? <UnsupportedNote retry /> : <>
+                  <DisclosureText text={text} label="입력한 텍스트" empty="입력한 텍스트가 없습니다." />
+                  {results.textResult ? <>
+                    {results.textResult.source !== "rule" && <Score label="텍스트 마약 확률" value={results.textResult.score} />}
+                    <MatchTags terms={results.textResult.matchedTerms} intents={results.textResult.matchedIntents} />
+                  </> : <p className={styles.subEmpty}>텍스트 분석 결과 미제공</p>}
+                </>}
               </div>
             </section>}
             {results.imageResults.length > 0 && <ul className={styles.imageResultList}>
@@ -294,14 +318,19 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                   </div>
                   <div className={styles.subBlock}>
                     <h4 className={styles.subTitle}>이미지 속 텍스트 (OCR)</h4>
-                    {result.ocrResults.length > 0 ? result.ocrResults.map((ocr, ocrIndex) => (
+                    {result.ocrResults.length > 0 ? result.ocrResults.map((ocr, ocrIndex) => {
+                      const ocrUnsupported = ocr.source === "no_supported_characters";
+                      return (
                       <div key={ocrIndex} className={styles.subBlock}>
-                        <p className={styles.subTitle}>OCR 분석 {ocrIndex + 1}<Verdict positive={ocr.isDrug} /></p>
-                        <Score label="OCR 마약 확률" value={ocr.score} />
-                        <DisclosureText text={ocr.text} />
-                        <MatchTags terms={ocr.matchedTerms} intents={ocr.matchedIntents} />
+                        <p className={styles.subTitle}>OCR 분석 {ocrIndex + 1}{!ocrUnsupported && <><Verdict positive={ocr.isDrug} /><SourceTag source={ocr.source} /></>}</p>
+                        {ocrUnsupported ? <UnsupportedNote /> : <>
+                          {ocr.source !== "rule" && <Score label="OCR 마약 확률" value={ocr.score} />}
+                          <DisclosureText text={ocr.text} />
+                          <MatchTags terms={ocr.matchedTerms} intents={ocr.matchedIntents} />
+                        </>}
                       </div>
-                    )) : result.ocrText.trim() ? <DisclosureText text={result.ocrText} /> : <p className={styles.subEmpty}>OCR 결과가 없습니다.</p>}
+                      );
+                    }) : result.ocrText.trim() ? <DisclosureText text={result.ocrText} /> : <p className={styles.subEmpty}>OCR 결과가 없습니다.</p>}
                   </div>
                 </div>
               </li>
