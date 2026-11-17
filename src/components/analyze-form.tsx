@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, FileText, ImagePlus, ScanSearch, ShieldCheck, TriangleAlert, X } from "lucide-react";
+import { ChevronDown, FileText, ImagePlus, ListChecks, ScanSearch, ShieldCheck, Sparkles, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { scoreColors, toPercent } from "@/lib/detections";
 import { analyzeContent, type AnalyzeResult } from "@/lib/text-detector";
@@ -25,11 +25,33 @@ function Verdict({ positive }: { positive: boolean | null }) {
   if (positive === null) return <span className={styles.itemBadge} data-tone="muted">판정 미제공</span>;
   return <span className={styles.itemBadge} data-tone={positive ? "danger" : "safe"}>{positive ? "양성" : "음성"}</span>;
 }
-function OcrText({ text }: { text: string }) {
-  if (!text.trim()) return <p className={styles.subEmpty}>추출 문구가 없습니다.</p>;
+function SourceTag({ source }: { source: "rule" | "model" | null }) {
+  if (source === "model") return <span className={styles.sourceTag}><Sparkles aria-hidden="true" />AI 모델</span>;
+  if (source === "rule") return <span className={styles.sourceTag}><ListChecks aria-hidden="true" />규칙 매칭</span>;
+  return null;
+}
+// 규칙 판정에서 걸린 키워드·의도를 평문 대신 칩으로 보여준다. 매칭이 하나도 없으면 아예 렌더하지 않는다.
+function MatchTags({ terms, intents }: { terms: string[]; intents: string[] }) {
+  if (!terms.length && !intents.length) return null;
+  return (
+    <div className={styles.matchGroups}>
+      {terms.length > 0 && <div className={styles.matchGroup}>
+        <span className={styles.matchGroupLabel}>매칭 용어</span>
+        <span className={styles.matchTags}>{terms.map((term, i) => <span key={`${term}-${i}`} className={styles.matchTag} data-kind="term">{term}</span>)}</span>
+      </div>}
+      {intents.length > 0 && <div className={styles.matchGroup}>
+        <span className={styles.matchGroupLabel}>매칭 의도</span>
+        <span className={styles.matchTags}>{intents.map((intent, i) => <span key={`${intent}-${i}`} className={styles.matchTag} data-kind="intent">{intent}</span>)}</span>
+      </div>}
+    </div>
+  );
+}
+// 입력 텍스트·OCR 추출 문구를 같은 접기/펼치기 상자로 보여준다.
+function DisclosureText({ text, label = "추출 문구", empty = "추출 문구가 없습니다." }: { text: string; label?: string; empty?: string }) {
+  if (!text.trim()) return <p className={styles.subEmpty}>{empty}</p>;
   return (
     <details className={styles.ocrDisclosure}>
-      <summary><span className={styles.ocrDisclosureLabel}><FileText aria-hidden="true" />추출 문구</span><span className={styles.ocrDisclosureAction}><span className={styles.ocrExpand}>보기</span><span className={styles.ocrCollapse}>접기</span><ChevronDown aria-hidden="true" /></span></summary>
+      <summary><span className={styles.ocrDisclosureLabel}><FileText aria-hidden="true" />{label}</span><span className={styles.ocrDisclosureAction}><span className={styles.ocrExpand}>보기</span><span className={styles.ocrCollapse}>접기</span><ChevronDown aria-hidden="true" /></span></summary>
       <p className={styles.ocrText}>{text}</p>
     </details>
   );
@@ -236,16 +258,13 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
             {Boolean(text.trim()) && <section className={styles.analysisPanel}>
               <div className={styles.analysisPanelHeader}>
               <span className={styles.itemIcon} aria-hidden="true"><FileText /></span>
-              <h3 className={styles.itemTitle}>텍스트 분석 <Verdict positive={results.textResult?.isDrug ?? null} /></h3>
+              <h3 className={styles.itemTitle}>텍스트 분석 <Verdict positive={results.textResult?.isDrug ?? null} /><SourceTag source={results.textResult?.source ?? null} /></h3>
               </div>
               <div className={styles.itemBody}>
-                <h4 className={styles.subTitle}>입력한 텍스트</h4>
-                <p className={styles.inputTextResult}>{text}</p>
+                <DisclosureText text={text} label="입력한 텍스트" empty="입력한 텍스트가 없습니다." />
                 {results.textResult ? <>
-                  <p className={styles.ruleNote}>{results.textResult.source === "rule" ? "규칙 · 사전 매칭으로 판정했습니다." : results.textResult.source === "model" ? "AI 모델로 분석했습니다." : "판정 방식이 제공되지 않았습니다."}</p>
                   <Score label="텍스트 마약 확률" value={results.textResult.score} />
-                  <p className={styles.itemMeta}>매칭 용어: {results.textResult.matchedTerms.join(", ") || "없음"}</p>
-                  <p className={styles.itemMeta}>매칭 의도: {results.textResult.matchedIntents.join(", ") || "없음"}</p>
+                  <MatchTags terms={results.textResult.matchedTerms} intents={results.textResult.matchedIntents} />
                 </> : <p className={styles.subEmpty}>텍스트 분석 결과 미제공</p>}
               </div>
             </section>}
@@ -279,11 +298,10 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                       <div key={ocrIndex} className={styles.subBlock}>
                         <p className={styles.subTitle}>OCR 분석 {ocrIndex + 1}<Verdict positive={ocr.isDrug} /></p>
                         <Score label="OCR 마약 확률" value={ocr.score} />
-                        <OcrText text={ocr.text} />
-                        <p className={styles.itemMeta}>매칭 용어: {ocr.matchedTerms.join(", ") || "없음"}</p>
-                        <p className={styles.itemMeta}>매칭 의도: {ocr.matchedIntents.join(", ") || "없음"}</p>
+                        <DisclosureText text={ocr.text} />
+                        <MatchTags terms={ocr.matchedTerms} intents={ocr.matchedIntents} />
                       </div>
-                    )) : result.ocrText.trim() ? <OcrText text={result.ocrText} /> : <p className={styles.subEmpty}>OCR 결과가 없습니다.</p>}
+                    )) : result.ocrText.trim() ? <DisclosureText text={result.ocrText} /> : <p className={styles.subEmpty}>OCR 결과가 없습니다.</p>}
                   </div>
                 </div>
               </li>
