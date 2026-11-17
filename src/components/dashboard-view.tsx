@@ -1,4 +1,4 @@
-import { BarChart3, FileText, Images, ShieldCheck, TrendingUp, TriangleAlert } from "lucide-react";
+import { BarChart3, FileText, Images, TrendingUp, TriangleAlert } from "lucide-react";
 import type { AnalysisStats, DashboardSummary } from "@/lib/detections-api";
 import CollectionTrendChart from "./collection-trend-chart";
 import styles from "./console.module.css";
@@ -19,11 +19,7 @@ const PREVIEW_SUMMARY: DashboardSummary = {
   ],
 };
 
-/**
- * TODO(mock): 백엔드가 음성 결과 저장·통계 API를 제공하기 전까지 쓰는 임시 통계.
- * 양성(positive)은 실제 저장 건수(summary)를 쓰고, 음성·텍스트/이미지 통계는
- * 그로부터 파생한 고정 mock이다. 통계 API가 생기면 이 함수를 교체한다.
- */
+/** 비로그인 미리보기 전용 예시 통계. 운영 화면에서는 사용하지 않는다. */
 function buildMockStats(summary: DashboardSummary) {
   const positive = summary.total;
   const negative = positive > 0 ? Math.round(positive * 2.4) + 4 : 0;
@@ -148,25 +144,22 @@ export default function DashboardView({
 }: {
   preview?: boolean;
   summary?: DashboardSummary;
-  /** 실데이터 집계. 미리보기·집계 실패 시 null이면 mock으로 대체 */
+  /** 상세 응답에서 집계한 분석 통계 */
   stats?: AnalysisStats | null;
 }) {
-  const mock = buildMockStats(summary);
-  // 텍스트·이미지 통계는 실데이터 집계가 있으면 그걸 쓰고, 없으면 mock을 쓴다.
+  const mock = preview ? buildMockStats(summary) : null;
+  // 예시 데이터는 비로그인 미리보기에서만 사용한다.
   const text = stats
     ? { total: stats.analyzedText, model: stats.textModel, ruleOnly: stats.textRuleOnly, terms: stats.terms, intents: stats.intents }
-    : { total: mock.total, ...mock.text };
+    : mock ? { total: mock.total, ...mock.text } : { total: 0, model: 0, ruleOnly: 0, terms: [], intents: [] };
   const image = stats
     ? { total: stats.imageTotal, withOcr: stats.withOcr, withoutOcr: stats.withoutOcr, objects: stats.objects }
-    : { total: mock.total, withOcr: mock.image.withOcr, withoutOcr: mock.image.withoutOcr, objects: mock.image.objects };
-  // TODO(mock): 오늘 수집 합계도 통계 API 제공 전까지 양성 건수 기반 파생값
-  const todayTotal = summary.today > 0 ? summary.today * 3 + 1 : 0;
-
+    : mock ? { total: mock.total, withOcr: mock.image.withOcr, withoutOcr: mock.image.withoutOcr, objects: mock.image.objects } : { total: 0, withOcr: 0, withoutOcr: 0, objects: [] };
+  const trend = summary.trend.map((day) => ({ ...day, total: day.count, positive: 0, negative: 0 }));
   const metrics = [
-    { title: "전체 수집", value: mock.total, tone: "blue", Icon: BarChart3, foot: "수집·분석된 게시글" },
-    { title: "양성 (의심)", value: mock.positive, tone: "red", Icon: TriangleAlert, foot: `전체의 ${percent(mock.positive, mock.total)}%` },
-    { title: "음성 (정상)", value: mock.negative, tone: "green", Icon: ShieldCheck, foot: `전체의 ${percent(mock.negative, mock.total)}%` },
-    { title: "오늘 수집", value: todayTotal, tone: "slate", Icon: TrendingUp, foot: `의심 ${summary.today}건 포함` },
+    { title: "전체 탐지", value: summary.total, tone: "blue", Icon: BarChart3, foot: "저장된 탐지 게시글" },
+    { title: "미확인", value: summary.unconfirmed, tone: "red", Icon: TriangleAlert, foot: "검토가 필요한 게시글" },
+    { title: "오늘 탐지", value: summary.today, tone: "slate", Icon: TrendingUp, foot: "오늘 저장된 게시글" },
   ];
 
   return (
@@ -183,16 +176,16 @@ export default function DashboardView({
       <div className={`${styles.panels} ${styles.panelsSingle}`}>
         <section className={styles.panel}>
           <header>
-            <h2><BarChart3 aria-hidden="true" />수집 추이</h2>
-            <small>최근 7일 · 전체 {mock.total.toLocaleString("ko-KR")}건</small>
+            <h2><BarChart3 aria-hidden="true" />탐지 추이</h2>
+            <small>최근 7일 · 합계 {summary.trend.reduce((sum, day) => sum + day.count, 0).toLocaleString("ko-KR")}건</small>
           </header>
           <div className={styles.lineChart}>
-            <CollectionTrendChart trend={mock.trend} />
+            <CollectionTrendChart trend={trend} totalOnly />
           </div>
         </section>
       </div>
 
-      <div className={`${styles.panels} ${styles.panelsEven}`}>
+      {!stats && !preview ? <p role="status">분석 통계를 불러오지 못했습니다.</p> : <div className={`${styles.panels} ${styles.panelsEven}`}>
         <section className={styles.panel}>
           <header>
             <h2><FileText aria-hidden="true" />텍스트 분석 통계</h2>
@@ -233,7 +226,7 @@ export default function DashboardView({
             <CountBars items={image.objects} color={COLOR.positive} />
           </div>
         </section>
-      </div>
+      </div>}
     </div>
   );
 }

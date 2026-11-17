@@ -20,6 +20,7 @@ export type DetectionImage = {
 
 /** 백엔드 text_ai_result에서 화면에 쓰는 값만 추린 것 */
 export type TextAnalysis = {
+  source: "rule" | "model" | null;
   /** 종합 의심 판정(prediction=1). 모델·규칙 어느 쪽이든 의심이면 1 */
   flagged: boolean;
   /**
@@ -47,7 +48,7 @@ export type ImageAnalysisSummary = {
 
 export type DetectionRow = {
   id: string;
-  score: number;
+  isDrug: boolean | null;
   /** 텍스트 AI 모델의 마약 확률(0~1). 모델 점수가 없으면 null */
   textScore: number | null;
   /** 텍스트 분석의 종합 의심 판정. 분석 자체가 없으면 null */
@@ -73,9 +74,9 @@ export type DetectionDetailData = DetectionRow & {
   textAnalysis: TextAnalysis | null;
 };
 
-/** 0~1 점수를 "92%" 형태의 비율 문자열로 바꾼다. */
-export function toPercent(score: number) {
-  return `${Math.round(Math.min(1, Math.max(0, score)) * 100)}%`;
+/** 0~1 점수를 비율 문자열로 바꾼다. 필요한 화면에서는 소수 자릿수를 지정한다. */
+export function toPercent(score: number, maximumFractionDigits = 0) {
+  return `${(Math.min(1, Math.max(0, score)) * 100).toLocaleString("ko-KR", { maximumFractionDigits })}%`;
 }
 
 export const STATUS_LABEL: Record<ReviewStatus, string> = {

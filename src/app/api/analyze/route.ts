@@ -3,6 +3,9 @@
 // 다른 화면(detections-api.ts)처럼 서버를 거치도록 통일한다.
 
 import { NextResponse } from "next/server";
+import { prepareAnalyzeRequest } from "@/lib/text-detector";
+
+export const maxDuration = 120;
 
 const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run.app";
 
@@ -14,13 +17,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ detail: "invalid json" }, { status: 400 });
   }
 
-  // 백엔드가 받는 필드만 추려서 전달한다(임의 페이로드 중계 방지).
-  const input = (typeof raw === "object" && raw !== null ? raw : {}) as Record<string, unknown>;
-  const body: Record<string, string> = {};
-  if (typeof input.text === "string" && input.text.trim()) body.text = input.text;
-  if (typeof input.image === "string" && input.image) body.image = input.image;
-  if (Object.keys(body).length === 0) {
-    return NextResponse.json({ detail: "text or image required" }, { status: 422 });
+  const prepared = prepareAnalyzeRequest(raw);
+  if (prepared.error !== undefined) {
+    return NextResponse.json({ detail: prepared.error }, { status: prepared.status });
   }
 
   const baseUrl = (process.env.BACKEND_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
     const response = await fetch(`${baseUrl}/public/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(prepared.body),
       cache: "no-store",
       // AI 분석(OCR·객체 탐지)이 오래 걸릴 수 있다. 클라이언트 타임아웃(120초)보다 짧게 둔다.
       signal: AbortSignal.timeout(115_000),

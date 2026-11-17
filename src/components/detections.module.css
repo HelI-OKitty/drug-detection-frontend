@@ -27,6 +27,7 @@
 
 /* 목록의 텍스트/이미지 의심 판정 배지. 세부 분석은 상세 페이지에서 확인한다. */
 .cellNone { color:#9aa8b9; font-weight:700; }
+.resultNote { margin:0; padding:14px 20px; border-top:1px solid #e6edf3; color:#52657b; font-size:12px; line-height:1.7; }
 .verdictBadge { display:inline-flex; align-items:center; justify-content:center; min-width:56px; padding:6px 9px; border:1px solid transparent; border-radius:9px; font-size:12px; font-weight:700; white-space:nowrap; }
 .verdictBadge[data-flagged=true] { background:#fde8ec; color:#cf2548; border-color:#f3c0cc; }
 .verdictBadge[data-flagged=false] { background:#f1f5f9; color:#5b6b7d; border-color:#e2e8f0; }

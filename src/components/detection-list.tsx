@@ -16,7 +16,7 @@ const PER_PAGE = 10;
 
 /** 판정 배지. 분석이 없으면 회색 대시. 이미지 결과는 "정상" 대신 검출 여부로 표현한다. */
 function VerdictBadge({ flagged, kind = "text" }: { flagged: boolean | null; kind?: "text" | "image" }) {
-  if (flagged === null) return <span className={styles.cellNone}>–</span>;
+  if (flagged === null) return <span className={styles.cellNone} aria-label="개별 판정 미제공" title="개별 판정 미제공">–</span>;
   const label = kind === "image" ? (flagged ? "검출" : "미검출") : flagged ? "의심" : "정상";
   return (
     <span className={styles.verdictBadge} data-flagged={flagged}>
@@ -102,11 +102,9 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
             </thead>
             <tbody>
               {rows.map((item) => {
-                // 이미지 결과는 장별 판정 중 하나라도 의심이면 의심으로 요약. 세부는 상세에서 확인한다.
-                const imageFlagged =
-                  item.imageAnalyses.length > 0
-                    ? item.imageAnalyses.some((image) => image.flagged)
-                    : null;
+                const imageFlagged = item.imageAnalyses.length > 0
+                  ? item.imageAnalyses.some((image) => image.flagged)
+                  : null;
                 return (
                   <tr className={styles.row} key={item.id}>
                     <td><VerdictBadge flagged={item.textFlagged} /></td>
@@ -139,6 +137,8 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
             </tbody>
           </table>
         </div>
+
+        {rows.length > 0 && <p className={styles.resultNote}>–는 목록에 개별 판정이 제공되지 않은 항목입니다. 게시글을 선택하면 상세 분석 결과를 확인할 수 있습니다.</p>}
 
         {rows.length === 0 && (
           <p className={styles.empty} role="status">조건에 맞는 탐지 게시글이 없습니다.</p>
