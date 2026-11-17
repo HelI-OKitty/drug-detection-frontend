@@ -146,8 +146,17 @@
 .itemBadge[data-tone=error] { background:#eef2f6; color:#7d8b9c; }
 .itemBadge[data-tone=muted] { background:#eef2f6; color:#7d8b9c; }
 .itemMeta { margin:0 0 4px; font-size:12px; line-height:1.7; color:#52657b; overflow-wrap:anywhere; }
-/* 모델 점수 없이 규칙 매칭으로 판정된 결과 안내 */
-.ruleNote { margin:6px 0 4px; font-size:12px; color:#8a9bb1; }
+/* 판정 방식(AI 모델 / 규칙 매칭) pill — 판정 배지 옆에 둔다 */
+.sourceTag { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:7px; background:#eef3f7; color:#52657b; font-size:11px; font-weight:600; white-space:nowrap; }
+.sourceTag > svg { width:12px; height:12px; flex-shrink:0; stroke-width:2; }
+/* 규칙 판정에서 걸린 키워드·의도를 칩으로 */
+.matchGroups { display:flex; flex-direction:column; gap:9px; margin:14px 0 2px; }
+.matchGroup { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; }
+.matchGroupLabel { flex-shrink:0; font-size:12px; color:#8a9bb1; }
+.matchTags { display:inline-flex; flex-wrap:wrap; gap:6px; }
+.matchTag { padding:3px 10px; border-radius:7px; font-size:12px; font-weight:600; line-height:1.55; }
+.matchTag[data-kind=term] { background:#fdeef1; color:#c23350; }
+.matchTag[data-kind=intent] { background:#eef1fb; color:#4a5bbf; }
 .probRow { display:flex; align-items:center; gap:10px; margin:8px 0 4px; max-width:420px; }
 .probLabel { flex-shrink:0; font-size:11px; color:#8a9bb1; white-space:nowrap; }
 .probTrack { flex:1; height:7px; border-radius:99px; background:#eef2f6; overflow:hidden; }
@@ -158,7 +167,12 @@
 .subBlock + .subBlock { padding-top:14px; border-top:1px solid #f0f4f8; }
 .subTitle { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 7px; font-size:11px; font-weight:600; letter-spacing:.3px; color:#8a9bb1; }
 .subEmpty { margin:0; font-size:12px; color:#9aa8b9; }
-.ocrText { margin:0 0 8px; font-size:12px; line-height:1.7; color:#52657b; overflow-wrap:anywhere; }
+.ocrText { margin:0 0 8px; font-size:12px; line-height:1.7; color:#52657b; overflow-wrap:anywhere; white-space:pre-wrap; }
+.ocrDisclosure { margin:8px 0 12px; border:1px solid #e0e7ee; border-radius:8px; background:#f8fafc; }
+.ocrDisclosure summary { padding:12px; color:#52657b; font-size:12px; cursor:pointer; }
+.ocrDisclosure .ocrText { margin:0; padding:0 12px 12px; }
+.ocrCollapse, .ocrDisclosure[open] .ocrExpand { display:none; }
+.ocrDisclosure[open] .ocrCollapse { display:inline; }
 .objectList { display:flex; flex-direction:column; gap:9px; margin:4px 0 0; padding:0; list-style:none; max-width:420px; }
 .objectRow { display:flex; align-items:center; gap:10px; }
 .objectName { flex-shrink:0; max-width:42%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:#52657b; }
@@ -243,4 +257,46 @@
   .page { padding:20px 16px 32px; }
   .cardHeader, .cardBody { padding:16px; }
   .fieldGrid { grid-template-columns:1fr; }
+}
+
+/* 단순 분석 결과: 실제 카드 너비에 따라 좌우 비교 또는 세로 배치 */
+.resultCard { container-type:inline-size; }
+.resultCard[data-tone=muted] .resultIcon { background:#eef2f6; color:#52657b; }
+.analysisColumns { display:grid; gap:28px; margin-top:20px; padding-top:24px; border-top:1px solid #e0e7ee; align-items:start; }
+.analysisPanel { min-width:0; }
+.analysisColumns[data-split=true] > .imageResultList { padding-top:24px; border-top:1px solid #e0e7ee; }
+.imageResultList > .analysisPanel + .analysisPanel { padding-top:24px; border-top:1px solid #e0e7ee; }
+.analysisPanelHeader { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+.analysisPanelHeader .itemTitle { margin:0; font-size:15px; }
+.analysisPanelHeader .itemIcon { width:24px; height:32px; border:0; border-radius:0; background:transparent; }
+.analysisPanelHeader .itemBadge { font-family:inherit; font-size:11px; letter-spacing:0; }
+.imageResultHeading { min-width:0; }
+.imageResultHeading .itemMeta { margin:6px 0 0; }
+.imageResultList { display:grid; gap:16px; min-width:0; margin:0; padding:0; list-style:none; }
+.analysisPanel .probRow { max-width:none; flex-wrap:wrap; margin:12px 0 18px; }
+.analysisPanel .sourceTag { font-size:12px; letter-spacing:0; }
+.analysisPanel .probLabel { width:100%; color:#52657b; font-size:12px; }
+.analysisPanel .probTrack { min-width:40px; }
+.analysisPanel .probValue { font-size:14px; }
+.analysisPanel .itemMeta { font-size:13px; }
+.analysisPanel .subTitle { color:#52657b; font-size:12px; }
+.analysisPanel .subBlock { margin-top:20px; }
+.ocrDisclosure { margin:12px 0; border:0; background:#f8fafc; overflow:hidden; }
+.ocrDisclosure summary { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:48px; padding:12px 14px; list-style:none; }
+.ocrDisclosure summary::-webkit-details-marker { display:none; }
+.ocrDisclosure summary:hover { background:#eef2f6; }
+.ocrDisclosure summary:focus-visible { outline-offset:-3px; }
+.ocrDisclosureLabel,.ocrDisclosureAction { display:inline-flex; align-items:center; gap:8px; }
+.ocrDisclosureLabel { font-size:13px; font-weight:600; }
+.ocrDisclosureAction { font-size:12px; flex-shrink:0; }
+.ocrDisclosureLabel svg,.ocrDisclosureAction svg { width:16px; height:16px; }
+.ocrDisclosure[open] .ocrDisclosureAction svg { transform:rotate(180deg); }
+.ocrDisclosure[open] summary { border-bottom:1px solid #e0e7ee; }
+.ocrDisclosure .ocrText { padding:14px; font-size:13px; line-height:1.8; color:#243447; }
+@container (min-width:700px) {
+  .analysisColumns[data-split=true] { grid-template-columns:minmax(0, .85fr) minmax(0, 1.35fr); }
+  .analysisColumns[data-split=true] > .imageResultList { padding-top:0; padding-left:28px; border-top:0; border-left:1px solid #e0e7ee; }
+}
+@media(max-width:600px) {
+  .resultCard { padding:18px 14px; }
 }
