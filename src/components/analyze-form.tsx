@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, ImagePlus, ScanSearch, ShieldCheck, TriangleAlert, X } from "lucide-react";
+import { ChevronDown, FileText, ImagePlus, ScanSearch, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { scoreColors, toPercent } from "@/lib/detections";
 import { analyzeContent, type AnalyzeResult } from "@/lib/text-detector";
@@ -8,26 +8,31 @@ import viewerStyles from "./detections.module.css";
 import styles from "./settings.module.css";
 
 const MAX_IMAGES = 5;
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 
-type PickedImage = { id: string; name: string; dataUrl: string; base64: string };
-type ItemResult = {
-  label: string;
-  thumb?: string;
-  outcome?: AnalyzeResult;
-  /** 이미지에서 추출된 OCR 텍스트를 다시 텍스트 분석에 돌린 결과 */
-  ocrOutcome?: AnalyzeResult;
-  error?: string;
-};
+type PickedImage = { id: string; name: string; dataUrl: string; base64: string; bytes: number };
 
-function AnalysisMethod({ result }: { result: AnalyzeResult }) {
-  return <>
-    <p className={styles.ruleNote}>
-      {result.textSource === "rule" ? "규칙(사전 매칭) 판정" : result.textSource === "model" ? "모델 판정" : "판정 방식 미제공"}
-    </p>
-    {result.matchedTerms.length > 0 && <p className={styles.itemMeta}>매칭 용어: {result.matchedTerms.join(", ")}</p>}
-    {result.matchedIntents.length > 0 && <p className={styles.itemMeta}>매칭 의도: {result.matchedIntents.join(", ")}</p>}
-  </>;
+function Score({ label, value }: { label: string; value: number | null }) {
+  return <div className={styles.probRow}>
+    <span className={styles.probLabel}>{label}</span>
+    {value === null ? <span className={styles.itemMeta}>점수 미제공</span> : <>
+      <i className={styles.probTrack} aria-hidden="true"><b style={{ width: toPercent(value, 2), background: scoreColors(value).stroke }} /></i>
+      <strong className={styles.probValue}>{toPercent(value, 2)}</strong>
+    </>}
+  </div>;
+}
+function Verdict({ positive }: { positive: boolean | null }) {
+  if (positive === null) return <span className={styles.itemBadge} data-tone="muted">판정 미제공</span>;
+  return <span className={styles.itemBadge} data-tone={positive ? "danger" : "safe"}>{positive ? "양성" : "음성"}</span>;
+}
+function OcrText({ text }: { text: string }) {
+  if (!text.trim()) return <p className={styles.subEmpty}>추출 문구가 없습니다.</p>;
+  return (
+    <details className={styles.ocrDisclosure}>
+      <summary><span className={styles.ocrDisclosureLabel}><FileText aria-hidden="true" />추출 문구</span><span className={styles.ocrDisclosureAction}><span className={styles.ocrExpand}>보기</span><span className={styles.ocrCollapse}>접기</span><ChevronDown aria-hidden="true" /></span></summary>
+      <p className={styles.ocrText}>{text}</p>
+    </details>
+  );
 }
 
 function readImage(file: File): Promise<PickedImage> {
@@ -38,6 +43,7 @@ function readImage(file: File): Promise<PickedImage> {
       resolve({
         id: crypto.randomUUID(),
         name: file.name,
+        bytes: file.size,
         dataUrl,
         // API는 data URL 접두사 없는 순수 base64를 받는다.
         base64: dataUrl.slice(dataUrl.indexOf(",") + 1),
@@ -52,9 +58,10 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
   const [text, setText] = useState("");
   const [images, setImages] = useState<PickedImage[]>([]);
   const [pending, setPending] = useState(false);
-  const [progress, setProgress] = useState("");
+  const [reading, setReading] = useState(false);
+  const readingFiles = useRef(false);
   const [error, setError] = useState("");
-  const [results, setResults] = useState<ItemResult[] | null>(null);
+  const [results, setResults] = useState<AnalyzeResult | null>(null);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const inFlight = useRef(false);
@@ -75,10 +82,14 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
   }
 
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+    if (readingFiles.current || inFlight.current) return;
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (files.length === 0) return;
     resetOutcome();
+    readingFiles.current = true;
+    setReading(true);
+    let totalBytes = images.reduce((sum, image) => sum + image.bytes, 0);
 
     const room = MAX_IMAGES - images.length;
     if (files.length > room) setError(`이미지는 최대 ${MAX_IMAGES}장까지 추가할 수 있습니다.`);
@@ -88,17 +99,20 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
         setError("이미지 파일만 추가할 수 있습니다.");
         continue;
       }
-      if (file.size > MAX_IMAGE_BYTES) {
-        setError("이미지는 4MB 이하만 추가할 수 있습니다.");
+      if (totalBytes + file.size > MAX_IMAGE_BYTES) {
+        setError("이미지는 합계 3MB 이하로 추가해 주세요.");
         continue;
       }
       try {
         picked.push(await readImage(file));
+        totalBytes += file.size;
       } catch {
         setError("이미지를 읽지 못했습니다. 다른 파일로 시도해 주세요.");
       }
     }
     if (picked.length > 0) setImages((current) => [...current, ...picked]);
+    readingFiles.current = false;
+    setReading(false);
   }
 
   function removeImage(id: string) {
@@ -108,59 +122,26 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (inFlight.current) return;
+    if (inFlight.current || readingFiles.current) return;
     resetOutcome();
-
-    // 입력별 스코어를 따로 보여주기 위해 텍스트와 각 이미지를 단독으로 분석한다.
-    const tasks: { label: string; thumb?: string; payload: { text?: string; image?: string } }[] = [];
-    if (text.trim()) tasks.push({ label: "텍스트", payload: { text } });
-    images.forEach((image, index) => {
-      tasks.push({ label: `이미지 ${index + 1} · ${image.name}`, thumb: image.dataUrl, payload: { image: image.base64 } });
-    });
-    if (tasks.length === 0) {
+    if (!text.trim() && images.length === 0) {
       setError("분석할 텍스트를 입력하거나 이미지를 추가해 주세요.");
       return;
     }
-
     inFlight.current = true;
     setPending(true);
-    const collected: ItemResult[] = [];
     try {
-      // 서버 부하와 요청 제한을 고려해 항목별로 순차 분석한다.
-      for (let index = 0; index < tasks.length; index += 1) {
-        setProgress(`${index + 1}/${tasks.length} 분석 중입니다. 잠시만 기다려 주세요…`);
-        const task = tasks[index];
-        try {
-          const outcome = await analyzeContent(task.payload);
-          let ocrOutcome: AnalyzeResult | undefined;
-          // 이미지에서 텍스트가 추출됐으면 그 텍스트가 얼마나 의심되는지도 따로 분석한다.
-          if (task.payload.image && outcome.ocrText) {
-            try {
-              ocrOutcome = await analyzeContent({ text: outcome.ocrText });
-            } catch {
-              // OCR 텍스트 추가 분석 실패는 이미지 결과 표시를 막지 않는다.
-            }
-          }
-          collected.push({ label: task.label, thumb: task.thumb, outcome, ocrOutcome });
-        } catch (err) {
-          collected.push({ label: task.label, thumb: task.thumb, error: err instanceof Error ? err.message : "분석에 실패했습니다." });
-        }
-      }
-      setResults(collected);
-      if (!collected.some((item) => item.outcome)) {
-        setError("분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-      }
+      setResults(await analyzeContent({ text, images: images.map((image) => image.base64) }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "분석에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       inFlight.current = false;
       setPending(false);
-      setProgress("");
     }
   }
 
-  const analyzed = results?.filter((item) => item.outcome) ?? [];
-  // 이미지 자체는 정상이어도 이미지 속 텍스트가 의심이면 전체 판정은 의심으로 본다.
-  const anyDrug = analyzed.some((item) => item.outcome?.isDrug || item.ocrOutcome?.isDrug);
-  const canSubmit = !pending && (Boolean(text.trim()) || images.length > 0);
+  const canSubmit = !pending && !reading && (Boolean(text.trim()) || images.length > 0);
+  const textResultMissing = Boolean(results && text.trim() && results.textResult?.isDrug == null);
 
   return (
     <div className={styles.page}>
@@ -171,7 +152,7 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
             <small>텍스트 {text.length.toLocaleString("ko-KR")}자 · 이미지 {images.length}/{MAX_IMAGES}</small>
           </header>
           <div className={styles.cardBody}>
-            <p className={styles.help}>게시글 텍스트나 이미지를 넣으면 마약 관련 의심 여부를 분석합니다. 텍스트와 각 이미지가 얼마나 의심되는지 스코어로 보여줍니다.</p>
+            <p className={styles.help}>텍스트와 이미지를 함께 분석합니다. 게시글의 종합 판정과 텍스트·이미지별 결과를 나누어 확인할 수 있습니다.</p>
             <div className={styles.field}>
               <label htmlFor="analyze-text">분석할 텍스트 (선택)</label>
               <textarea
@@ -183,13 +164,13 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                   resetOutcome();
                 }}
                 placeholder="분석할 게시글이나 문장을 입력하거나 붙여넣으세요."
-                disabled={pending}
+                disabled={pending || reading}
                 className={styles.textarea}
               />
             </div>
 
             <div className={styles.field} style={{ marginTop: 16 }}>
-              <label htmlFor="analyze-images">이미지 (선택, 최대 {MAX_IMAGES}장 · 장당 4MB)</label>
+              <label htmlFor="analyze-images">이미지 (선택, 최대 {MAX_IMAGES}장 · 전체 3MB 이하)</label>
               <input
                 ref={fileInput}
                 id="analyze-images"
@@ -198,13 +179,14 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                 multiple
                 hidden
                 onChange={handleFiles}
+                disabled={pending || reading}
               />
               <div>
                 <button
                   type="button"
                   className={styles.addImage}
                   onClick={() => fileInput.current?.click()}
-                  disabled={pending || images.length >= MAX_IMAGES}
+                  disabled={pending || reading || images.length >= MAX_IMAGES}
                 >
                   <ImagePlus aria-hidden="true" />이미지 추가
                 </button>
@@ -220,7 +202,7 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                         type="button"
                         className={styles.thumbRemove}
                         onClick={() => removeImage(image.id)}
-                        disabled={pending}
+                        disabled={pending || reading}
                         aria-label={`${image.name} 제거`}
                       >
                         <X aria-hidden="true" />
@@ -235,7 +217,7 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
 
         <div className={styles.footer}>
           <p role="status" aria-live="polite" aria-atomic="true" className={error ? styles.error : styles.savedNote}>
-            {pending ? progress : error}
+            {pending ? "텍스트와 이미지를 분석하고 있습니다. 잠시만 기다려 주세요…" : reading ? "이미지를 읽고 있습니다…" : error}
           </p>
           <button type="submit" className={styles.saveButton} disabled={!canSubmit}>
             <ScanSearch aria-hidden="true" />{pending ? "분석 중…" : "분석하기"}
@@ -243,150 +225,71 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
         </div>
       </form>
 
-      {results !== null && analyzed.length > 0 && (
-        <section className={styles.resultCard} data-tone={anyDrug ? "danger" : "safe"} aria-labelledby="overall-title">
+      {results && (
+        <section className={styles.resultCard} data-tone={results.isDrug ? "danger" : textResultMissing ? "muted" : "safe"} aria-labelledby="overall-title" aria-live="polite">
           <div className={styles.resultHead}>
-            <span className={styles.resultIcon} aria-hidden="true">
-              {anyDrug ? <TriangleAlert /> : <ShieldCheck />}
-            </span>
-            <h2 id="overall-title" className={styles.resultTitle}>
-              {anyDrug ? "마약 관련 의심 신호가 탐지되었습니다" : "마약 관련 의심 신호가 탐지되지 않았습니다"}
-            </h2>
+            <span className={styles.resultIcon} aria-hidden="true">{results.isDrug || textResultMissing ? <TriangleAlert /> : <ShieldCheck />}</span>
+            <h2 id="overall-title" className={styles.resultTitle}>종합 판정 · {results.isDrug ? "양성" : textResultMissing ? "확인 필요" : "음성"}</h2>
           </div>
-          <ul className={styles.scoreList}>
-              {results.map((item, index) => (
-                <li key={`${item.label}-${index}`} className={styles.itemRow}>
-                  {item.thumb ? (
-                    <button
-                      type="button"
-                      className={styles.thumbZoom}
-                      onClick={() => setViewerUrl(item.thumb ?? null)}
-                      aria-label={`${item.label} 원본 크기로 보기`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className={styles.itemThumb} src={item.thumb} alt="" aria-hidden="true" />
-                    </button>
-                  ) : (
-                    <span className={styles.itemIcon} aria-hidden="true"><FileText /></span>
-                  )}
-                  <div className={styles.itemBody}>
-                    <p className={styles.itemTitle}>
-                      {item.label}
-                      {/* 이미지 행은 세부 블록(객체 탐지/OCR)에서 상태를 보여주므로 텍스트 행에만 배지를 단다. */}
-                      {item.outcome && !item.thumb && (
-                        <span className={styles.itemBadge} data-tone={item.outcome.isDrug ? "danger" : "safe"}>
-                          {item.outcome.isDrug ? "의심" : "정상"}
-                        </span>
-                      )}
-                      {item.error && <span className={styles.itemBadge} data-tone="error">실패</span>}
-                    </p>
-                    {item.error && <p className={styles.itemMeta}>{item.error}</p>}
-                    {/* 판정 방식은 점수 유무가 아닌 서버의 text_source를 사용한다. */}
-                    {!item.thumb && item.outcome && (
-                      <AnalysisMethod result={item.outcome} />
-                    )}
-                    {!item.thumb && item.outcome?.probDrug !== null && item.outcome?.probDrug !== undefined && (
-                      <div className={styles.probRow}>
-                        <span className={styles.probLabel}>마약 의심 비율</span>
-                        <i className={styles.probTrack} aria-hidden="true">
-                          <b
-                            style={{
-                              width: toPercent(item.outcome.probDrug, 2),
-                              background: scoreColors(item.outcome.probDrug).stroke,
-                            }}
-                          />
-                        </i>
-                        <strong className={styles.probValue} style={{ color: scoreColors(item.outcome.probDrug).fg }}>
-                          {toPercent(item.outcome.probDrug, 2)}
-                        </strong>
-                      </div>
-                    )}
-                    {item.outcome && item.thumb && (
-                      <>
-                        <div className={styles.subBlock}>
-                          <p className={styles.subTitle}>
-                            객체 탐지 결과
-                            {/* "정상" 표기는 마약 의심 여부로 읽혀서, 객체 검출 여부(검출됨/미검출)로 표현한다. */}
-                            {item.outcome.detectedObjects.length > 0 ? (
-                              <span className={styles.itemBadge} data-tone="danger">검출됨</span>
-                            ) : (
-                              <span className={styles.itemBadge} data-tone="muted">미검출</span>
-                            )}
-                          </p>
-                          {item.outcome.detectedObjects.length > 0 ? (
-                            <ul className={styles.objectList}>
-                              {[...item.outcome.detectedObjects]
-                                .sort((a, b) => b.confidence - a.confidence)
-                                .map((object, objectIndex) => (
-                                  <li key={`${object.className}-${objectIndex}`} className={styles.objectRow}>
-                                    <span className={styles.objectName} title={object.className}>{object.className}</span>
-                                    <i className={styles.probTrack} aria-hidden="true">
-                                      <b
-                                        style={{
-                                          width: toPercent(object.confidence),
-                                          background: scoreColors(object.confidence).stroke,
-                                        }}
-                                      />
-                                    </i>
-                                    <strong className={styles.probValue} style={{ color: scoreColors(object.confidence).fg }}>
-                                      {toPercent(object.confidence)}
-                                    </strong>
-                                  </li>
-                                ))}
-                            </ul>
-                          ) : (
-                            <p className={styles.subEmpty}>이미지에서 탐지된 객체가 없습니다.</p>
-                          )}
-                        </div>
-                        <div className={styles.subBlock}>
-                          <p className={styles.subTitle}>
-                            이미지 속 텍스트 (OCR)
-                            {item.outcome.ocrText ? (
-                              item.ocrOutcome && (
-                                <span className={styles.itemBadge} data-tone={item.ocrOutcome.isDrug ? "danger" : "safe"}>
-                                  {item.ocrOutcome.isDrug ? "의심" : "정상"}
-                                </span>
-                              )
-                            ) : (
-                              <span className={styles.itemBadge} data-tone="muted">미검출</span>
-                            )}
-                          </p>
-                          {item.outcome.ocrText ? (
-                            <>
-                              <p className={styles.ocrText}>{item.outcome.ocrText}</p>
-                              {item.ocrOutcome && (
-                                <AnalysisMethod result={item.ocrOutcome} />
-                              )}
-                              {item.ocrOutcome?.probDrug !== null && item.ocrOutcome?.probDrug !== undefined && (
-                                <div className={styles.probRow}>
-                                  <span className={styles.probLabel}>마약 의심 비율</span>
-                                  <i className={styles.probTrack} aria-hidden="true">
-                                    <b
-                                      style={{
-                                        width: toPercent(item.ocrOutcome.probDrug, 2),
-                                        background: scoreColors(item.ocrOutcome.probDrug).stroke,
-                                      }}
-                                    />
-                                  </i>
-                                  <strong
-                                    className={styles.probValue}
-                                    style={{ color: scoreColors(item.ocrOutcome.probDrug).fg }}
-                                  >
-                                    {toPercent(item.ocrOutcome.probDrug, 2)}
-                                  </strong>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <p className={styles.subEmpty}>이미지에서 추출된 텍스트가 없습니다.</p>
-                          )}
-                        </div>
-                      </>
-                    )}
+          {textResultMissing && <p className={styles.itemMeta}>텍스트 판정이 누락되었습니다. 다시 분석해 주세요.</p>}
+          <div className={styles.analysisColumns} data-split={Boolean(text.trim() && results.imageResults.length)}>
+            {Boolean(text.trim()) && <section className={styles.analysisPanel}>
+              <div className={styles.analysisPanelHeader}>
+              <span className={styles.itemIcon} aria-hidden="true"><FileText /></span>
+              <h3 className={styles.itemTitle}>텍스트 분석 <Verdict positive={results.textResult?.isDrug ?? null} /></h3>
+              </div>
+              <div className={styles.itemBody}>
+                <h4 className={styles.subTitle}>입력한 텍스트</h4>
+                <p className={styles.inputTextResult}>{text}</p>
+                {results.textResult ? <>
+                  <p className={styles.ruleNote}>{results.textResult.source === "rule" ? "규칙 · 사전 매칭으로 판정했습니다." : results.textResult.source === "model" ? "AI 모델로 분석했습니다." : "판정 방식이 제공되지 않았습니다."}</p>
+                  <Score label="텍스트 마약 확률" value={results.textResult.score} />
+                  <p className={styles.itemMeta}>매칭 용어: {results.textResult.matchedTerms.join(", ") || "없음"}</p>
+                  <p className={styles.itemMeta}>매칭 의도: {results.textResult.matchedIntents.join(", ") || "없음"}</p>
+                </> : <p className={styles.subEmpty}>텍스트 분석 결과 미제공</p>}
+              </div>
+            </section>}
+            {results.imageResults.length > 0 && <ul className={styles.imageResultList}>
+            {results.imageResults.map((result, index) => (
+              <li key={images[index].id} className={styles.analysisPanel}>
+                <div className={styles.analysisPanelHeader}>
+                <button type="button" className={styles.thumbZoom} onClick={() => setViewerUrl(images[index].dataUrl)} aria-label={`이미지 ${index + 1} 원본 크기로 보기`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className={styles.itemThumb} src={images[index].dataUrl} alt={images[index].name} />
+                </button>
+                <div className={styles.imageResultHeading}>
+                  <h3 className={styles.itemTitle}>이미지 {index + 1}<Verdict positive={result.isDrug} /></h3>
+                  <p className={styles.itemMeta}>{images[index].name}</p>
+                </div>
+                </div>
+                <div className={styles.itemBody}>
+                  <Score label="이미지 탐지 점수" value={result.score} />
+                  <div className={styles.subBlock}>
+                    <h4 className={styles.subTitle}>객체 탐지 결과 · {result.detectedObjects.length}개</h4>
+                    {result.detectedObjects.length ? <ul className={styles.objectList}>
+                      {result.detectedObjects.map((object, i) => <li key={`${object.className}-${i}`} className={styles.objectRow}>
+                        <span className={styles.objectName} title={object.className}>{object.className}</span>
+                        <span className={styles.itemMeta}>신뢰도</span><strong className={styles.probValue}>{object.confidence === null ? "미제공" : toPercent(object.confidence, 2)}</strong>
+                      </li>)}
+                    </ul> : <p className={styles.subEmpty}>탐지된 객체가 없습니다.</p>}
                   </div>
-                </li>
-              ))}
-          </ul>
+                  <div className={styles.subBlock}>
+                    <h4 className={styles.subTitle}>이미지 속 텍스트 (OCR)</h4>
+                    {result.ocrResults.length > 0 ? result.ocrResults.map((ocr, ocrIndex) => (
+                      <div key={ocrIndex} className={styles.subBlock}>
+                        <p className={styles.subTitle}>OCR 분석 {ocrIndex + 1}<Verdict positive={ocr.isDrug} /></p>
+                        <Score label="OCR 마약 확률" value={ocr.score} />
+                        <OcrText text={ocr.text} />
+                        <p className={styles.itemMeta}>매칭 용어: {ocr.matchedTerms.join(", ") || "없음"}</p>
+                        <p className={styles.itemMeta}>매칭 의도: {ocr.matchedIntents.join(", ") || "없음"}</p>
+                      </div>
+                    )) : result.ocrText.trim() ? <OcrText text={result.ocrText} /> : <p className={styles.subEmpty}>OCR 결과가 없습니다.</p>}
+                  </div>
+                </div>
+              </li>
+            ))}
+            </ul>}
+          </div>
         </section>
       )}
 
