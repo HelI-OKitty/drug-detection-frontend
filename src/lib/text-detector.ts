@@ -1,89 +1,134 @@
-// 텍스트·이미지(base64) 단순 분석 호출. 함께 보내면 서버가 OCR 텍스트까지 묶어 분석한다.
-// 브라우저에서는 백엔드 CORS allowlist를 타지 않도록 same-origin 프록시(/api/analyze)를 거치고,
-// 서버(테스트 포함)에서는 백엔드 /public/analyze를 직접 호출한다.
-
+// 단순 분석: 텍스트와 이미지 배열을 한 요청으로 보내고 서버의 종합·개별 판정을 보존한다.
 const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run.app";
 
-export type AnalyzedObject = { className: string; confidence: number };
-
-export interface AnalyzeResult {
-  isDrug: boolean;
-  textSource: "rule" | "model" | null;
+// 다중 이미지와 텍스트를 함께 전송할 때 적용하는 프론트 요청 크기 제한.
+export const MAX_ANALYZE_BODY_BYTES = 4 * 1024 * 1024;
+export type AnalyzePayload = { text?: string; images?: string[] };
+export type AnalyzedObject = { className: string; confidence: number | null };
+export type TextAnalyzeResult = {
+  isDrug: boolean | null;
+  source: "rule" | "model" | null;
+  /** text_score(0~100)를 화면 공통 단위(0~1)로 변환 */
+  score: number | null;
   matchedTerms: string[];
   matchedIntents: string[];
-  /** 이미지 분석 시 탐지된 객체 목록 */
+};
+export type OcrAnalyzeResult = {
+  text: string;
+  isDrug: boolean;
+  score: number | null;
+  matchedTerms: string[];
+  matchedIntents: string[];
+};
+export type ImageAnalyzeResult = {
+  isDrug: boolean;
+  score: number | null;
   detectedObjects: AnalyzedObject[];
-  /** 이미지에서 추출된 OCR 텍스트 */
-  ocrText: string | null;
-  /** prob_drug_percent(0~100)를 화면 공통 단위(0~1)로 변환한 확률 */
-  probDrug: number | null;
+  ocrText: string;
+  ocrResults: OcrAnalyzeResult[];
+};
+export type AnalyzeResult = {
+  isDrug: boolean;
+  textResult: TextAnalyzeResult | null;
+  imageResults: ImageAnalyzeResult[];
+};
+
+/** 클라이언트와 프록시가 같은 요청 계약을 사용한다. */
+export function prepareAnalyzeRequest(input: unknown): { body: AnalyzePayload; error?: never; status?: never } | { error: string; status: number; body?: never } {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return { error: "분석할 내용을 확인해 주세요.", status: 422 };
+  const raw = input as Record<string, unknown>;
+  if (raw.text !== undefined && typeof raw.text !== "string") return { error: "텍스트는 문자열로 입력해 주세요.", status: 422 };
+  if (raw.images !== undefined && (!Array.isArray(raw.images) || raw.images.some((item) => typeof item !== "string" || !item.trim()))) {
+    return { error: "이미지는 base64 문자열 목록으로 보내 주세요.", status: 422 };
+  }
+  const body: AnalyzePayload = {};
+  if (typeof raw.text === "string" && raw.text.trim()) body.text = raw.text.trim();
+  if (Array.isArray(raw.images) && raw.images.length) body.images = raw.images as string[];
+  if (!body.text && !body.images?.length) return { error: "분석할 텍스트나 이미지를 입력해 주세요.", status: 422 };
+  if (new TextEncoder().encode(JSON.stringify(body)).byteLength > MAX_ANALYZE_BODY_BYTES) {
+    return { error: "입력 용량이 큽니다. 텍스트를 줄이거나 이미지 크기·개수를 줄여 주세요.", status: 413 };
+  }
+  return { body };
 }
-
-export async function analyzeContent(payload: { text?: string; image?: string }): Promise<AnalyzeResult> {
-  const body: Record<string, string> = {};
-  const text = payload.text?.trim();
-  if (text) body.text = text;
-  if (payload.image) body.image = payload.image;
-  if (Object.keys(body).length === 0) throw new Error("분석할 텍스트나 이미지를 입력해 주세요.");
-
+function probability(value: unknown, max: number) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= max ? value / max : null;
+}
+function record(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
+  return value as Record<string, unknown>;
+}
+function prediction(value: unknown) {
+  if (value !== 0 && value !== 1) throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
+  return value === 1;
+}
+function strings(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+export async function analyzeContent(payload: AnalyzePayload): Promise<AnalyzeResult> {
+  const prepared = prepareAnalyzeRequest(payload);
+  if (prepared.error !== undefined) throw new Error(prepared.error);
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.BACKEND_API_URL || DEFAULT_API_URL;
-  const endpoint =
-    typeof window === "undefined" ? `${baseUrl.replace(/\/$/, "")}/public/analyze` : "/api/analyze";
+  const endpoint = typeof window === "undefined" ? `${baseUrl.replace(/\/$/, "")}/public/analyze` : "/api/analyze";
   let response: Response;
   try {
     response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      cache: "no-store",
-      signal: AbortSignal.timeout(120_000),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(prepared.body),
+      cache: "no-store", signal: AbortSignal.timeout(120_000),
     });
   } catch (error) {
-    if (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)) {
-      throw new Error("분석 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
-    }
+    if (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)) throw new Error("분석 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
     throw new Error("분석 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
-
   if (response.status === 429) throw new Error("요청이 많습니다. 잠시 후 다시 시도해 주세요.");
-  if (response.status === 413) throw new Error("이미지 용량이 너무 큽니다. 더 작은 이미지로 시도해 주세요.");
+  if (response.status === 413) throw new Error("입력 용량이 큽니다. 텍스트를 줄이거나 이미지 크기·개수를 줄여 주세요.");
   if (response.status === 422) throw new Error("분석할 내용을 확인해 주세요.");
+  if (response.status === 504) throw new Error("분석 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
   if (!response.ok) throw new Error("분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-
-  const data: unknown = await response.json().catch(() => null);
-  if (!data || typeof data !== "object" || !("is_drug" in data) || typeof data.is_drug !== "boolean") {
+  const raw = record(await response.json().catch(() => null));
+  if (typeof raw.is_drug !== "boolean" || !Array.isArray(raw.image_ai_results) || raw.text_ai_result === undefined) {
     throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
   }
-  const raw = data as Record<string, unknown>;
-  // 최신 응답의 백분율을 우선한다. 필드가 없는 구버전 응답만 0~1 값을 사용한다.
-  const probability = raw.prob_drug_percent === undefined
-    ? raw.prob_drug
-    : typeof raw.prob_drug_percent === "number" ? raw.prob_drug_percent / 100 : null;
-  const objects = Array.isArray(raw.detected_objects)
-    ? raw.detected_objects.flatMap((item) => {
-        if (typeof item !== "object" || item === null) return [];
-        const object = item as Record<string, unknown>;
-        if (typeof object.class_name !== "string" || typeof object.confidence !== "number") return [];
-        return [{ className: object.class_name, confidence: object.confidence }];
-      })
-    : [];
-  return {
-    isDrug: raw.is_drug === true,
-    textSource: raw.text_source === "model" || raw.text_source === "rule" ? raw.text_source : null,
-    matchedTerms: Array.isArray(raw.matched_terms) ? raw.matched_terms.filter((v): v is string => typeof v === "string") : [],
-    matchedIntents: Array.isArray(raw.matched_intents) ? raw.matched_intents.filter((v): v is string => typeof v === "string") : [],
-    detectedObjects: objects,
-    ocrText: typeof raw.ocr_text === "string" && raw.ocr_text.trim() ? raw.ocr_text : null,
-    probDrug: typeof probability === "number" && Number.isFinite(probability) && probability >= 0 && probability <= 1
-      ? probability : null,
-  };
-}
-
-/** 텍스트 단건 분석. 기존 호출부·테스트 호환용 래퍼. */
-export async function analyzeText(text: unknown): Promise<{ is_drug: boolean }> {
-  if (typeof text !== "string" || !text.trim()) {
-    throw new Error("분석할 텍스트를 입력해 주세요.");
+  const requestedImages = prepared.body.images?.length ?? 0;
+  if (raw.image_ai_results.length !== requestedImages) {
+    throw new Error(`이미지 ${requestedImages}장을 전송했지만 서버에서 ${raw.image_ai_results.length}건의 분석 결과만 받았습니다. 이미지 분석 결과가 누락되어 판정을 표시할 수 없습니다. 잠시 후 다시 시도해 주세요.`);
   }
-  const result = await analyzeContent({ text });
-  return { is_drug: result.isDrug };
+  let textResult: TextAnalyzeResult | null = null;
+  if (raw.text_ai_result !== null) {
+    const text = record(raw.text_ai_result);
+    textResult = {
+      isDrug: text.prediction === null ? null : prediction(text.prediction),
+      source: text.source === "rule" || text.source === "model" ? text.source : null,
+      score: probability(text.text_score, 100),
+      matchedTerms: strings(text.matched_terms), matchedIntents: strings(text.matched_intents),
+    };
+  }
+  const imageResults = raw.image_ai_results.map((item) => {
+    const image = record(item);
+    if (!Array.isArray(image.detected_objects) || (image.ocr_text_results !== undefined
+      ? !Array.isArray(image.ocr_text_results) : typeof image.ocr_text !== "string")) {
+      throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
+    }
+    const ocrResults = Array.isArray(image.ocr_text_results) ? image.ocr_text_results.map((item) => {
+      const ocr = record(item);
+      if (typeof ocr.ocr_text !== "string") throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
+      return {
+        text: ocr.ocr_text, isDrug: prediction(ocr.prediction), score: probability(ocr.ocr_text_score, 100),
+        matchedTerms: strings(ocr.matched_terms), matchedIntents: strings(ocr.matched_intents),
+      };
+    }) : [];
+    return {
+      isDrug: prediction(image.prediction), score: probability(image.image_score, 1),
+      ocrText: typeof image.ocr_text === "string" ? image.ocr_text : "", ocrResults,
+      detectedObjects: image.detected_objects.map((item) => {
+        const object = record(item);
+        if (typeof object.class_name !== "string") throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
+        return { className: object.class_name, confidence: probability(object.confidence, 1) };
+      }),
+    };
+  });
+  return { isDrug: raw.is_drug, textResult, imageResults };
+}
+export async function analyzeText(text: unknown): Promise<{ is_drug: boolean }> {
+  if (typeof text !== "string" || !text.trim()) throw new Error("분석할 텍스트를 입력해 주세요.");
+  return { is_drug: (await analyzeContent({ text })).isDrug };
 }
