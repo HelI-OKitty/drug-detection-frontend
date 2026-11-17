@@ -157,6 +157,15 @@
 .matchTag { padding:3px 10px; border-radius:7px; font-size:12px; font-weight:600; line-height:1.55; }
 .matchTag[data-kind=term] { background:#fdeef1; color:#c23350; }
 .matchTag[data-kind=intent] { background:#eef1fb; color:#4a5bbf; }
+/* 분석 불가(no_supported_characters) 안내 — 판정 대신 원인과 다음 행동을 함께 보여준다 */
+.unsupportedNote { display:flex; gap:12px; margin:0; padding:14px 16px; border:1px solid #d6e2ec; border-radius:12px; background:#f4f8fb; }
+.unsupportedIcon { display:grid; place-items:center; width:32px; height:32px; flex-shrink:0; border-radius:9px; background:#e3eef6; color:#4a6076; }
+.unsupportedIcon > svg { width:17px; height:17px; stroke-width:1.9; }
+.unsupportedBody { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.unsupportedTitle { font-size:13px; font-weight:600; color:#2c4152; }
+.unsupportedDetail { margin:0; font-size:13px; line-height:1.7; color:#52657b; word-break:keep-all; }
+.unsupportedExample { margin:2px 0 0; font-size:12px; color:#7d8b9c; }
+.unsupportedExample b { padding:1px 7px; border-radius:5px; background:#e7eef4; color:#4a6076; font-weight:600; }
 .probRow { display:flex; align-items:center; gap:10px; margin:8px 0 4px; max-width:420px; }
 .probLabel { flex-shrink:0; font-size:11px; color:#8a9bb1; white-space:nowrap; }
 .probTrack { flex:1; height:7px; border-radius:99px; background:#eef2f6; overflow:hidden; }

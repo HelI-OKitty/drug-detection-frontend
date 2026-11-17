@@ -5,17 +5,20 @@ const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run
 export const MAX_ANALYZE_BODY_BYTES = 4 * 1024 * 1024;
 export type AnalyzePayload = { text?: string; images?: string[] };
 export type AnalyzedObject = { className: string; confidence: number | null };
+/** 판정 방식. no_supported_characters는 텍스트 모델이 분석할 수 없는 입력을 뜻한다. */
+export type AnalysisSource = "rule" | "model" | "no_supported_characters" | null;
 export type TextAnalyzeResult = {
   isDrug: boolean | null;
-  source: "rule" | "model" | null;
-  /** text_score(0~100)를 화면 공통 단위(0~1)로 변환 */
+  source: AnalysisSource;
+  /** text_score(0~100)를 화면 공통 단위(0~1)로 변환. rule·no_supported_characters는 null */
   score: number | null;
   matchedTerms: string[];
   matchedIntents: string[];
 };
 export type OcrAnalyzeResult = {
   text: string;
-  isDrug: boolean;
+  isDrug: boolean | null;
+  source: AnalysisSource;
   score: number | null;
   matchedTerms: string[];
   matchedIntents: string[];
@@ -64,6 +67,9 @@ function prediction(value: unknown) {
 function strings(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
+function parseSource(value: unknown): AnalysisSource {
+  return value === "rule" || value === "model" || value === "no_supported_characters" ? value : null;
+}
 export async function analyzeContent(payload: AnalyzePayload): Promise<AnalyzeResult> {
   const prepared = prepareAnalyzeRequest(payload);
   if (prepared.error !== undefined) throw new Error(prepared.error);
@@ -95,12 +101,16 @@ export async function analyzeContent(payload: AnalyzePayload): Promise<AnalyzeRe
   let textResult: TextAnalyzeResult | null = null;
   if (raw.text_ai_result !== null) {
     const text = record(raw.text_ai_result);
-    textResult = {
-      isDrug: text.prediction === null ? null : prediction(text.prediction),
-      source: text.source === "rule" || text.source === "model" ? text.source : null,
-      score: probability(text.text_score, 100),
-      matchedTerms: strings(text.matched_terms), matchedIntents: strings(text.matched_intents),
-    };
+    const source = parseSource(text.source);
+    // 모델이 처리할 수 없는 입력은 판정·점수·매칭이 없다. 빈 응답({})과 달리 source로 식별한다.
+    textResult = source === "no_supported_characters"
+      ? { isDrug: null, source, score: null, matchedTerms: [], matchedIntents: [] }
+      : {
+          isDrug: text.prediction === null ? null : prediction(text.prediction),
+          source,
+          score: probability(text.text_score, 100),
+          matchedTerms: strings(text.matched_terms), matchedIntents: strings(text.matched_intents),
+        };
   }
   const imageResults = raw.image_ai_results.map((item) => {
     const image = record(item);
@@ -111,10 +121,15 @@ export async function analyzeContent(payload: AnalyzePayload): Promise<AnalyzeRe
     const ocrResults = Array.isArray(image.ocr_text_results) ? image.ocr_text_results.map((item) => {
       const ocr = record(item);
       if (typeof ocr.ocr_text !== "string") throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
-      return {
-        text: ocr.ocr_text, isDrug: prediction(ocr.prediction), score: probability(ocr.ocr_text_score, 100),
-        matchedTerms: strings(ocr.matched_terms), matchedIntents: strings(ocr.matched_intents),
-      };
+      const source = parseSource(ocr.source);
+      // OCR도 텍스트와 동일한 응답 구조를 쓴다. 분석 불가 입력은 판정·점수·매칭 없이 추출 문구만 남긴다.
+      return source === "no_supported_characters"
+        ? { text: ocr.ocr_text, isDrug: null, source, score: null, matchedTerms: [], matchedIntents: [] }
+        : {
+            text: ocr.ocr_text, isDrug: ocr.prediction === null ? null : prediction(ocr.prediction),
+            source, score: probability(ocr.ocr_text_score, 100),
+            matchedTerms: strings(ocr.matched_terms), matchedIntents: strings(ocr.matched_intents),
+          };
     }) : [];
     return {
       isDrug: prediction(image.prediction), score: probability(image.image_score, 1),
