@@ -367,6 +367,9 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                 <dt>status</dt>
                 <dd><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></dd>
               </div>
+              {detection.adminId && (
+                <div className={styles.metaRow}><dt>admin_id</dt><dd>{detection.adminId}</dd></div>
+              )}
             </dl>
           </section>
 
