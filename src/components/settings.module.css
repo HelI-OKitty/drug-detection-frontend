@@ -119,10 +119,18 @@
 .scoreList { display:flex; flex-direction:column; margin:16px 0 0; padding:16px 0 0; border-top:1px solid rgba(23,37,53,.08); list-style:none; }
 
 /* ───────── 단순 분석: 이미지 첨부·항목별 결과 ───────── */
-.addImage { display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:10px 16px; border:1px dashed #c7d3de; border-radius:10px; background:#fff; color:#52657b; font-size:13px; transition:background .12s; }
-.addImage:hover:not(:disabled) { background:#f5f8fa; }
-.addImage:disabled { opacity:.5; cursor:default; }
-.addImage > svg { width:16px; height:16px; stroke-width:1.8; }
+/* 이미지 드롭존 — 클릭 또는 끌어다 놓기로 추가 */
+.dropZone { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; width:100%; min-height:116px; padding:20px; border:1.5px dashed #c7d3de; border-radius:12px; background:#fbfdfe; color:#52657b; text-align:center; cursor:pointer; transition:background .14s,border-color .14s,color .14s; }
+.dropZone:hover { background:#f5f8fa; border-color:#b9c7d4; }
+.dropZone:focus-visible { outline:2px solid #0aaf75; outline-offset:2px; }
+.dropZone[data-dragging=true] { border-color:#0aaf75; background:#effaf5; color:#059d69; }
+.dropZone[data-disabled=true] { opacity:.55; cursor:default; }
+.dropZone[data-disabled=true]:hover { background:#fbfdfe; border-color:#c7d3de; }
+.dropZone > svg { width:26px; height:26px; stroke-width:1.6; }
+.dropZoneText { font-size:13px; line-height:1.5; }
+.dropZoneText strong { font-weight:600; color:#243447; }
+.dropZone[data-dragging=true] .dropZoneText strong { color:#059d69; }
+.dropZone > small { font-size:11px; color:#8a9bb1; }
 .thumbGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin:12px 0 0; padding:0; list-style:none; }
 .thumbItem { position:relative; aspect-ratio:1; border:1px solid #e0e7ee; border-radius:11px; overflow:hidden; background:#f3f6f8; }
 .thumbItem img { width:100%; height:100%; object-fit:cover; display:block; }
