@@ -71,21 +71,19 @@ test("dashboard preserves documented counts and does not turn failures into zero
   assert.deepEqual(await detections.fetchDashboard(), { ok: false, reason: "error" });
 });
 
-test("detail preserves restored percentage fields without deriving verdicts from scores", async () => {
+test("detail maps text_score percentage without deriving verdicts from scores", async () => {
   for (const [fields, expected] of [
-    [{ prob_drug_percent: 12.18, prob_drug: 0.9 }, 12.18 / 100],
-    [{ prob_drug_percent: 0 }, 0],
-    [{ prob_drug_percent: 100 }, 1],
-    [{ prob_drug_percent: null, prob_drug: 0.9 }, null],
-    [{ prob_drug_percent: "12.18" }, null],
-    [{ prob_drug_percent: 101 }, null],
-    [{ prob_drug: -1 }, null],
-    [{ prob_drug: 12.18 }, null],
-    [{ prob_drug: 0.1218 }, 0.1218],
+    [{ text_score: 12.18 }, 12.18 / 100],
+    [{ text_score: 0 }, 0],
+    [{ text_score: 100 }, 1],
+    [{ text_score: null }, null],
+    [{ text_score: "12.18" }, null],
+    [{ text_score: 101 }, null],
+    [{ text_score: -1 }, null],
     [{}, null],
   ]) {
     globalThis.fetch = async () => Response.json({
-      ...rows[0], text_ai_result: { prediction: 1, source: "rule", ...fields },
+      ...rows[0], text_ai_result: { prediction: 1, source: "model", ...fields },
       image_ai_results: [{ image_url: "https://example.com/test.png", prediction: 0 }],
     });
     const { detection } = await detections.fetchDetectionDetail(rows[0].id);
