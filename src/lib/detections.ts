@@ -34,15 +34,15 @@ export type TextAnalysis = {
   matchedIntents: string[];
 };
 
-/** 목록 표시용 이미지 1장의 분석 요약 */
+/** 목록 표시용 이미지 1장의 분석 요약. 목록 응답에는 image_url·객체·ocr_text가 없고 요약값만 내려온다. */
 export type ImageAnalysisSummary = {
-  /** 이미지 URL. 썸네일 표시용 (없으면 빈 문자열) */
-  url: string;
   /** 이미지 AI의 의심 판정(prediction=1) */
   flagged: boolean;
-  /** 검출된 객체들(이름 + 객체별 confidence) */
-  objects: DetectedObject[];
-  /** OCR 텍스트 분석 점수 0~1. 추출된 텍스트가 없으면 null */
+  /** 이미지 AI 탐지 점수 0~1 (image_score) */
+  score: number;
+  /** 이미지에 OCR 텍스트가 있는지 (has_ocr_text) */
+  hasOcrText: boolean;
+  /** OCR 텍스트 분석 점수 0~1. 목록 요약에는 없어 항상 null (상세 화면 호환용) */
   ocrScore: number | null;
 };
 
