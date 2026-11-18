@@ -1,7 +1,7 @@
 // GET /detections, GET /detections/{id}, GET /dashboard/* 서버 연동. 화면용 타입으로 변환해서 돌려준다.
 
 import { cookies } from "next/headers";
-import type { DetectedObject, DetectionDetailData, DetectionImage, DetectionRow, ReviewStatus, TextAnalysis } from "./detections";
+import type { DetectedObject, DetectionDetailData, DetectionImage, DetectionRow, ImageAnalysisSummary, ReviewStatus, TextAnalysis } from "./detections";
 
 const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run.app";
 const REVIEW_STATUSES: ReviewStatus[] = ["unreviewed", "reviewing", "confirmed"];
@@ -37,13 +37,7 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
     ? (raw.review_status as ReviewStatus)
     : "unreviewed";
   const textAnalysis = toTextAnalysis(raw.text_ai_result);
-  const images = toImages(raw.image_ai_results);
-  const imageAnalyses = images.map((image) => ({
-    url: image.url,
-    flagged: image.flagged,
-    objects: image.detectedObjects,
-    ocrScore: null,
-  }));
+  const imageAnalyses = toImageSummaries(raw.image_ai_results);
   return {
     id,
     isDrug: typeof raw.is_drug === "boolean" ? raw.is_drug : null,
@@ -73,6 +67,26 @@ function toDetectedObjects(raw: unknown): DetectedObject[] {
   });
   // 확신도 높은 객체가 먼저 보이도록 정렬
   return objects.sort((a, b) => b.confidence - a.confidence);
+}
+
+/**
+ * 목록 응답의 이미지 요약(image_ai_results[])을 화면용 요약으로 바꾼다.
+ * 목록에는 image_url·detected_objects·ocr_text가 없고 prediction·image_score·has_ocr_text만 내려오므로
+ * image_url 유무에 의존하지 않고 prediction으로 판정을 만든다.
+ */
+function toImageSummaries(raw: unknown): ImageAnalysisSummary[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item) => {
+    if (typeof item !== "object" || item === null) return [];
+    const image = item as Record<string, unknown>;
+    if (image.prediction !== 0 && image.prediction !== 1) return [];
+    return [{
+      flagged: image.prediction === 1,
+      score: typeof image.image_score === "number" ? image.image_score : 0,
+      hasOcrText: image.has_ocr_text === true,
+      ocrScore: null,
+    }];
+  });
 }
 
 function toImages(raw: unknown): DetectionImage[] {
