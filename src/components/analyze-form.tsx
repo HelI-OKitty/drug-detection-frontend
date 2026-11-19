@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, FileText, ImagePlus, Info, ListChecks, ScanSearch, ShieldCheck, Sparkles, TriangleAlert, X } from "lucide-react";
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
 import { scoreColors, toPercent } from "@/lib/detections";
 import { analyzeContent, type AnalysisSource, type AnalyzeResult } from "@/lib/text-detector";
 import viewerStyles from "./detections.module.css";
@@ -97,6 +97,7 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
   const [images, setImages] = useState<PickedImage[]>([]);
   const [pending, setPending] = useState(false);
   const [reading, setReading] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const readingFiles = useRef(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState<AnalyzeResult | null>(null);
@@ -119,10 +120,9 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
     setError("");
   }
 
-  async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+  // 파일 선택·드래그앤드롭 양쪽에서 같은 검증·읽기 경로를 쓴다.
+  async function addFiles(files: File[]) {
     if (readingFiles.current || inFlight.current) return;
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = "";
     if (files.length === 0) return;
     resetOutcome();
     readingFiles.current = true;
@@ -151,6 +151,25 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
     if (picked.length > 0) setImages((current) => [...current, ...picked]);
     readingFiles.current = false;
     setReading(false);
+  }
+
+  function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    void addFiles(files);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragging(false);
+    if (pending || reading || images.length >= MAX_IMAGES) return;
+    void addFiles(Array.from(event.dataTransfer.files));
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    // 드롭을 허용하려면 dragover에서 기본 동작을 막아야 한다.
+    event.preventDefault();
+    if (!pending && !reading && images.length < MAX_IMAGES) setDragging(true);
   }
 
   function removeImage(id: string) {
@@ -223,15 +242,31 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                 onChange={handleFiles}
                 disabled={pending || reading}
               />
-              <div>
-                <button
-                  type="button"
-                  className={styles.addImage}
-                  onClick={() => fileInput.current?.click()}
-                  disabled={pending || reading || images.length >= MAX_IMAGES}
-                >
-                  <ImagePlus aria-hidden="true" />이미지 추가
-                </button>
+              <div
+                className={styles.dropZone}
+                data-dragging={dragging}
+                data-disabled={pending || reading || images.length >= MAX_IMAGES}
+                role="button"
+                tabIndex={pending || reading || images.length >= MAX_IMAGES ? -1 : 0}
+                aria-label="이미지 추가 — 클릭하거나 파일을 끌어다 놓기"
+                onClick={() => !(pending || reading || images.length >= MAX_IMAGES) && fileInput.current?.click()}
+                onKeyDown={(event) => {
+                  if ((event.key === "Enter" || event.key === " ") && !(pending || reading || images.length >= MAX_IMAGES)) {
+                    event.preventDefault();
+                    fileInput.current?.click();
+                  }
+                }}
+                onDragOver={handleDragOver}
+                onDragLeave={(event) => { event.preventDefault(); setDragging(false); }}
+                onDrop={handleDrop}
+              >
+                <ImagePlus aria-hidden="true" />
+                <span className={styles.dropZoneText}>
+                  {images.length >= MAX_IMAGES
+                    ? `이미지는 최대 ${MAX_IMAGES}장까지 추가할 수 있습니다`
+                    : <><strong>이미지를 끌어다 놓거나 클릭</strong>해 추가</>}
+                </span>
+                {images.length < MAX_IMAGES && <small>최대 {MAX_IMAGES}장 · 전체 3MB 이하</small>}
               </div>
               {images.length > 0 && (
                 <ul className={styles.thumbGrid}>
