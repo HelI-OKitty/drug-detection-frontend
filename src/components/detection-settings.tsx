@@ -71,7 +71,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
     const word = keywordInput.trim();
     if (!word) return;
     if (customKeywords.length >= MAX_CUSTOM_KEYWORDS) {
-      setKeywordError(`커스텀 키워드는 최대 ${MAX_CUSTOM_KEYWORDS}개까지 추가할 수 있습니다.`);
+      setKeywordError(`추가 키워드는 최대 ${MAX_CUSTOM_KEYWORDS}개까지 추가할 수 있습니다.`);
       return;
     }
     if (PRESETS.includes(word)) {
@@ -188,7 +188,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
             <div>
               <p className={styles.switchLabel}>자동 크롤링 사용</p>
               <p className={styles.help}>
-                켜면 설정한 주기마다 자동으로 게시글 수집과 AI 분석이 실행됩니다. 이 스위치는 변경 즉시 서버에 반영됩니다.
+                설정한 주기로 게시글을 수집하고 분석합니다. 변경 즉시 적용됩니다.
               </p>
             </div>
             <button
@@ -219,7 +219,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
         </header>
         <div className={styles.cardBody}>
           <div className={styles.helpRow}>
-            <p className={styles.help}>탐지에 사용할 키워드를 선택하세요. 선택을 해제한 키워드는 탐지에서 제외됩니다.</p>
+            <p className={styles.help}>선택한 키워드로 게시글을 수집합니다.</p>
             <div className={styles.bulkButtons}>
               <button
                 type="button"
@@ -253,7 +253,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
 
           <div className={styles.customBlock}>
             <p className={styles.customLabel}>
-              커스텀 키워드 <small>{customKeywords.length}/{MAX_CUSTOM_KEYWORDS}</small>
+              추가 키워드 <small>{customKeywords.length}/{MAX_CUSTOM_KEYWORDS}</small>
             </p>
             {customKeywords.length > 0 && (
               <div className={styles.chipGrid}>
@@ -278,7 +278,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
                 placeholder="추가할 키워드 입력"
                 maxLength={20}
                 disabled={customKeywords.length >= MAX_CUSTOM_KEYWORDS}
-                aria-label="커스텀 키워드 입력"
+                aria-label="추가 키워드 입력"
                 aria-invalid={Boolean(keywordError)}
                 aria-describedby={keywordError ? "keyword-error" : undefined}
               />
@@ -288,7 +288,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
             </form>
             {keywordError && <p id="keyword-error" className={styles.error} role="alert">{keywordError}</p>}
             {customKeywords.length >= MAX_CUSTOM_KEYWORDS && !keywordError && (
-              <p className={styles.help}>커스텀 키워드를 모두 사용했습니다. 삭제 후 새 키워드를 추가할 수 있습니다.</p>
+              <p className={styles.help}>추가 키워드를 모두 사용했습니다. 삭제 후 새 키워드를 추가할 수 있습니다.</p>
             )}
           </div>
         </div>
@@ -320,7 +320,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
 
       <section className={styles.card} aria-labelledby="count-title">
         <header className={styles.cardHeader}>
-          <h2 id="count-title"><Hash aria-hidden="true" />탐지 갯수</h2>
+          <h2 id="count-title"><Hash aria-hidden="true" />수집 건수</h2>
           <small>회당 최대 수집량</small>
         </header>
         <div className={styles.cardBody}>
@@ -328,7 +328,7 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
             1회 탐지에서 수집할 최대 게시글 수입니다. ({MIN_DETECTION_COUNT}~{MAX_DETECTION_COUNT}개)
           </p>
           <div className={styles.stepper}>
-            <button type="button" onClick={() => stepCount(-10)} aria-label="탐지 갯수 10 줄이기"><Minus aria-hidden="true" /></button>
+            <button type="button" onClick={() => stepCount(-10)} aria-label="수집 건수 10 줄이기"><Minus aria-hidden="true" /></button>
             <input
               type="number"
               inputMode="numeric"
@@ -337,9 +337,9 @@ export default function DetectionSettings({ initial }: { initial: CrawlSettings 
               value={countInput}
               onChange={(event) => setCountInput(event.target.value)}
               onBlur={normalizeCount}
-              aria-label="탐지 갯수"
+              aria-label="수집 건수"
             />
-            <button type="button" onClick={() => stepCount(10)} aria-label="탐지 갯수 10 늘리기"><Plus aria-hidden="true" /></button>
+            <button type="button" onClick={() => stepCount(10)} aria-label="수집 건수 10 늘리기"><Plus aria-hidden="true" /></button>
             <span>개 / 회</span>
           </div>
         </div>

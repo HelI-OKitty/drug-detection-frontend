@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { filterDetections, readFilters } from '../src/lib/detection-filters.ts';
+import { filterDetections, readFilters, countVerdicts } from '../src/lib/detection-filters.ts';
 const rows = [
   { id: 'text', isDrug: true, textFlagged: true, imageAnalyses: [], status: 'unreviewed', detectedAt: '2026-11-11 00:00', summary: '게시글', nickname: '@author', keywords: ['keyword'] },
   { id: 'image', isDrug: true, textFlagged: false, imageAnalyses: [{ flagged: true }], status: 'reviewing', detectedAt: '2026-11-05 23:59', summary: '이미지', nickname: '@other', keywords: [] },
@@ -28,5 +28,35 @@ test('invalid URL filters are normalized; OCR text or scores never imply OCR pos
   assert.equal(filters.verdict, 'all');
   assert.equal(filters.status, 'all');
   assert.equal(filters.from, '');
-  assert.deepEqual(filters.types, ['text']);
+  assert.deepEqual(filters.types, ['ocr', 'text']);
+});
+
+test('OCR filter requires explicit positive verdict, combines with text by OR', () => {
+  const samples = [
+    {...rows[0], id:'positive', textFlagged:false, ocrFlagged:true},
+    {...rows[0], id:'negative', textFlagged:false, ocrFlagged:false},
+    {...rows[0], id:'unknown', textFlagged:false, imageAnalyses:[{flagged:true,hasOcrText:true,ocrScore:1}]},
+    {...rows[0], id:'text-only'},
+  ];
+  const filter = query => filterDetections(samples, readFilters(new URLSearchParams(query)), '2026-11-11').map(row=>row.id);
+  assert.deepEqual(filter('verdict=positive&types=ocr'), ['positive']);
+  assert.deepEqual(filter('verdict=positive&types=text,ocr'), ['positive','text-only']);
+});
+
+test('dashboard counts preserve negative, positive and missing verdicts separately',()=>{
+  assert.deepEqual(countVerdicts(rows),{positive:4,negative:1,unknown:1});
+  assert.deepEqual(countVerdicts([]),{positive:0,negative:0,unknown:0});
+});
+
+test('OCR presence uses image has_ocr_text independently of positive verdicts', () => {
+  const samples = [
+    {...rows[0], id:'with', isDrug:false, imageAnalyses:[{hasOcrText:false},{hasOcrText:true}]},
+    {...rows[0], id:'without', imageAnalyses:[{hasOcrText:false}]},
+    {...rows[0], id:'no-image', imageAnalyses:[]},
+  ];
+  const filter = query => filterDetections(samples, readFilters(new URLSearchParams(query)), '2026-11-11').map(row=>row.id);
+  assert.deepEqual(filter('has_ocr_text=true'), ['with']);
+  assert.deepEqual(filter('has_ocr_text=false'), ['without','no-image']);
+  assert.deepEqual(filter('has_ocr_text=true&verdict=positive'), []);
+  assert.deepEqual(filter('has_ocr_text=invalid'), ['with','without','no-image']);
 });

@@ -1,21 +1,14 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { ArrowRight, BarChart3, Bell, LayoutDashboard, Radar, ScanText, SearchCheck, ShieldCheck, SlidersHorizontal, TriangleAlert, UserCog, Zap } from "lucide-react";
+import { ArrowRight, LayoutDashboard, ScanText, SlidersHorizontal, TriangleAlert, UserCog } from "lucide-react";
 import DashboardView from "@/components/dashboard-view";
 import MemberInfo from "@/components/member-info";
 import styles from "./home.module.css";
 
 const features = [
-  { Icon: ScanText, title: "게시글 텍스트 분석", text: <>게시글을 입력하고 마약 거래<br />의심 여부를 간편하게 확인하세요.</> },
-  { Icon: Radar, title: "마약 은어 탐지", text: <>AI 기반 텍스트 분석으로<br />은어와 거래 정황을 살펴보세요.</> },
-  { Icon: BarChart3, title: "직관적인 대시보드", text: <>탐지 현황과 검토 흐름을<br />한눈에 확인하는 화면입니다.</> },
-  { Icon: ShieldCheck, title: "간편한 체험", text: <>로그인·회원가입 없이<br />분석 결과를 확인하세요.</> },
-];
-
-const trustItems = [
-  { Icon: SearchCheck, label: "은어·정황 분석" },
-  { Icon: ShieldCheck, label: "의심 여부 판별" },
-  { Icon: Zap, label: "빠른 확인" },
+  { title: "텍스트·이미지 분석", text: "게시글을 입력하면 텍스트 판정, 이미지 객체 탐지, OCR 결과를 확인할 수 있습니다." },
+  { title: "키워드별 수집", text: "수집할 키워드와 실행 주기를 설정하고, 수집 기록을 확인합니다." },
+  { title: "탐지 게시글 검토", text: "판정과 검토 상태로 게시글을 찾고, 원문과 분석 근거를 검토합니다." },
 ];
 
 const previewMenu = [
@@ -23,7 +16,6 @@ const previewMenu = [
   { Icon: ScanText, label: "단순 분석" },
   { Icon: TriangleAlert, label: "탐지 게시글" },
   { Icon: SlidersHorizontal, label: "탐지 설정" },
-  { Icon: Bell, label: "알림 채널" },
   { Icon: UserCog, label: "계정 관리" },
 ];
 
@@ -44,33 +36,27 @@ export default async function Home() {
           <div className={styles.heroInner}>
             <div className={styles.heroCopy}>
               <p className={styles.eyebrow}>마약 거래 의심 게시글 탐지 콘솔</p>
-              <h1><span>마약 거래 의심 게시글</span>,<br />지금 감지하고 더 안전한 내일을 만듭니다.</h1>
-              <p className={styles.description}>게시글 속 은어와 거래 정황, 혼자 판단하지 마세요.<br />SENTINEL의 텍스트 분석이 마약 거래 의심 여부를 판별해<br className={styles.desktopBreak} /> 더 안전한 온라인 환경을 만들어 갑니다.</p>
+              <h1>게시글을 분석하고,<br />탐지 근거를 확인하세요.</h1>
+              <p className={styles.description}>텍스트와 이미지에서 마약 거래 의심 여부를 분석합니다. 수집된 게시글은 판정과 검토 상태별로 확인할 수 있습니다.</p>
               <div className={styles.heroActions}>
                 <Link href="/try" className={styles.button}>체험하기 <ArrowRight aria-hidden="true" /></Link>
                 {loggedIn
                   ? <Link href="/dashboard" className={styles.outlineButton}>대시보드로 이동 <ArrowRight aria-hidden="true" /></Link>
                   : <Link href="/login" className={styles.outlineButton}>로그인 <ArrowRight aria-hidden="true" /></Link>}
               </div>
-              <p className={styles.trustLabel}>로그인·회원가입 없이, 게시글을 입력하고 분석 결과를 확인하세요.</p>
-              <div className={styles.trustItems}>{trustItems.map(({ Icon, label }) => <span key={label}><Icon aria-hidden="true" />{label}</span>)}</div>
+              <p className={styles.trustLabel}>체험은 로그인 없이 사용할 수 있습니다.</p>
             </div>
             <div className={styles.previewFrame}>
               <div className={styles.previewSide}><div className={styles.miniBrand}><i />SENTINEL</div>{previewMenu.map(({ Icon, label, active }) => <span key={label} className={active ? styles.activeMini : undefined}><Icon aria-hidden="true" />{label}</span>)}</div>
-              <div className={styles.previewMain}><div className={styles.previewHeader}><strong>탐지 대시보드</strong><span>/ summary</span></div><DashboardView preview /></div>
+              <div className={styles.previewMain}><div className={styles.previewHeader}><strong>탐지 대시보드</strong><span>화면 예시</span></div><DashboardView preview /></div>
             </div>
           </div>
         </section>
 
         <section id="features" className={styles.features} aria-label="주요 기능">
-          {features.map(({ Icon, title, text }) => <article key={title}><div className={styles.featureIcon}><Icon aria-hidden="true" /></div><h2>{title}</h2><p>{text}</p></article>)}
+          {features.map(({ title, text }) => <article key={title}><h2>{title}</h2><p>{text}</p></article>)}
         </section>
 
-        <section className={styles.cta} aria-labelledby="cta-title">
-          <div className={styles.ctaArt} aria-hidden="true"><div><i /><i /><i /></div><span /><section><b /><b /><b /></section></div>
-          <div><h2 id="cta-title">보안의 새로운 기준, SENTINEL</h2><p>지금 바로 시작하고,<br />한층 더 안전한 환경을 만들어 보세요.</p></div>
-          <Link href="/try" className={styles.button}>체험하기 <ArrowRight aria-hidden="true" /></Link>
-        </section>
       </main>
 
       <footer className={styles.footer}><Link href="/" className={styles.brand}><i />SENTINEL</Link><span>© {new Date().getFullYear()} SENTINEL. All rights reserved.</span></footer>

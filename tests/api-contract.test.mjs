@@ -163,3 +163,18 @@ test("partial failures and missing target results cannot be reported as success"
   globalThis.fetch = async (url) => Response.json(new URL(url).pathname === "/profile" ? { id: "admin-1" } : { results: [] });
   assert.equal((await crawl.triggerCrawl(40)).success, false);
 });
+
+test("provisional OCR verdict accepts only explicit numeric prediction", async () => {
+  const values=[1,0,null,undefined,true,"1"];
+  globalThis.fetch=async()=>Response.json(values.map((ocr_prediction,i)=>({...rows[0],id:`ocr-${i}`,ocr_prediction,has_ocr_text:true,ocr_score:1})));
+  const result=await detections.fetchDetections();
+  assert.equal(result.ok,true);
+  assert.deepEqual(result.items.map(row=>row.ocrFlagged),[true,false,null,null,null,null]);
+  assert.deepEqual(filterDetections(result.items,readFilters(new URLSearchParams('types=ocr')),'2026-11-23').map(row=>row.id),['ocr-0']);
+});
+test("analysis statistics reuse supplied list without another list request", async () => {
+  let calls=0;
+  globalThis.fetch=async(url)=>{calls++;assert.equal(new URL(url).pathname,'/detections/id-0');return Response.json({...rows[0],image_ai_results:[]});};
+  assert.ok(await detections.fetchAnalysisStats([{id:'id-0'}]));
+  assert.equal(calls,1);
+});

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConsoleShell } from "@/components/console-shell";
-import DetectionDetail from "@/components/detection-detail";
+import DetectionDetail, { DetectionDetailNavigation } from "@/components/detection-detail";
 import MemberInfo from "@/components/member-info";
 import { fetchDetectionDetail, markDetectionReviewing } from "@/lib/detections-api";
 import guardStyles from "@/components/settings.module.css";
@@ -21,7 +21,7 @@ export default async function DetectionDetailPage({ params }: { params: Promise<
   }
 
   return (
-    <ConsoleShell memberInfo={<MemberInfo />}>
+    <ConsoleShell memberInfo={<MemberInfo />} headerActions={detection ? <DetectionDetailNavigation sourceUrl={detection.sourceUrl} /> : undefined}>
       <main>
         {detection ? (
           <DetectionDetail detection={detection} />

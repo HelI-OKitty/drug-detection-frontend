@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, ExternalLink, FileText, Images, ImageOff, ScanText, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, ImageOff, Trash2, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
 import {
@@ -30,6 +30,68 @@ function highlightKeywords(content: string, keywords: string[]) {
       ? <mark key={`${part}-${index}`}>{part}</mark>
       : <Fragment key={`text-${index}`}>{part}</Fragment>,
   );
+}
+
+export function DetectionDetailNavigation({ sourceUrl }: { sourceUrl: string }) {
+  const params = useSearchParams();
+  const listHref = `/detections${params.size ? `?${params}` : ""}`;
+  const [active, setActive] = useState("post-original");
+  const navRef = useRef<HTMLElement>(null);
+  const selectedPosition = useRef<number | null>(null);
+
+  useEffect(() => {
+    let frame = 0;
+    function update() {
+      if (selectedPosition.current !== null && Math.abs(window.scrollY - selectedPosition.current) < 2) return;
+      selectedPosition.current = null;
+      const boundary = (navRef.current?.closest("header")?.getBoundingClientRect().bottom ?? 120) + 32;
+      const ids = ["post-original", "text-analysis-title", "image-analysis-title"];
+      const review = document.getElementById("action-title");
+      const aside = review?.closest("aside");
+      // 고정된 검토 패널은 본문과 함께 보여도 현재 읽는 본문 구역을 덮어쓰지 않는다.
+      if (aside && getComputedStyle(aside).position !== "sticky") ids.push("action-title");
+      let current = ids[0];
+      for (const id of ids) {
+        if ((document.getElementById(id)?.getBoundingClientRect().top ?? Infinity) <= boundary) current = id;
+      }
+      setActive(current);
+    }
+    function schedule() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    }
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
+
+  function jump(id: string) {
+    document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "instant" });
+    window.history.pushState(null, "", `#${id}`);
+    selectedPosition.current = window.scrollY;
+    setActive(id);
+  }
+
+  function sectionLink(id: string, label: string) {
+    return <a href={`#${id}`} aria-current={active === id ? "location" : undefined} onClick={(event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault(); jump(id);
+    }}>{label}</a>;
+  }
+
+  return <nav ref={navRef} aria-label="상세 화면 바로가기">
+    <Link href={listHref} scroll={false}><ArrowLeft size={16} aria-hidden="true" />목록으로</Link>
+    {sectionLink("post-original", "게시글 원문")}
+    {sectionLink("text-analysis-title", "텍스트 근거")}
+    {sectionLink("image-analysis-title", "이미지 · OCR")}
+    <a href={sourceUrl} target="_blank" rel="noreferrer noopener">원문 열기<ExternalLink size={14} aria-hidden="true" /><span className={styles.srOnly}> (새 창)</span></a>
+    {sectionLink("action-title", "검토 처리")}
+  </nav>;
 }
 
 export default function DetectionDetail({ detection }: { detection: DetectionDetailData }) {
@@ -77,6 +139,20 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
     .filter((score): score is number => score !== null);
   const ocrMax = ocrScores.length > 0 ? Math.max(...ocrScores) : null;
 
+  const imageFlagged = detection.images.length ? detection.images.some((image) => image.flagged) : null;
+  const positiveSources = [detection.textFlagged === true ? "텍스트" : null, imageFlagged === true ? "이미지" : null].filter(Boolean);
+  const verdictExplanation = detection.isDrug === true && positiveSources.length
+    ? `${positiveSources.join("와 ")}에서 양성이 탐지되었습니다.`
+    : detection.isDrug === false && positiveSources.length
+      ? "종합 판정과 개별 결과가 일치하지 않습니다. 분석 근거를 확인해 주세요."
+      : detection.isDrug === true
+        ? "양성의 근거가 되는 개별 판정을 확인할 수 없습니다."
+        : detection.isDrug === null
+          ? "종합 판정이 제공되지 않았습니다."
+          : detection.textFlagged === null || imageFlagged === null
+            ? "제공된 종합 판정은 음성입니다. 일부 개별 판정은 미제공이며, 음성을 뜻하지 않습니다."
+            : "텍스트와 이미지 모두 음성입니다.";
+
   async function handleConfirm() {
     if (pending) return;
     setError("");
@@ -108,24 +184,24 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
 
   return (
     <div className={styles.page}>
-      <div className={styles.detailTopline}>
-        <Link href={listHref} className={styles.backLink}><ArrowLeft aria-hidden="true" />필터를 유지하고 목록으로</Link>
-        <a className={styles.originalLink} href={detection.sourceUrl} target="_blank" rel="noreferrer noopener">원문 열기<ExternalLink size={15} aria-hidden="true" /><span className={styles.srOnly}> (새 창)</span></a>
-      </div>
-      <div className={styles.detailHeading}><div><h1>탐지 게시글 검토</h1><p>원문과 분석 근거를 확인한 뒤 검토 상태를 확정하세요.</p></div><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></div>
+      <h1 className={styles.srOnly}>탐지 게시글 검토</h1>
 
-      <section className={styles.verdictOverview} aria-label="판정 및 검토 요약">
-        <div><span>종합 판정</span><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong><small>서버의 종합 분석 결과</small></div>
-        <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong><small>게시글 텍스트 분석</small></div>
-        <div><span>이미지 판정</span><strong data-positive={detection.images.some((image) => image.flagged)}>{!detection.images.length ? "미제공" : detection.images.some((image) => image.flagged) ? "양성" : "음성"}</strong><small>이미지 객체 탐지</small></div>
-        <div><span>OCR 판정</span><strong className={styles.pendingVerdict}>연동 대기</strong><small>추출 텍스트와 별도 판정</small></div>
-        <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>AI 판정과 별도로 관리</small></div>
+      <section className={styles.verdictSummary} aria-label="분석 판정 요약">
+        <div className={styles.overallVerdict}>
+          <div><h2>종합 판정</h2><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong></div>
+          <p>{verdictExplanation}</p>
+          <details className={styles.verdictRule}><summary>판정 기준</summary><p>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</p></details>
+        </div>
+        <div className={styles.componentVerdicts}>
+          <div><div className={styles.verdictHeading}><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong></div>{textScore !== null ? <div className={styles.summaryScore}><span>모델 점수</span><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b></div> : <small>{textAnalysis ? "모델 점수 미제공" : "분석 미제공"}</small>}</div>
+          <div><div className={styles.verdictHeading}><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong></div>
+            <details className={styles.verdictRule}><summary>객체·OCR 요약</summary>
+              <p><span className={styles.summaryLabel}>검출 객체</span>{detectedNames.length ? detectedNames.join(", ") : detection.images.length ? "미검출" : "미제공"}</p>
+              <p><span className={styles.summaryLabel}>OCR 분석 점수</span><b style={ocrMax !== null ? { color: scoreColors(ocrMax).fg } : undefined}>{ocrMax !== null ? toPercent(ocrMax, 2) : "미제공"}</b></p>
+            </details>
+            </div>
+        </div>
       </section>
-      <nav className={styles.evidenceNav} aria-label="분석 근거 바로가기">
-        <a href="#post-original"><FileText size={16} aria-hidden="true" />게시글 원문</a>
-        <a href="#text-analysis-title"><ScanText size={16} aria-hidden="true" />텍스트 근거</a>
-        <a href="#image-analysis-title"><Images size={16} aria-hidden="true" />이미지 · OCR <span>{detection.images.length}</span></a>
-      </nav>
       <div className={`${styles.detailLayout} ${styles.reviewLayout}`}>
         <div className={styles.mainColumn}>
           <article className={styles.postCard} id="post-original" aria-labelledby="post-title">
@@ -161,7 +237,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
             </header>
             {textAnalysis ? (
               <>
-                <p className={styles.evidenceNote}>판정 방식: {textAnalysis.source === "rule" ? "규칙 · 사전 매칭" : textAnalysis.source === "model" ? "AI 모델" : "미제공"}. 모델 점수와 사전 매칭 결과를 함께 확인하세요.</p>
+                <p className={styles.evidenceNote}>판정 방식: {textAnalysis.source === "rule" ? "규칙 · 사전 매칭" : textAnalysis.source === "model" ? "AI 모델" : "미제공"}</p>
                 {/* prob_drug는 ML 모델 점수, matched_*는 사전 기반 규칙 결과로 서로 다른 분석이다. */}
                 {textAnalysis.probDrug !== null ? (
                   <div className={styles.probRow}>
@@ -179,11 +255,11 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                       {toPercent(textAnalysis.probDrug, 2)}
                     </strong>
                   </div>
-                ) : (
+                ) : textAnalysis.source !== "rule" ? (
                   <p className={styles.ruleNote}>
-                    {textAnalysis.source === "rule" ? "규칙(사전 매칭)으로 판정되었습니다." : textAnalysis.source === "model" ? "모델로 판정되었습니다. 확률 점수는 제공되지 않습니다." : "판정 방식과 확률 점수가 제공되지 않았습니다."}
+                    {textAnalysis.source === "model" ? "모델로 판정되었습니다. 확률 점수는 제공되지 않습니다." : "판정 방식과 확률 점수가 제공되지 않았습니다."}
                   </p>
-                )}
+                ) : null}
                 {textAnalysis.matchedTerms.length > 0 && (
                   <div className={styles.matchGroup}>
                     <h3 className={styles.matchTitle}>매칭된 용어 (단어 사전)</h3>
@@ -223,7 +299,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
               <h2 className={styles.asideTitle} id="image-analysis-title">이미지 · OCR 분석 근거</h2>
             </header>
             {detection.images.length > 0 ? (
-              <><p className={styles.evidenceNote}>이미지를 누르면 원본 크기로 볼 수 있습니다. 객체의 검출 신뢰도와 OCR 텍스트를 각각 확인하세요.</p><ul className={styles.imageRows}>
+              <><p className={styles.evidenceNote}>이미지를 선택하면 원본을 볼 수 있습니다.</p><ul className={styles.imageRows}>
                 {detection.images.map((image, index) => {
                   const ocrScore = analyses ? analyses[index].ocrScore : null;
                   return (
@@ -320,70 +396,16 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
         <aside className={`${styles.aside} ${styles.reviewAside}`}>
           <section className={`${styles.asideCard} ${styles.reviewCard}`} aria-labelledby="action-title">
             <div className={styles.reviewCardHeader}><h2 id="action-title">검토 처리</h2><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></div>
-            <p className={styles.evidenceNote}>원문과 분석 근거를 검토한 뒤 확정하세요. AI의 양성·음성 판정은 변경되지 않습니다.</p>
+            <p className={styles.evidenceNote}>검토 확정은 AI 판정을 변경하지 않습니다.</p>
             <button type="button" className={styles.confirmButton} onClick={handleConfirm} disabled={status === "confirmed" || pending !== null}>
               <Check aria-hidden="true" />{pending === "confirm" ? "저장 중…" : status === "confirmed" ? "검토 확정됨" : "검토 확정"}
             </button>
-            <p className={error ? styles.actionError : styles.actionNote} role="status">{error || (status === "confirmed" ? "검토 상태가 확정으로 저장되었습니다." : "확정 시 검토 상태를 서버에 저장합니다.")}</p>
+            <p className={error ? styles.actionError : styles.actionNote} role="status">{error || (status === "confirmed" ? "검토가 확정되었습니다." : "")}</p>
             <div className={styles.deleteArea}>
               <div><strong>게시글 삭제</strong><p>이 기록을 완전히 삭제합니다. 되돌릴 수 없습니다.</p></div>
-              <button type="button" onClick={() => setConfirmOpen(true)} disabled={pending !== null}><Trash2 size={15} aria-hidden="true" />삭제…</button>
+              <button type="button" aria-label="게시글 삭제" title="게시글 삭제" onClick={() => setConfirmOpen(true)} disabled={pending !== null}><Trash2 size={15} aria-hidden="true" /></button>
             </div>
           </section>
-          <section className={styles.asideCard} aria-labelledby="risk-title">
-            <h2 className={styles.asideTitle} id="risk-title">분석 요약</h2>
-            <dl className={styles.breakdown}>
-              <div className={styles.breakdownRow}>
-                <dt>텍스트</dt>
-                <dd>
-                  {textScore !== null ? (
-                    <>
-                      <i className={styles.breakdownTrack} aria-hidden="true">
-                        <b style={{ width: toPercent(textScore), background: scoreColors(textScore).stroke }} />
-                      </i>
-                      <span className={styles.breakdownValue} style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</span>
-                    </>
-                  ) : textAnalysis ? (
-                    // 모델 점수 없이 규칙 매칭만 수행된 경우
-                    <span className={styles.breakdownText}>
-                      {textAnalysis.flagged ? "의심" : "정상"} (점수 없음)
-                    </span>
-                  ) : (
-                    <span className={styles.breakdownEmpty}>분석 없음</span>
-                  )}
-                </dd>
-              </div>
-              <div className={styles.breakdownRow}>
-                <dt>객체</dt>
-                <dd>
-                  {detectedNames.length > 0 ? (
-                    <span className={styles.breakdownText}>
-                      {detectedNames[0]}
-                      {detectedNames.length > 1 && ` 외 ${detectedNames.length - 1}종`}
-                    </span>
-                  ) : (
-                    <span className={styles.breakdownEmpty}>{detection.images.length ? "미검출" : "미제공"}</span>
-                  )}
-                </dd>
-              </div>
-              <div className={styles.breakdownRow}>
-                <dt>OCR</dt>
-                <dd>
-                  {ocrMax !== null ? (
-                    <>
-                      <i className={styles.breakdownTrack} aria-hidden="true">
-                        <b style={{ width: toPercent(ocrMax), background: scoreColors(ocrMax).stroke }} />
-                      </i>
-                      <span className={styles.breakdownValue} style={{ color: scoreColors(ocrMax).fg }}>{toPercent(ocrMax, 2)}</span>
-                    </>
-                  ) : (
-                    <span className={styles.breakdownEmpty}>판정 미제공</span>
-                  )}
-                </dd>
-              </div>
-            </dl>
-          </section>
-
           <section className={styles.asideCard} aria-labelledby="meta-title">
             <h2 className={styles.asideTitle} id="meta-title">수집 정보</h2>
             <dl className={styles.metaList}>

@@ -47,6 +47,8 @@ export type ImageAnalysisSummary = {
 };
 
 export type DetectionRow = {
+  /** OCR의 명시적 개별 판정. 제공되지 않으면 추출 여부나 점수로 추정하지 않는다. */
+  ocrFlagged?: boolean | null;
   id: string;
   isDrug: boolean | null;
   /** 텍스트 AI 모델의 마약 확률(0~1). 모델 점수가 없으면 null */

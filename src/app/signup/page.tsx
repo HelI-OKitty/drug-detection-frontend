@@ -9,8 +9,8 @@ export default function Page() {
       <main className="auth-page">
         <section className="auth-card" aria-labelledby="auth-title">
           <header className="auth-header">
-            <div className="auth-brand"><span aria-hidden="true" />SENTINEL</div>
-            <h1 id="auth-title">회원가입 · 모니터링 콘솔</h1>
+            <Link href="/" className="auth-brand"><span aria-hidden="true" />SENTINEL</Link>
+            <h1 id="auth-title">회원가입</h1>
           </header>
           <div className="auth-guide" role="status">
             <p className="guide-title">회원가입 일시 중단</p>

@@ -9,8 +9,6 @@ export interface AccountUpdateInput {
   site_url: string;
   notification_enabled: boolean;
   notification_email: string;
-  current_password?: string;
-  new_password?: string;
 }
 
 export async function updateAccount(input: AccountUpdateInput): Promise<
@@ -36,18 +34,6 @@ export async function updateAccount(input: AccountUpdateInput): Promise<
     notification_enabled: input.notification_enabled,
     notification_email: notificationEmail || null,
   };
-
-  // 비밀번호는 두 값이 모두 있을 때만 변경 요청에 포함한다. (current_password는 변경 시 필수)
-  if (input.current_password || input.new_password) {
-    if (!input.current_password || !input.new_password) {
-      return { success: false, message: "비밀번호를 변경하려면 현재 비밀번호와 새 비밀번호를 모두 입력해 주세요." };
-    }
-    if (input.new_password.length < 8) {
-      return { success: false, message: "새 비밀번호는 8자 이상으로 설정해 주세요." };
-    }
-    body.current_password = input.current_password;
-    body.new_password = input.new_password;
-  }
 
   try {
     const data = await authRequest("/profile", {
