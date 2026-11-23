@@ -3,22 +3,19 @@ import Link from "next/link";
 import { ConsoleShell } from "@/components/console-shell";
 import DashboardView from "@/components/dashboard-view";
 import MemberInfo from "@/components/member-info";
-import { fetchAnalysisStats, fetchDashboard, fetchDetections } from "@/lib/detections-api";
-import { countVerdicts } from "@/lib/detection-filters";
+import { fetchAnalysisStats, fetchDashboard } from "@/lib/detections-api";
 import guardStyles from "@/components/settings.module.css";
 
 export const metadata: Metadata = { title: "탐지 대시보드 | SENTINEL" };
 
 export default async function DashboardPage() {
-  const [result, list] = await Promise.all([fetchDashboard(), fetchDetections()]);
-  const stats = result.ok && list.ok ? await fetchAnalysisStats(list.items) : null;
-  const verdictCounts = list.ok ? countVerdicts(list.items) : null;
+  const [result, stats] = await Promise.all([fetchDashboard(), fetchAnalysisStats()]);
 
   return (
     <ConsoleShell memberInfo={<MemberInfo />}>
       <main>
         {result.ok ? (
-          <DashboardView summary={result.summary} stats={stats} verdictCounts={verdictCounts} />
+          <DashboardView summary={result.summary} stats={stats} verdictCounts={result.verdicts} />
         ) : (
           <div className={guardStyles.page}>
             <div className={guardStyles.guard} role="status">
