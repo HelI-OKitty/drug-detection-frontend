@@ -382,7 +382,7 @@
 .selectMenu button:hover, .selectMenu button:focus { background:#edf2f5; outline:none; }
 @media(max-width:600px) { .selectField { width:calc(50% - 6px); } }
 
-.verdictSummary { word-break:keep-all; overflow-wrap:anywhere; display:grid; grid-template-columns:minmax(260px,1.4fr) minmax(0,3fr); align-items:start; margin-bottom:20px; padding:18px 0; border:1px solid #e0e7ee; border-radius:10px; background:#fff; }
+.verdictSummary { word-break:keep-all; overflow-wrap:anywhere; display:grid; grid-template-columns:minmax(260px,1.3fr) minmax(0,2fr); align-items:start; margin-bottom:20px; padding:18px 0; border:1px solid #e0e7ee; border-radius:10px; background:#fff; }
 .overallVerdict { padding:0 20px; }
 .overallVerdict > div { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
 .overallVerdict h2 { margin:0; font-size:13px; font-weight:500; color:#52657b; }
@@ -392,13 +392,14 @@
 .verdictRule { color:#64748b; font-size:11px; }
 .verdictRule summary { width:fit-content; cursor:pointer; }
 .verdictRule p { margin:8px 0 0; line-height:1.6; }
-.componentVerdicts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.componentVerdicts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
 .componentVerdicts > div { display:flex; flex-direction:column; gap:8px; padding:0 20px; border-left:1px solid #edf1f5; }
 .componentVerdicts span { font-size:12px; color:#64748b; }
 .componentVerdicts strong { font-size:17px; }
 .componentVerdicts small { font-size:11px; color:#64748b; line-height:1.6; }
-.summaryScore { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
-.summaryLabel { display:block; margin-bottom:4px; }
+.verdictHeading { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; min-height:28px; }
+.summaryScore { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; }
+.summaryLabel { display:inline; margin-right:8px; }
 .summaryScore > span { font-size:11px; }
 .summaryScore b { font-size:24px; line-height:1.2; font-weight:600; font-variant-numeric:tabular-nums; color:#243447; white-space:nowrap; }
 @media(max-width:1000px) {
