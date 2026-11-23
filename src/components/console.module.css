@@ -26,6 +26,7 @@
 .headerActions nav { display:flex; align-items:center; gap:20px; min-height:47px; overflow-x:auto; white-space:nowrap; }
 .headerActions a { display:inline-flex; align-items:center; gap:6px; min-height:44px; color:#52657b; font-size:12px; }
 .headerActions a:hover { color:#087e56; }
+.headerActions a[aria-current="location"] { color:#087e56; font-weight:600; box-shadow:inset 0 -2px #087e56; }
 .headerActions a:last-child { margin-left:auto; color:#087e56; }
 
 .breadcrumb { color:#8a9bb1; font:12px ui-monospace,monospace; }
@@ -177,7 +178,7 @@
 .sidebarToggle:focus-visible { outline:2px solid #087e56; outline-offset:2px; }
 .sidebarToggle svg { width:20px; height:20px; }
 @media(min-width:761px) {
-  .sidebar { padding-top:0; }
+  .sidebar { position:sticky; top:0; align-self:start; height:100svh; overflow-y:auto; padding-top:0; }
   .sidebarHeader { position:relative; height:72px; min-height:72px; flex-shrink:0; }
   .sidebarHeader::after { content:""; position:absolute; bottom:0; left:8px; right:8px; height:1px; background:#e4eaf0; }
   .sidebar .nav { margin-top:16px; }

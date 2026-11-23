@@ -35,13 +35,62 @@ function highlightKeywords(content: string, keywords: string[]) {
 export function DetectionDetailNavigation({ sourceUrl }: { sourceUrl: string }) {
   const params = useSearchParams();
   const listHref = `/detections${params.size ? `?${params}` : ""}`;
-  return <nav aria-label="상세 화면 바로가기">
+  const [active, setActive] = useState("post-original");
+  const navRef = useRef<HTMLElement>(null);
+  const selectedPosition = useRef<number | null>(null);
+
+  useEffect(() => {
+    let frame = 0;
+    function update() {
+      if (selectedPosition.current !== null && Math.abs(window.scrollY - selectedPosition.current) < 2) return;
+      selectedPosition.current = null;
+      const boundary = (navRef.current?.closest("header")?.getBoundingClientRect().bottom ?? 120) + 32;
+      const ids = ["post-original", "text-analysis-title", "image-analysis-title"];
+      const review = document.getElementById("action-title");
+      const aside = review?.closest("aside");
+      // 고정된 검토 패널은 본문과 함께 보여도 현재 읽는 본문 구역을 덮어쓰지 않는다.
+      if (aside && getComputedStyle(aside).position !== "sticky") ids.push("action-title");
+      let current = ids[0];
+      for (const id of ids) {
+        if ((document.getElementById(id)?.getBoundingClientRect().top ?? Infinity) <= boundary) current = id;
+      }
+      setActive(current);
+    }
+    function schedule() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    }
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
+
+  function jump(id: string) {
+    document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "instant" });
+    window.history.pushState(null, "", `#${id}`);
+    selectedPosition.current = window.scrollY;
+    setActive(id);
+  }
+
+  function sectionLink(id: string, label: string) {
+    return <a href={`#${id}`} aria-current={active === id ? "location" : undefined} onClick={(event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault(); jump(id);
+    }}>{label}</a>;
+  }
+
+  return <nav ref={navRef} aria-label="상세 화면 바로가기">
     <Link href={listHref} scroll={false}><ArrowLeft size={16} aria-hidden="true" />목록으로</Link>
-    <a href="#post-original">게시글 원문</a>
-    <a href="#text-analysis-title">텍스트 근거</a>
-    <a href="#image-analysis-title">이미지 · OCR</a>
+    {sectionLink("post-original", "게시글 원문")}
+    {sectionLink("text-analysis-title", "텍스트 근거")}
+    {sectionLink("image-analysis-title", "이미지 · OCR")}
     <a href={sourceUrl} target="_blank" rel="noreferrer noopener">원문 열기<ExternalLink size={14} aria-hidden="true" /><span className={styles.srOnly}> (새 창)</span></a>
-    <a href="#action-title">검토 처리</a>
+    {sectionLink("action-title", "검토 처리")}
   </nav>;
 }
 
