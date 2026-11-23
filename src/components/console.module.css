@@ -19,7 +19,7 @@
 .avatar { display:grid; place-items:center; width:36px; height:36px; border:1px solid #d7e0e9; border-radius:9px; background:#e4eaf0; color:#059d69; font-family:monospace; }
 .workspace { min-width:0; }
 /* 회원 정보·로그인 버튼 등 어떤 내용이 와도 높이가 변하지 않도록 고정한다. */
-.topbar { height:72px; padding:0 28px; display:flex; align-items:center; gap:20px; border-bottom:1px solid #e4eaf0; font-size:14px; }
+.topbar { position:sticky; top:0; z-index:30; background:#f8fafb; height:72px; padding:0 28px; display:flex; align-items:center; gap:20px; border-bottom:1px solid #e4eaf0; font-size:14px; }
 .breadcrumb { color:#8a9bb1; font:12px ui-monospace,monospace; }
 .topbar > a { margin-left:auto; color:#6c7d91; font-size:12px; }
 .memberInfo { margin-left:auto; min-width:0; }
@@ -64,7 +64,7 @@
 .chartTip span i { width:8px; height:8px; border-radius:3px; flex-shrink:0; }
 .hoverCol[data-edge=start] .chartTip { left:0; transform:translate(0,-100%); }
 .hoverCol[data-edge=end] .chartTip { left:auto; right:0; transform:translate(0,-100%); }
-.panel { border:1px solid #e0e7ee; background:white; border-radius:10px; overflow:hidden; scroll-margin-top:20px; }
+.panel { border:1px solid #e0e7ee; background:white; border-radius:10px; overflow:hidden; scroll-margin-top:92px; }
 .panel header { display:flex; gap:10px; align-items:center; justify-content:space-between; padding:20px; border-bottom:1px solid #e6edf3; }
 .panel header h2 { display:flex; align-items:center; gap:10px; margin:0; font-size:14px; font-weight:600; }
 .panel header h2 > svg { width:17px; height:17px; flex-shrink:0; color:#74849a; stroke-width:1.7; }

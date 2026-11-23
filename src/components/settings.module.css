@@ -355,7 +355,7 @@
 }
 
 .outcomeHeader { padding:0 0 20px; border-bottom:1px solid #e0e7ee; }
-.outcomeHeader h2 { margin:0 0 10px; color:#202e39; font-size:22px; font-weight:700; letter-spacing:-.5px; scroll-margin-top:24px; }
+.outcomeHeader h2 { margin:0 0 10px; color:#202e39; font-size:22px; font-weight:700; letter-spacing:-.5px; scroll-margin-top:96px; }
 .outcomeHeader h2:focus { outline:none; }
 .outcomeHeader p { margin:0; color:#52657b; font-size:14px; line-height:1.8; word-break:keep-all; }
 .outcomeActions { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:12px; }
