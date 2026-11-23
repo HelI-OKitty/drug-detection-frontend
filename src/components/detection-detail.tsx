@@ -141,12 +141,12 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
         <div className={styles.overallVerdict}>
           <div><h2>종합 판정</h2><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong></div>
           <p>{verdictExplanation}</p>
-          <small>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</small>
+          <details className={styles.verdictRule}><summary>판정 기준</summary><p>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</p></details>
         </div>
         <div className={styles.componentVerdicts}>
           <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong><a href="#text-analysis-title">분석 근거 보기</a></div>
           <div><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong><a href="#image-analysis-title">분석 근거 보기</a></div>
-          <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>담당자의 검토 상태 · AI 판정과 별개</small></div>
+          <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>담당자 검토 · AI 판정과 별개</small></div>
         </div>
       </section>
       <div className={`${styles.detailLayout} ${styles.reviewLayout}`}>
