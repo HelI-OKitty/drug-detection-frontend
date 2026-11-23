@@ -194,7 +194,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
             <span className={styles.verdictHeading}>이미지 판정{detection.images.length > 0 && ` · ${detection.images.length}장`}</span>
             <div className={styles.verdictResult}>
               <strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong>
-              {imageMax !== null && <div className={styles.summaryScore}><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b><span>이미지 최고 점수</span></div>}
+              {imageMax !== null && <div className={styles.summaryScore}><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b><span>{detection.images.length > 1 ? "이미지 마약 확률 · 최댓값" : "이미지 마약 확률"}</span></div>}
             </div>
             {imageMax === null && <small>해당 게시글에는 이미지가 없습니다.</small>}
           </div>
@@ -327,8 +327,16 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                         <div className={styles.imageEvidenceTitle}><h3 className={styles.rowTitle}>이미지 {index + 1}</h3><span className={styles.analysisBadge} data-flagged={image.flagged}>{image.flagged ? "이미지 양성" : "이미지 음성"}</span></div>
 
                         <div className={styles.analysisSub}>
+                          <p className={styles.analysisSubTitle}>이미지 마약 확률</p>
+                          <div className={styles.probRow}>
+                            <div className={styles.probTrack} aria-hidden="true"><i className={styles.probFill} style={{ width: toPercent(image.score), background: scoreColors(image.score).stroke }} /></div>
+                            <strong className={styles.probValue} style={{ color: scoreColors(image.score).fg }}>{toPercent(image.score, 2)}</strong>
+                          </div>
+                          <p className={styles.ocrDisclaimer}>이미지 전체에 마약이 포함되어 있을 확률입니다.</p>
+                        </div>
+                        <div className={styles.analysisSub}>
                           <p className={styles.analysisSubTitle}>
-                            객체 탐지 결과
+                            검출 객체 · 분류 확률
                             {/* "정상" 표기는 마약 의심 여부로 읽혀서, 객체 검출 여부(검출됨/미검출)로 표현한다. */}
                             {image.detectedObjects.length > 0 ? (
                               <span className={styles.analysisBadge} data-flagged={true}>검출됨</span>
@@ -336,6 +344,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                               <span className={styles.mutedBadge}>미검출</span>
                             )}
                           </p>
+                          {image.detectedObjects.length > 0 && <p className={styles.ocrDisclaimer}>검출된 객체가 표시된 마약 종류에 해당할 확률입니다.</p>}
                           {image.detectedObjects.length > 0 && (
                             <ul className={styles.objectList}>
                               {image.detectedObjects.map((object, objectIndex) => (

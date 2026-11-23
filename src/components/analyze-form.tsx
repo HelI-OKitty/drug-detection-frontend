@@ -382,13 +382,14 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
                 </div>
                 </div>
                 <div className={styles.itemBody}>
-                  <Score label="이미지 탐지 점수" value={result.score} />
+                  <Score label="이미지 마약 확률" value={result.score} />
+                  <p className={styles.itemMeta}>이미지 전체에 마약이 포함되어 있을 확률입니다.</p>
                   <div className={styles.subBlock}>
-                    <h4 className={styles.subTitle}>객체 탐지 결과 · {result.detectedObjects.length}개</h4>
+                    <h4 className={styles.subTitle}>검출 객체 · {result.detectedObjects.length}개</h4>
                     {result.detectedObjects.length ? <ul className={styles.objectList}>
                       {result.detectedObjects.map((object, i) => <li key={`${object.className}-${i}`} className={styles.objectRow}>
                         <span className={styles.objectName} title={object.className}>{object.className}</span>
-                        <span className={styles.itemMeta}>신뢰도</span><strong className={styles.probValue}>{object.confidence === null ? "미제공" : toPercent(object.confidence, 2)}</strong>
+                        <span className={styles.itemMeta}>객체 분류 확률</span><strong className={styles.probValue}>{object.confidence === null ? "미제공" : toPercent(object.confidence, 2)}</strong>
                       </li>)}
                     </ul> : <p className={styles.subEmpty}>탐지된 객체가 없습니다.</p>}
                   </div>
