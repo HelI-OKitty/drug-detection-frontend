@@ -374,3 +374,13 @@
 .advancedFilters[open] { padding-bottom:16px; }
 .advancedFilters[open] .filterChevron { transform:rotate(180deg); }
 .advancedFilters .filterFields { margin-top:12px; }
+
+.selectField { position:relative; display:flex; flex-wrap:wrap; align-items:center; gap:8px; width:180px; color:#52657b; font-size:12px; font-weight:600; }
+.selectTrigger { display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%; min-height:42px; padding:9px 12px; border:1px solid #dce4eb; border-radius:8px; background:#fff; color:#243447; font:inherit; font-weight:400; cursor:pointer; }
+.selectTrigger[aria-expanded=true] > svg { transform:rotate(180deg); }
+.selectTrigger:focus-visible { outline:2px solid #059669; outline-offset:-2px; }
+.selectMenu { position:absolute; z-index:10; top:calc(100% + 6px); left:0; width:100%; padding:4px; border:1px solid #dce4eb; border-radius:8px; background:#fff; box-shadow:0 6px 18px #17253514; }
+.selectMenu button { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:38px; padding:8px; border:0; border-radius:4px; background:#fff; color:#243447; font:inherit; font-weight:400; text-align:left; cursor:pointer; }
+.selectMenu button[aria-selected=true] { color:#087e56; background:#effaf5; }
+.selectMenu button:hover, .selectMenu button:focus { background:#edf2f5; outline:none; }
+@media(max-width:600px) { .selectField { width:calc(50% - 6px); } }

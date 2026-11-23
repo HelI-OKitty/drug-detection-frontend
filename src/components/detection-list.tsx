@@ -7,6 +7,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Se
 import { STATUS_FILTERS, STATUS_LABEL, sourceHost, type DetectionRow } from "@/lib/detections";
 import { VERDICTS, PERIODS, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
 import styles from "./detections.module.css";
+import FilterSelect from "./filter-select";
 
 const PER_PAGE = 10;
 const LIST_POSITION_KEY = "sentinel:detection-list-position";
@@ -102,8 +103,8 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
         <details className={styles.advancedFilters} open={expanded} onToggle={(event) => toggleFilters(event.currentTarget.open)}>
         <summary><SlidersHorizontal size={16} aria-hidden="true" />상세 필터{advancedCount > 0 && <span>{advancedCount}개 적용</span>}<ChevronDown size={16} className={styles.filterChevron} aria-hidden="true" /></summary>
         <div className={styles.filterFields}>
-          <label>검토 상태<select value={filters.status} onChange={(e) => update({ status: e.target.value })}>{STATUS_FILTERS.map((v) => <option key={v.key} value={v.key}>{v.label}</option>)}</select></label>
-          <label>탐지 기간 <small>KST 기준</small><select value={filters.period} onChange={(e) => update({ period: e.target.value, from: "", to: "" })}>{PERIODS.map((v) => <option key={v.key} value={v.key}>{v.label}</option>)}</select></label>
+          <FilterSelect label="검토 상태" value={filters.status} options={STATUS_FILTERS} onChange={(status) => update({ status })} />
+          <FilterSelect label="탐지 기간" hint="KST 기준" value={filters.period} options={PERIODS} onChange={(period) => update({ period, from: "", to: "" })} />
           {filters.period === "custom" && <div className={styles.dateRange}><label>시작일<input type="date" value={filters.from} max={filters.to || undefined} onChange={(e) => update({ from: e.target.value })} /></label><span>–</span><label>종료일<input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => update({ to: e.target.value })} /></label></div>}
         </div>
         {invalidRange && <p className={styles.filterError} role="alert">종료일은 시작일 이후로 선택해 주세요.</p>}
