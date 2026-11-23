@@ -388,7 +388,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                 })}
               </ul></>
             ) : (
-              <p className={styles.noAnalysis}>제공된 이미지 분석 결과가 없습니다.</p>
+              <p className={styles.noAnalysis}>해당 게시글에는 이미지가 존재하지 않습니다.</p>
             )}
           </section>
         </div>
