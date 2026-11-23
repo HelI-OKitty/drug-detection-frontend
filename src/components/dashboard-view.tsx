@@ -101,18 +101,33 @@ export default function DashboardView({
     { key: "positive", label: "양성", count: verdictCounts.positive, color: "#cf2548" },
     { key: "negative", label: "음성", count: verdictCounts.negative, color: "#087e56" },
   ] : [];
-  const metrics = [
+  const metrics: {
+    title: string;
+    value: number;
+    href: string;
+    action: string;
+    pending?: boolean;
+    verdict?: string;
+  }[] = [
     { title: "미확인 게시글", value: summary.unconfirmed, href: "/detections?verdict=positive&status=unreviewed", action: "검토하기", pending: true },
-    { title: preview ? "오늘 탐지" : "오늘 탐지 · UTC", value: summary.today, href: "/detections?verdict=positive&period=today", action: "오늘 게시글" },
-    { title: "전체 탐지", value: summary.total, href: "/detections?verdict=positive", action: "전체 목록" },
+    { title: preview ? "오늘 탐지" : "오늘 양성 · UTC", value: summary.today, href: "/detections?verdict=positive&period=today", action: "오늘 게시글" },
+    ...(!preview && verdictCounts
+      ? verdictSegments.map(({ key, label, count }) => ({
+          title: `전체 ${label}`,
+          value: count,
+          href: `/detections?verdict=${key}`,
+          action: `${label} 목록`,
+          verdict: key,
+        }))
+      : [{ title: "전체 탐지", value: summary.total, href: "/detections?verdict=positive", action: "전체 목록" }]),
   ];
 
   return (
     <div className={`${ui.dashboard} ${preview ? ui.preview : ""}`}>
       <h1 className={ui.srOnly}>대시보드</h1>
       {preview && <p className={ui.previewNote}>화면 예시 · 실제 운영 데이터가 아닙니다</p>}
-      <div className={ui.overview}>
-        {metrics.map((metric) => <section key={metric.title} data-priority={metric.pending || undefined}>
+      <div className={ui.overview} data-with-verdicts={!preview && !!verdictCounts || undefined}>
+        {metrics.map((metric) => <section key={metric.title} data-priority={metric.pending || undefined} data-verdict={metric.verdict}>
           <h2>{metric.title}</h2>
           <p className={ui.metric}>{metric.value.toLocaleString("ko-KR")}<small>건</small></p>
           {preview ? <span className={ui.muted}>{metric.action}</span> : <Link href={metric.href} className={metric.pending ? ui.primaryAction : undefined}>{metric.action}<ArrowUpRight size={15} aria-hidden="true" /></Link>}
