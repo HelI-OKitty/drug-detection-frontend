@@ -399,8 +399,10 @@
 .componentVerdicts > div { display:flex; flex-direction:column; gap:8px; padding:0 20px; border-left:1px solid #edf1f5; }
 .componentVerdicts span { font-size:12px; color:#64748b; }
 .componentVerdicts strong { font-size:17px; }
-.componentVerdicts a, .componentVerdicts small { font-size:11px; color:#64748b; line-height:1.6; }
-.componentVerdicts a { color:#087e56; }
+.componentVerdicts small { font-size:11px; color:#64748b; line-height:1.6; }
+.summaryScore { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; }
+.summaryScore > span { font-size:11px; }
+.summaryScore b { font-size:24px; line-height:1.2; font-weight:600; font-variant-numeric:tabular-nums; color:#243447; }
 @media(max-width:1000px) {
   .verdictSummary { grid-template-columns:1fr; gap:16px; }
   .componentVerdicts { padding-top:16px; border-top:1px solid #edf1f5; }

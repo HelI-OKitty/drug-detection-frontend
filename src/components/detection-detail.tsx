@@ -193,14 +193,14 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
           <details className={styles.verdictRule}><summary>판정 기준</summary><p>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</p></details>
         </div>
         <div className={styles.componentVerdicts}>
-          <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong><small>{textScore !== null ? `모델 점수 ${toPercent(textScore, 2)}` : textAnalysis ? "모델 점수 미제공" : "분석 미제공"}</small><a href="#text-analysis-title">분석 근거 보기</a></div>
+          <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong>{textScore !== null ? <div className={styles.summaryScore}><span>모델 점수</span><b>{toPercent(textScore, 2)}</b></div> : <small>{textAnalysis ? "모델 점수 미제공" : "분석 미제공"}</small>}</div>
           <div><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong>
             <details className={styles.verdictRule}><summary>객체·OCR 요약</summary>
               <p>검출 객체: {detectedNames.length ? detectedNames.join(", ") : detection.images.length ? "미검출" : "미제공"}</p>
-              <p>OCR 분석 점수: {ocrMax !== null ? toPercent(ocrMax, 2) : "미제공"}</p>
+              <p>OCR 분석 점수: <b>{ocrMax !== null ? toPercent(ocrMax, 2) : "미제공"}</b></p>
             </details>
-            <a href="#image-analysis-title">분석 근거 보기</a></div>
-          <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>담당자 검토 · AI 판정과 별개</small></div>
+            </div>
+          <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>담당자 검토 상태</small></div>
         </div>
       </section>
       <div className={`${styles.detailLayout} ${styles.reviewLayout}`}>
