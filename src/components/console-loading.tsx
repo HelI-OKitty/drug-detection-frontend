@@ -1,14 +1,14 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import {
-  ArrowLeft, BarChart3, Bell, FileText, Hash, Images, KeyRound, Power, Radar, ScanSearch, ShieldCheck, Timer, TrendingUp, TriangleAlert, UserCog,
+  ArrowLeft, BarChart3, FileText, Hash, Images, KeyRound, Power, Radar, ScanSearch, ShieldCheck, Timer, TrendingUp, TriangleAlert, UserCog,
 } from "lucide-react";
 import { ConsoleShell } from "./console-shell";
 import styles from "./console.module.css";
 import listStyles from "./detections.module.css";
 import formStyles from "./settings.module.css";
 
-type Variant = "dashboard" | "detections" | "detection-detail" | "account" | "settings" | "crawl" | "analyze";
+type Variant = "dashboard" | "detections" | "detection-detail" | "account" | "password" | "settings" | "crawl" | "analyze";
 
 /** 데이터가 들어올 자리만 차지하는 쉬머 블록 */
 function Sk({ w = "100%", h = 12, r = 7, style }: { w?: number | string; h?: number; r?: number | string; style?: CSSProperties }) {
@@ -191,14 +191,18 @@ function AccountSkeleton() {
         <div style={{ display: "grid", gap: 14, marginBottom: 20 }}><Sk h={13} /><Sk h={13} /></div>
         <div className={formStyles.fieldGrid}><Sk h={44} r={10} /><Sk h={44} r={10} /></div>
       </CardSkeleton>
-      <CardSkeleton Icon={Bell} title="알림 설정">
-        <div style={{ display: "grid", gap: 14 }}><Sk h={26} w={46} r={999} /><Sk h={44} r={10} /></div>
-      </CardSkeleton>
-      <CardSkeleton Icon={KeyRound} title="비밀번호 변경">
-        <div className={formStyles.fieldGrid}><Sk h={44} r={10} /><Sk h={44} r={10} /></div>
-      </CardSkeleton>
+      <Sk h={60} r={10} />
     </div>
   );
+}
+
+function PasswordSkeleton() {
+  return <div className={formStyles.page}>
+    <Sk w={120} h={20} />
+    <CardSkeleton Icon={KeyRound} title="비밀번호 변경">
+      <div className={formStyles.passwordFields}><Sk h={44} r={8} /><Sk h={44} r={8} /><Sk h={44} r={8} /><Sk w={140} h={48} r={8} /></div>
+    </CardSkeleton>
+  </div>;
 }
 
 function SettingsSkeleton() {
@@ -260,6 +264,7 @@ const SKELETONS: Record<Variant, () => React.ReactNode> = {
   detections: DetectionsSkeleton,
   "detection-detail": DetectionDetailSkeleton,
   account: AccountSkeleton,
+  password: PasswordSkeleton,
   settings: SettingsSkeleton,
   crawl: CrawlSkeleton,
   analyze: AnalyzeSkeleton,
