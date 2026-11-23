@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
+import { filterDetections, readFilters } from "../src/lib/detection-filters.ts";
 
 // 서버 액션을 네트워크·쿠키 대역으로 실행해 API 계약을 검증한다.
 function loadServer(path) {
@@ -58,6 +59,20 @@ test("list uses is_drug without fabricating text, images, or OCR scores", async 
   const runs = await detections.fetchCrawlRuns();
   assert.equal(runs.runs[0].positive, 1);
   assert.equal(runs.runs[0].negative, 1);
+});
+
+test("summary-only image responses support the image-positive filter", async () => {
+  globalThis.fetch = async (url) => {
+    assert.equal(new URL(url).pathname, "/detections");
+    return Response.json(rows.map((row, index) => ({
+      ...row,
+      image_ai_results: [{ prediction: index === 0 ? 1 : 0, image_score: 0.8, has_ocr_text: true }],
+    })));
+  };
+  const result = await detections.fetchDetections();
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.items[0].imageAnalyses, [{ flagged: true, score: 0.8, hasOcrText: true, ocrScore: null }]);
+  assert.deepEqual(filterDetections(result.items, readFilters(new URLSearchParams("types=image")), "2026-11-23").map((row) => row.id), [rows[0].id]);
 });
 
 test("detail and statistics use source=model even without a probability", async () => {

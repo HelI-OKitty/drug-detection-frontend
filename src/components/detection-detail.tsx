@@ -403,7 +403,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                 <dd><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></dd>
               </div>
               {detection.adminId && (
-                <div className={styles.metaRow}><dt>admin_id</dt><dd>{detection.adminId}</dd></div>
+                <div className={styles.metaRow}><dt>담당 관리자 ID</dt><dd>{detection.adminId}</dd></div>
               )}
             </dl>
           </section>
