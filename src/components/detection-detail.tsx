@@ -243,14 +243,6 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
               {highlightKeywords(detection.content, detection.keywords)}
             </p>
 
-            {detection.images.length > 0 && (
-              <ul className={styles.postImages} aria-label="첨부 이미지">
-                {detection.images.map((image, index) => (
-                  <li key={`${image.url}-${index}`}>{renderImageThumbnail(image.url, index)}</li>
-                ))}
-              </ul>
-            )}
-
             {detection.keywords.length > 0 && (
               <div className={styles.postKeywords} aria-label="탐지 키워드">
                 <span className={styles.postKeywordsLabel}>탐지 키워드</span>

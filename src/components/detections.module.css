@@ -329,8 +329,6 @@
 .postToggle svg { flex-shrink:0; color:#52657b; }
 .postCard[open] > .postToggle svg { transform:rotate(180deg); }
 .postCard:not([open]) .postToggle h2 { margin-bottom:0; }
-.postImages { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,96px),1fr)); gap:10px; margin:20px 0 0; padding:0; list-style:none; }
-.reviewLayout .postImages :is(.rowThumb, .rowThumbBroken) { width:100%; height:auto; aspect-ratio:1; }
 .reviewLayout .asideTitle { font-family:inherit; font-size:14px; letter-spacing:0; font-weight:600; color:#334155; }
 .platformTag { margin-left:auto; padding:6px 9px; border-radius:7px; background:#edf4f8; color:#52657b; font-size:11px; white-space:nowrap; }
 .evidenceNote { margin:0 0 18px; color:#64748b; font-size:12px; line-height:1.8; }
