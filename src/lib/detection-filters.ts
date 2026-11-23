@@ -66,3 +66,11 @@ export function filterDetections(items: DetectionRow[], filters: DetectionFilter
     return !query || [item.summary, item.nickname, ...item.keywords].some((value) => value.toLowerCase().includes(query));
   });
 }
+
+export function countVerdicts(items: DetectionRow[]) {
+  return {
+    positive: items.filter((item) => item.isDrug === true).length,
+    negative: items.filter((item) => item.isDrug === false).length,
+    unknown: items.filter((item) => item.isDrug === null).length,
+  };
+}

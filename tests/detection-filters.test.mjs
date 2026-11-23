@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { filterDetections, readFilters } from '../src/lib/detection-filters.ts';
+import { filterDetections, readFilters, countVerdicts } from '../src/lib/detection-filters.ts';
 const rows = [
   { id: 'text', isDrug: true, textFlagged: true, imageAnalyses: [], status: 'unreviewed', detectedAt: '2026-11-11 00:00', summary: '게시글', nickname: '@author', keywords: ['keyword'] },
   { id: 'image', isDrug: true, textFlagged: false, imageAnalyses: [{ flagged: true }], status: 'reviewing', detectedAt: '2026-11-05 23:59', summary: '이미지', nickname: '@other', keywords: [] },
@@ -41,4 +41,9 @@ test('OCR filter requires explicit positive verdict, combines with text by OR', 
   const filter = query => filterDetections(samples, readFilters(new URLSearchParams(query)), '2026-11-11').map(row=>row.id);
   assert.deepEqual(filter('verdict=positive&types=ocr'), ['positive']);
   assert.deepEqual(filter('verdict=positive&types=text,ocr'), ['positive','text-only']);
+});
+
+test('dashboard counts preserve negative, positive and missing verdicts separately',()=>{
+  assert.deepEqual(countVerdicts(rows),{positive:4,negative:1,unknown:1});
+  assert.deepEqual(countVerdicts([]),{positive:0,negative:0,unknown:0});
 });

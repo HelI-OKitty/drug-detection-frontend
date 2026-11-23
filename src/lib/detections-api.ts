@@ -41,6 +41,8 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
   return {
     id,
     isDrug: typeof raw.is_drug === "boolean" ? raw.is_drug : null,
+    // 임시 OCR 계약: 게시글 단위 ocr_prediction (1 / 0 / null).
+    ocrFlagged: raw.ocr_prediction === 1 ? true : raw.ocr_prediction === 0 ? false : null,
     textScore: textAnalysis ? textAnalysis.probDrug : null,
     textFlagged: textAnalysis ? textAnalysis.flagged : null,
     imageAnalyses,
@@ -255,13 +257,18 @@ const OBJECT_CLASSES = ["Cocaine", "Heroin", "Shrooms", "Marijuana"];
  * 목록의 모든 게시글 상세를 모아 텍스트·이미지 통계를 집계한다.
  * TODO(stats): 게시글이 많아지면 요청이 N+1로 늘어나므로 백엔드 통계 API로 교체한다.
  */
-export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
+export async function fetchAnalysisStats(items?: DetectionRow[]): Promise<AnalysisStats | null> {
   try {
-    const { status, data } = await request("/detections");
-    if (status !== 200 || !Array.isArray(data)) return null;
-    const ids = data
-      .map((item) => (typeof item === "object" && item !== null ? (item as Record<string, unknown>).id : null))
-      .filter((id): id is string => typeof id === "string");
+    let ids: string[];
+    if (items) {
+      ids = items.map((item) => item.id);
+    } else {
+      const { status, data } = await request("/detections");
+      if (status !== 200 || !Array.isArray(data)) return null;
+      ids = data
+        .map((item) => (typeof item === "object" && item !== null ? (item as Record<string, unknown>).id : null))
+        .filter((id): id is string => typeof id === "string");
+    }
     const details = await Promise.all(
       ids.map((id) => request(`/detections/${encodeURIComponent(id)}`).catch(() => ({ status: 0, data: null as unknown }))),
     );
