@@ -56,19 +56,19 @@ function RatioBar({
 }
 
 /** 항목별 건수를 가로 막대로 나열한다. */
-function CountBars({ items, color }: { items: { name: string; count: number }[]; color: string }) {
+function CountBars({ items }: { items: { name: string; count: number }[] }) {
   if (items.length === 0) return <p className={styles.statEmpty}>집계된 항목이 없습니다.</p>;
   const max = Math.max(1, ...items.map((item) => item.count));
   const total = items.reduce((acc, item) => acc + item.count, 0);
   return (
-    <ul className={styles.countBars}>
+    <ul className={ui.countBars}>
       {items.map((item) => (
         <li key={item.name}>
-          <span className={styles.countName} title={item.name}>{item.name}</span>
-          <i className={styles.countTrack} aria-hidden="true">
-            <b style={{ width: `${(item.count / max) * 100}%`, background: color }} />
+          <span className={ui.countName} title={item.name}>{item.name}</span>
+          <i className={ui.countTrack} aria-hidden="true">
+            <b style={{ width: `${(item.count / max) * 100}%`, background: item.count === max ? "var(--accent)" : "var(--chart-muted)" }} />
           </i>
-          <span className={styles.countValue}>{item.count}건 · {percent(item.count, total)}%</span>
+          <span className={ui.countValue}>{item.count}건 · {percent(item.count, total)}%</span>
         </li>
       ))}
     </ul>
@@ -106,10 +106,10 @@ export default function DashboardView({
       <h1 className={ui.srOnly}>대시보드</h1>
       {preview && <p className={ui.previewNote}>화면 예시 · 실제 운영 데이터가 아닙니다</p>}
       <div className={ui.overview}>
-        {metrics.map((metric) => <section key={metric.title}>
+        {metrics.map((metric) => <section key={metric.title} data-priority={metric.pending || undefined}>
           <h2>{metric.title}</h2>
           <p className={ui.metric} data-pending={metric.pending && metric.value > 0}>{metric.value.toLocaleString("ko-KR")}<small>건</small></p>
-          {preview ? <span className={ui.muted}>{metric.action}</span> : <Link href={metric.href}>{metric.action}<ArrowUpRight size={15} aria-hidden="true" /></Link>}
+          {preview ? <span className={ui.muted}>{metric.action}</span> : <Link href={metric.href} className={metric.pending ? ui.primaryAction : undefined}>{metric.action}<ArrowUpRight size={15} aria-hidden="true" /></Link>}
         </section>)}
       </div>
 
@@ -126,7 +126,7 @@ export default function DashboardView({
         <section className={ui.panel}>
           <header><div><h2>검토 현황</h2><p>전체 탐지 게시글 기준</p></div></header>
           <div className={ui.review}>
-            <div className={ui.ring} style={{ background: `conic-gradient(#c17936 0% ${pendingPercent}%, #edf1f4 ${pendingPercent}% 100%)` }} role="img" aria-label={`전체 중 미확인 ${pendingPercent}%`}><span><strong>{pendingPercent}%</strong>미확인</span></div>
+            <div className={ui.ring} style={{ background: `conic-gradient(var(--attention) 0% ${pendingPercent}%, var(--track) ${pendingPercent}% 100%)` }} role="img" aria-label={`전체 중 미확인 ${pendingPercent}%`}><span><strong>{pendingPercent}%</strong>미확인</span></div>
             <div><p>{summary.unconfirmed > 0 ? "검토할 게시글이 있습니다" : "미확인 게시글이 없습니다"}</p><span>미확인 {summary.unconfirmed.toLocaleString("ko-KR")}건 / 전체 {summary.total.toLocaleString("ko-KR")}건</span>
               {!preview && <Link href="/detections?status=unreviewed">미확인 목록 보기 <ArrowUpRight size={15} aria-hidden="true" /></Link>}
             </div>
@@ -139,21 +139,21 @@ export default function DashboardView({
           <section className={ui.panel}>
             <header><div><h2>텍스트 분석</h2><p>분석된 텍스트 {text.total.toLocaleString("ko-KR")}건</p></div></header>
             <div className={ui.body}>
-              <h3>자주 탐지된 용어</h3><CountBars items={text.terms} color="#6b879c" />
-              <h3>탐지된 의도</h3><CountBars items={text.intents} color="#8b9eac" />
+              <h3>자주 탐지된 용어</h3><CountBars items={text.terms} />
+              <h3>탐지된 의도</h3><CountBars items={text.intents} />
             </div>
           </section>
           <section className={ui.panel}>
             <header><div><h2>이미지 분석</h2><p>분석된 이미지 {image.total.toLocaleString("ko-KR")}장</p></div></header>
             <div className={ui.body}>
-              <h3>검출 객체 분포</h3><CountBars items={image.objects} color="#6b879c" />
-              <h3>이미지 내 텍스트</h3><RatioBar a={image.withOcr} b={image.withoutOcr} aLabel="텍스트 포함" bLabel="텍스트 없음" aColor="#6b879c" bColor="#d4dde6" />
+              <h3>검출 객체 분포</h3><CountBars items={image.objects} />
+              <h3>이미지 내 텍스트</h3><RatioBar a={image.withOcr} b={image.withoutOcr} aLabel="텍스트 포함" bLabel="텍스트 없음" aColor="var(--accent)" bColor="var(--track)" />
             </div>
           </section>
         </div>
         <details className={ui.methods}>
           <summary>분석 방식 상세<ChevronDown size={16} aria-hidden="true" /></summary>
-          <div><h3>텍스트 판정 방식</h3><RatioBar a={text.model} b={text.ruleOnly} aLabel="모델 분석" bLabel="규칙(사전) 판정" aColor="#6b879c" bColor="#b8c7d2" /></div>
+          <div><h3>텍스트 판정 방식</h3><RatioBar a={text.model} b={text.ruleOnly} aLabel="모델 분석" bLabel="규칙(사전) 판정" aColor="var(--accent)" bColor="var(--chart-muted)" /></div>
         </details>
       </>)}
     </div>
