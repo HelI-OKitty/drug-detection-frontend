@@ -132,7 +132,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
           </table>
         </div>
         {!rows.length && <div className={styles.filterEmpty} role="status"><Search size={26} aria-hidden="true" /><strong>{items.length ? "조건에 맞는 게시글이 없습니다" : "아직 수집된 게시글이 없습니다"}</strong><p>{items.length ? "선택한 판정이나 기간을 바꿔 다시 확인해 보세요." : "크롤링으로 수집된 게시글이 여기에 표시됩니다."}</p>{active.length > 0 && <button className={styles.resetButton} onClick={reset}>필터 초기화</button>}</div>}
-        <p className={styles.resultNote}>종합·텍스트·이미지는 각각의 판정입니다. 미제공은 음성을 뜻하지 않습니다.</p>
+        <p className={styles.resultNote}>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성입니다. 미제공은 음성을 뜻하지 않습니다.</p>
         <nav className={styles.filterPagination} aria-label="페이지 이동">
           <span>{filtered.length ? `${(page - 1) * PER_PAGE + 1}–${Math.min(page * PER_PAGE, filtered.length)}` : "0"} / {filtered.length}건</span>
           <div>

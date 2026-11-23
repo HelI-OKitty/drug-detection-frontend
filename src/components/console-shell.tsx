@@ -17,7 +17,7 @@ function pageTitle(pathname: string) {
   return "대시보드";
 }
 
-export function ConsoleShell({ children, memberInfo }: { children: ReactNode; memberInfo: ReactNode }) {
+export function ConsoleShell({ children, memberInfo, headerActions }: { children: ReactNode; memberInfo: ReactNode; headerActions?: ReactNode }) {
   const pathname = usePathname();
   const title = pageTitle(pathname);
   const [collapsed, setCollapsed] = useState(false);
@@ -37,7 +37,7 @@ export function ConsoleShell({ children, memberInfo }: { children: ReactNode; me
   }
 
   return (
-    <div className={`${styles.shell} ${collapsed ? styles.collapsed : ""}`}>
+    <div className={`${styles.shell} ${collapsed ? styles.collapsed : ""} ${headerActions ? styles.withHeaderActions : ""}`}>
       <aside id="console-sidebar" className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
         <Link href="/" className={styles.brand} aria-label="SENTINEL 홈"><i /><span>SENTINEL</span></Link>
@@ -61,7 +61,9 @@ export function ConsoleShell({ children, memberInfo }: { children: ReactNode; me
       </aside>
       <div className={styles.workspace}>
         <header className={styles.topbar}>
-          <strong>{title}</strong><div className={styles.memberInfo}>{memberInfo}</div></header>
+          <div className={styles.topbarContent}><strong>{title}</strong><div className={styles.memberInfo}>{memberInfo}</div></div>
+          {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
+        </header>
         {children}
       </div>
     </div>

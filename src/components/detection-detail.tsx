@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, ExternalLink, FileText, Images, ImageOff, ScanText, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, ImageOff, Trash2, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
 import {
@@ -30,6 +30,19 @@ function highlightKeywords(content: string, keywords: string[]) {
       ? <mark key={`${part}-${index}`}>{part}</mark>
       : <Fragment key={`text-${index}`}>{part}</Fragment>,
   );
+}
+
+export function DetectionDetailNavigation({ sourceUrl }: { sourceUrl: string }) {
+  const params = useSearchParams();
+  const listHref = `/detections${params.size ? `?${params}` : ""}`;
+  return <nav aria-label="상세 화면 바로가기">
+    <Link href={listHref} scroll={false}><ArrowLeft size={16} aria-hidden="true" />목록으로</Link>
+    <a href="#post-original">게시글 원문</a>
+    <a href="#text-analysis-title">텍스트 근거</a>
+    <a href="#image-analysis-title">이미지 · OCR</a>
+    <a href={sourceUrl} target="_blank" rel="noreferrer noopener">원문 열기<ExternalLink size={14} aria-hidden="true" /><span className={styles.srOnly}> (새 창)</span></a>
+    <a href="#action-title">검토 처리</a>
+  </nav>;
 }
 
 export default function DetectionDetail({ detection }: { detection: DetectionDetailData }) {
@@ -77,6 +90,20 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
     .filter((score): score is number => score !== null);
   const ocrMax = ocrScores.length > 0 ? Math.max(...ocrScores) : null;
 
+  const imageFlagged = detection.images.length ? detection.images.some((image) => image.flagged) : null;
+  const positiveSources = [detection.textFlagged === true ? "텍스트" : null, imageFlagged === true ? "이미지" : null].filter(Boolean);
+  const verdictExplanation = detection.isDrug === true && positiveSources.length
+    ? `${positiveSources.join("와 ")}에서 양성이 탐지되었습니다.`
+    : detection.isDrug === false && positiveSources.length
+      ? "종합 판정과 개별 결과가 일치하지 않습니다. 분석 근거를 확인해 주세요."
+      : detection.isDrug === true
+        ? "양성의 근거가 되는 개별 판정을 확인할 수 없습니다."
+        : detection.isDrug === null
+          ? "종합 판정이 제공되지 않았습니다."
+          : detection.textFlagged === null || imageFlagged === null
+            ? "제공된 종합 판정은 음성입니다. 일부 개별 판정은 미제공이며, 음성을 뜻하지 않습니다."
+            : "텍스트와 이미지 모두 음성입니다.";
+
   async function handleConfirm() {
     if (pending) return;
     setError("");
@@ -108,24 +135,20 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
 
   return (
     <div className={styles.page}>
-      <div className={styles.detailTopline}>
-        <Link href={listHref} scroll={false} className={styles.backLink}><ArrowLeft aria-hidden="true" />목록으로</Link>
-        <a className={styles.originalLink} href={detection.sourceUrl} target="_blank" rel="noreferrer noopener">원문 열기<ExternalLink size={15} aria-hidden="true" /><span className={styles.srOnly}> (새 창)</span></a>
-      </div>
       <h1 className={styles.srOnly}>탐지 게시글 검토</h1>
 
-      <section className={styles.verdictOverview} aria-label="판정 및 검토 요약">
-        <div><span>종합 판정</span><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong><small>서버의 종합 분석 결과</small></div>
-        <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong><small>게시글 텍스트 분석</small></div>
-        <div><span>이미지 판정</span><strong data-positive={detection.images.some((image) => image.flagged)}>{!detection.images.length ? "미제공" : detection.images.some((image) => image.flagged) ? "양성" : "음성"}</strong><small>이미지 객체 탐지</small></div>
-        <div><span>OCR 판정</span><strong className={styles.pendingVerdict}>연동 대기</strong><small>추출 텍스트와 별도 판정</small></div>
-        <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>AI 판정과 별도로 관리</small></div>
+      <section className={styles.verdictSummary} aria-label="판정 및 검토 요약">
+        <div className={styles.overallVerdict}>
+          <div><h2>종합 판정</h2><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong></div>
+          <p>{verdictExplanation}</p>
+          <small>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</small>
+        </div>
+        <div className={styles.componentVerdicts}>
+          <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong><a href="#text-analysis-title">분석 근거 보기</a></div>
+          <div><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong><a href="#image-analysis-title">분석 근거 보기</a></div>
+          <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>담당자의 검토 상태 · AI 판정과 별개</small></div>
+        </div>
       </section>
-      <nav className={styles.evidenceNav} aria-label="분석 근거 바로가기">
-        <a href="#post-original"><FileText size={16} aria-hidden="true" />게시글 원문</a>
-        <a href="#text-analysis-title"><ScanText size={16} aria-hidden="true" />텍스트 근거</a>
-        <a href="#image-analysis-title"><Images size={16} aria-hidden="true" />이미지 · OCR <span>{detection.images.length}</span></a>
-      </nav>
       <div className={`${styles.detailLayout} ${styles.reviewLayout}`}>
         <div className={styles.mainColumn}>
           <article className={styles.postCard} id="post-original" aria-labelledby="post-title">

@@ -341,6 +341,7 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
             <span className={styles.resultIcon} aria-hidden="true">{results.isDrug || textResultMissing ? <TriangleAlert /> : <ShieldCheck />}</span>
             <h2 id="overall-title" className={styles.resultTitle}>종합 판정 · {results.isDrug ? "양성" : textResultMissing ? "확인 필요" : "음성"}</h2>
           </div>
+          <p className={styles.itemMeta}>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</p>
           {textResultMissing && <p className={styles.itemMeta}>텍스트 판정이 누락되었습니다. 다시 분석해 주세요.</p>}
           <div className={styles.analysisColumns} data-split={Boolean(text.trim() && results.imageResults.length)}>
             {Boolean(text.trim()) && <section className={styles.analysisPanel}>
