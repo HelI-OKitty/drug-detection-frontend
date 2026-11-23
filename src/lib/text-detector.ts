@@ -1,8 +1,10 @@
 // 단순 분석: 텍스트와 이미지 배열을 한 요청으로 보내고 서버의 종합·개별 판정을 보존한다.
 const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run.app";
 
-// 다중 이미지와 텍스트를 함께 전송할 때 적용하는 프론트 요청 크기 제한.
-export const MAX_ANALYZE_BODY_BYTES = 4 * 1024 * 1024;
+export const MAX_ANALYZE_IMAGES = 5;
+export const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+// 이미지 5장의 base64 인코딩 크기에 텍스트·JSON 여유 1MB를 더한다.
+export const MAX_ANALYZE_BODY_BYTES = MAX_ANALYZE_IMAGES * Math.ceil(MAX_IMAGE_BYTES / 3) * 4 + 1024 * 1024;
 export type AnalyzePayload = { text?: string; images?: string[] };
 export type AnalyzedObject = { className: string; confidence: number | null };
 /** 판정 방식. no_supported_characters는 텍스트 모델이 분석할 수 없는 입력을 뜻한다. */
@@ -43,6 +45,16 @@ export function prepareAnalyzeRequest(input: unknown): { body: AnalyzePayload; e
   if (raw.text !== undefined && typeof raw.text !== "string") return { error: "텍스트는 문자열로 입력해 주세요.", status: 422 };
   if (raw.images !== undefined && (!Array.isArray(raw.images) || raw.images.some((item) => typeof item !== "string" || !item.trim()))) {
     return { error: "이미지는 base64 문자열 목록으로 보내 주세요.", status: 422 };
+  }
+  if (Array.isArray(raw.images)) {
+    if (raw.images.length > MAX_ANALYZE_IMAGES) return { error: "이미지는 최대 5장까지 추가할 수 있습니다.", status: 422 };
+    for (const image of raw.images as string[]) {
+      const base64 = image.replace(/\s/g, "");
+      const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+      if (Math.floor(base64.length * 3 / 4) - padding > MAX_IMAGE_BYTES) {
+        return { error: "이미지는 파일당 3MB 이하로 추가해 주세요.", status: 413 };
+      }
+    }
   }
   const body: AnalyzePayload = {};
   if (typeof raw.text === "string" && raw.text.trim()) body.text = raw.text.trim();

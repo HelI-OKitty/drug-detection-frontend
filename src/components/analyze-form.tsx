@@ -3,14 +3,11 @@
 import { ArrowLeft, ChevronDown, FileText, ImagePlus, Info, ScanSearch, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
 import { scoreColors, toPercent } from "@/lib/detections";
-import { analyzeContent, type AnalysisSource, type AnalyzeResult } from "@/lib/text-detector";
+import { MAX_ANALYZE_IMAGES as MAX_IMAGES, MAX_IMAGE_BYTES, analyzeContent, type AnalysisSource, type AnalyzeResult } from "@/lib/text-detector";
 import viewerStyles from "./detections.module.css";
 import styles from "./settings.module.css";
 
-const MAX_IMAGES = 5;
-const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
-
-type PickedImage = { id: string; name: string; dataUrl: string; base64: string; bytes: number };
+type PickedImage = { id: string; name: string; dataUrl: string; base64: string };
 
 function Score({ label, value }: { label: string; value: number | null }) {
   return <div className={styles.probRow}>
@@ -80,7 +77,6 @@ function readImage(file: File): Promise<PickedImage> {
       resolve({
         id: crypto.randomUUID(),
         name: file.name,
-        bytes: file.size,
         dataUrl,
         // API는 data URL 접두사 없는 순수 base64를 받는다.
         base64: dataUrl.slice(dataUrl.indexOf(",") + 1),
@@ -147,7 +143,6 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
     resetOutcome();
     readingFiles.current = true;
     setReading(true);
-    let totalBytes = images.reduce((sum, image) => sum + image.bytes, 0);
 
     const room = MAX_IMAGES - images.length;
     if (files.length > room) setError(`이미지는 최대 ${MAX_IMAGES}장까지 추가할 수 있습니다.`);
@@ -157,13 +152,12 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
         setError("이미지 파일만 추가할 수 있습니다.");
         continue;
       }
-      if (totalBytes + file.size > MAX_IMAGE_BYTES) {
-        setError("이미지는 합계 3MB 이하로 추가해 주세요.");
+      if (file.size > MAX_IMAGE_BYTES) {
+        setError(`${file.name}: 파일당 3MB 이하로 추가해 주세요.`);
         continue;
       }
       try {
         picked.push(await readImage(file));
-        totalBytes += file.size;
       } catch {
         setError("이미지를 읽지 못했습니다. 다른 파일로 시도해 주세요.");
       }
@@ -270,7 +264,7 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
             </div>
 
             <div className={`${styles.field} ${styles.imageField}`}>
-              <label htmlFor="analyze-images">{hideIntro ? <>이미지 <span>선택</span></> : `이미지 (선택, 최대 ${MAX_IMAGES}장 · 전체 3MB 이하)`}</label>
+              <label htmlFor="analyze-images">{hideIntro ? <>이미지 <span>선택</span></> : `이미지 (선택, 최대 ${MAX_IMAGES}장 · 파일당 3MB 이하)`}</label>
               <input
                 ref={fileInput}
                 id="analyze-images"
@@ -303,7 +297,7 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
                 <span className={styles.dropZoneText}>
                   {hideIntro ? <><strong>파일 선택</strong> 또는 여기로 이미지 끌어놓기</> : <><strong>이미지를 끌어다 놓거나 클릭</strong>해 추가</>}
                 </span>
-                <small>최대 {MAX_IMAGES}장 · 전체 3MB 이하</small>
+                <small>최대 {MAX_IMAGES}장 · 파일당 3MB 이하</small>
               </div>}
               {images.length > 0 && (
                 <ul className={styles.thumbGrid}>
@@ -333,7 +327,7 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
                   </li>}
                 </ul>
               )}
-              {images.length > 0 && <p className={styles.imageLimit}>{images.length} / {MAX_IMAGES}장 · 전체 3MB 이하</p>}
+              {images.length > 0 && <p className={styles.imageLimit}>{images.length} / {MAX_IMAGES}장 · 파일당 3MB 이하</p>}
             </div>
           </div>
         </section>

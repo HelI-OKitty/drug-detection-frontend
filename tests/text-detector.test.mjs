@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { analyzeContent, analyzeText, prepareAnalyzeRequest } from "../src/lib/text-detector.ts";
+import { analyzeContent, analyzeText, prepareAnalyzeRequest, MAX_ANALYZE_BODY_BYTES, MAX_IMAGE_BYTES } from "../src/lib/text-detector.ts";
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
 const textResult = (fields = {}) => ({ prediction: 1, source: 'rule', text_score: null, matched_terms: ['마약'], matched_intents: ['판매'], ...fields });
@@ -61,8 +61,8 @@ test('invalid inputs are rejected before fetch and request size is bounded', asy
   for (const input of [{}, {images:[]}, {image:'legacy'}, {images:'invalid'}, {text:'valid',images:[null]}, {images:[' ']}, {text:12}]) {
     assert.equal(prepareAnalyzeRequest(input).status,422);
   }
-  assert.equal(prepareAnalyzeRequest({text:'가'.repeat(1500000)}).status,413);
-  await assert.rejects(analyzeContent({images:['a'.repeat(4*1024*1024)]}), /용량/);
+  assert.equal(prepareAnalyzeRequest({text:'a'.repeat(MAX_ANALYZE_BODY_BYTES)}).status,413);
+  await assert.rejects(analyzeContent({images:['a'.repeat(4*1024*1024 + 4)]}), /파일당 3MB/);
 });
 test('malformed or legacy responses and incomplete image batches cannot appear as valid results', async () => {
   for (const body of [null, {}, {is_drug:false}, response({is_drug:'false'}), response({text_ai_result:{}}), response({image_ai_results:null})]) {
@@ -153,4 +153,14 @@ test('batch results preserve each image and every OCR entry exactly as single re
   assert.deepEqual(batch.imageResults.map(image=>image.ocrResults.map(ocr=>ocr.text)), [
     ['첫 번째 이미지 문구','첫 번째 이미지 추가 문구'],['두 번째 이미지 문구'],
   ]);
+});
+
+test('allows five 3MB images while enforcing individual size and count limits', () => {
+  const exact = Buffer.alloc(MAX_IMAGE_BYTES).toString('base64');
+  assert.equal(prepareAnalyzeRequest({ images: Array(5).fill(exact) }).error, undefined);
+  for (const size of [MAX_IMAGE_BYTES - 1, MAX_IMAGE_BYTES - 2]) {
+    assert.equal(prepareAnalyzeRequest({ images: [Buffer.alloc(size).toString('base64')] }).error, undefined);
+  }
+  assert.equal(prepareAnalyzeRequest({ images: [Buffer.alloc(MAX_IMAGE_BYTES + 1).toString('base64')] }).status, 413);
+  assert.equal(prepareAnalyzeRequest({ images: Array(6).fill('aA==') }).status, 422);
 });
