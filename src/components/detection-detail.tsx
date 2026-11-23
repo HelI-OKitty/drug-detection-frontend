@@ -126,15 +126,8 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
   }, [viewerUrl]);
   const textAnalysis = detection.textAnalysis;
   const textScore = textAnalysis ? textAnalysis.probDrug : null;
-  const detectedNames = [
-    ...new Set(detection.images.flatMap((image) => image.detectedObjects.map((object) => object.name))),
-  ];
-  const ocrScores = detection.images.flatMap((image) => image.ocrResults)
-    .map((ocr) => ocr.probDrug)
-    .filter((score): score is number => score !== null);
   const imageScores = detection.images.map((image) => image.score).filter(Number.isFinite);
   const imageMax = imageScores.length ? Math.max(...imageScores) : null;
-  const ocrMax = ocrScores.length > 0 ? Math.max(...ocrScores) : null;
 
   const imageFlagged = detection.images.length ? detection.images.some((image) => image.flagged) : null;
   const positiveSources = [detection.textFlagged === true ? "텍스트" : null, imageFlagged === true ? "이미지" : null].filter(Boolean);
@@ -189,14 +182,22 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
           <p>{verdictExplanation}</p>
         </div>
         <div className={styles.componentVerdicts}>
-          <div><div className={styles.verdictHeading}><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong></div>{textScore !== null ? <div className={styles.summaryScore}><span>모델 점수</span><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b></div> : <small>{detection.textFlagged === null ? missingVerdictReason(textAnalysis?.source) : "모델 점수 미제공"}</small>}</div>
-          <div><div className={styles.verdictHeading}><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong></div>
-            {imageMax !== null ? <div className={styles.summaryScore}><span>이미지 최고 점수 · {detection.images.length}장</span><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b></div> : <small>해당 게시글에는 이미지가 없습니다.</small>}
-            {detection.images.length > 0 && <details className={styles.verdictRule}><summary>객체·OCR 요약</summary>
-              <p><span className={styles.summaryLabel}>검출 객체</span>{detectedNames.length ? detectedNames.join(", ") : detection.images.length ? "미검출" : "미제공"}</p>
-              <p><span className={styles.summaryLabel}>OCR 분석 점수</span><b style={ocrMax !== null ? { color: scoreColors(ocrMax).fg } : undefined}>{ocrMax !== null ? toPercent(ocrMax, 2) : "미제공"}</b></p>
-            </details>}
+          <div>
+            <span className={styles.verdictHeading}>텍스트 판정</span>
+            <div className={styles.verdictResult}>
+              <strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong>
+              {textScore !== null && <div className={styles.summaryScore}><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b><span>모델 점수</span></div>}
             </div>
+            {textScore === null && <small>{detection.textFlagged === null ? missingVerdictReason(textAnalysis?.source) : textAnalysis?.source === "rule" ? "규칙 · 사전 매칭" : "모델 점수 미제공"}</small>}
+          </div>
+          <div>
+            <span className={styles.verdictHeading}>이미지 판정{detection.images.length > 0 && ` · ${detection.images.length}장`}</span>
+            <div className={styles.verdictResult}>
+              <strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong>
+              {imageMax !== null && <div className={styles.summaryScore}><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b><span>이미지 최고 점수</span></div>}
+            </div>
+            {imageMax === null && <small>해당 게시글에는 이미지가 없습니다.</small>}
+          </div>
         </div>
       </section>
       <div className={`${styles.detailLayout} ${styles.reviewLayout}`}>
