@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import {
-  ArrowLeft, BarChart3, FileText, Hash, Images, KeyRound, Power, Radar, ScanSearch, ShieldCheck, Timer, TrendingUp, TriangleAlert, UserCog,
+  ArrowLeft, Hash, KeyRound, Power, Radar, ScanSearch, Timer, UserCog,
 } from "lucide-react";
 import { ConsoleShell } from "./console-shell";
 import styles from "./console.module.css";
+import dashboardStyles from "./dashboard.module.css";
 import listStyles from "./detections.module.css";
 import formStyles from "./settings.module.css";
 
@@ -16,52 +17,17 @@ function Sk({ w = "100%", h = 12, r = 7, style }: { w?: number | string; h?: num
 }
 
 function DashboardSkeleton() {
-  const metrics = [
-    { title: "전체 수집", tone: "blue", Icon: BarChart3 },
-    { title: "양성 (의심)", tone: "red", Icon: TriangleAlert },
-    { title: "음성 (정상)", tone: "green", Icon: ShieldCheck },
-    { title: "오늘 수집", tone: "slate", Icon: TrendingUp },
-  ];
-  return (
-    <div className={styles.dashboard}>
-      <div className={styles.metrics}>
-        {metrics.map((metric) => (
-          <section className={styles.metric} key={metric.title} data-tone={metric.tone}>
-            <div className={styles.metricTop}><h2>{metric.title}</h2><span aria-hidden="true"><metric.Icon /></span></div>
-            <p className={styles.metricValue}><Sk w={82} h={40} r={9} /></p>
-            <p className={styles.metricFoot}><Sk w={110} h={11} /></p>
-          </section>
-        ))}
-      </div>
-      <div className={`${styles.panels} ${styles.panelsSingle}`}>
-        <section className={styles.panel}>
-          <header><h2><BarChart3 aria-hidden="true" />수집 추이</h2><small>최근 7일</small></header>
-          <div className={styles.lineChart}>
-            <div className={styles.trendToggles}>
-              <Sk w={64} h={30} r={9} /><Sk w={92} h={30} r={9} /><Sk w={92} h={30} r={9} />
-            </div>
-            <Sk h={176} r={11} />
-          </div>
-        </section>
-      </div>
-      <div className={`${styles.panels} ${styles.panelsEven}`}>
-        {[
-          { title: "텍스트 분석 통계", Icon: FileText },
-          { title: "이미지 분석 통계", Icon: Images },
-        ].map(({ title, Icon }) => (
-          <section className={styles.panel} key={title}>
-            <header><h2><Icon aria-hidden="true" />{title}</h2><small><Sk w={52} h={10} /></small></header>
-            <div className={styles.statBody}>
-              <Sk h={10} r={99} />
-              <div style={{ display: "grid", gap: 11, marginTop: 24 }}>
-                {Array.from({ length: 4 }, (_, index) => <Sk key={index} h={12} w={`${96 - index * 14}%`} />)}
-              </div>
-            </div>
-          </section>
-        ))}
-      </div>
+  return <div className={dashboardStyles.dashboard} aria-label="대시보드 불러오는 중">
+    <div className={dashboardStyles.overview}>
+      {["미확인 게시글", "오늘 탐지", "전체 탐지"].map((title) => <section key={title}><h2>{title}</h2><div style={{ margin: "14px 0" }}><Sk w={82} h={42} /></div><Sk w={90} /></section>)}
     </div>
-  );
+    <div className={dashboardStyles.activity}>
+      {["최근 탐지 추이", "검토 현황"].map((title) => <section className={dashboardStyles.panel} key={title}><header><h2>{title}</h2></header><div className={dashboardStyles.body}><Sk h={190} /></div></section>)}
+    </div>
+    <div className={dashboardStyles.analysis}>
+      {["텍스트 분석", "이미지 분석"].map((title) => <section className={dashboardStyles.panel} key={title}><header><h2>{title}</h2></header><div className={dashboardStyles.body}><Sk h={160} /></div></section>)}
+    </div>
+  </div>;
 }
 
 function DetectionsSkeleton() {
