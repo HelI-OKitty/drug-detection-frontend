@@ -132,6 +132,8 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
   const ocrScores = detection.images.flatMap((image) => image.ocrResults)
     .map((ocr) => ocr.probDrug)
     .filter((score): score is number => score !== null);
+  const imageScores = detection.images.map((image) => image.score).filter(Number.isFinite);
+  const imageMax = imageScores.length ? Math.max(...imageScores) : null;
   const ocrMax = ocrScores.length > 0 ? Math.max(...ocrScores) : null;
 
   const imageFlagged = detection.images.length ? detection.images.some((image) => image.flagged) : null;
@@ -190,6 +192,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
         <div className={styles.componentVerdicts}>
           <div><div className={styles.verdictHeading}><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong></div>{textScore !== null ? <div className={styles.summaryScore}><span>모델 점수</span><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b></div> : <small>{detection.textFlagged === null ? missingVerdictReason(textAnalysis?.source) : "모델 점수 미제공"}</small>}</div>
           <div><div className={styles.verdictHeading}><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong></div>
+            {imageMax !== null ? <div className={styles.summaryScore}><span>이미지 최고 점수 · {detection.images.length}장</span><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b></div> : <small>이미지 분석 미제공</small>}
             <details className={styles.verdictRule}><summary>객체·OCR 요약</summary>
               <p><span className={styles.summaryLabel}>검출 객체</span>{detectedNames.length ? detectedNames.join(", ") : detection.images.length ? "미검출" : "미제공"}</p>
               <p><span className={styles.summaryLabel}>OCR 분석 점수</span><b style={ocrMax !== null ? { color: scoreColors(ocrMax).fg } : undefined}>{ocrMax !== null ? toPercent(ocrMax, 2) : "미제공"}</b></p>
