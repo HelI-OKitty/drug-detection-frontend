@@ -16,13 +16,14 @@ export type DetectionImage = {
   score: number;
   detectedObjects: DetectedObject[];
   ocrText: string;
+  ocrResults: (TextAnalysis & { text: string })[];
 };
 
 /** 백엔드 text_ai_result에서 화면에 쓰는 값만 추린 것 */
 export type TextAnalysis = {
-  source: "rule" | "model" | null;
+  source: string | null;
   /** 종합 의심 판정(prediction=1). 모델·규칙 어느 쪽이든 의심이면 1 */
-  flagged: boolean;
+  flagged: boolean | null;
   /**
    * ML 모델의 마약 확률 0~1. 모델 점수 없이 규칙 매칭만 수행된 경우 null.
    * 규칙 양성을 임의의 확률(100%)로 바꿔 보여주지 않는다.
@@ -47,8 +48,8 @@ export type ImageAnalysisSummary = {
 };
 
 export type DetectionRow = {
-  /** OCR의 명시적 개별 판정. 제공되지 않으면 추출 여부나 점수로 추정하지 않는다. */
-  ocrFlagged?: boolean | null;
+  /** 텍스트 판정 미제공 사유를 포함하는 원본 source. */
+  textSource?: string | null;
   id: string;
   isDrug: boolean | null;
   /** 텍스트 AI 모델의 마약 확률(0~1). 모델 점수가 없으면 null */
@@ -127,4 +128,12 @@ export function shortUrl(url: string) {
   } catch {
     return url;
   }
+}
+
+/** 판정 미제공 사유는 source를 보존하고 알려진 값만 설명으로 바꾼다. */
+export function missingVerdictReason(source: string | null | undefined) {
+  if (source === "no_supported_characters") return "분석 가능한 문자가 없어 판정이 제공되지 않았습니다.";
+  if (source === "rule") return "규칙 분석의 판정이 제공되지 않았습니다.";
+  if (source === "model") return "모델 분석의 판정이 제공되지 않았습니다.";
+  return source ? `판정 미제공 사유: ${source}` : "판정과 사유가 제공되지 않았습니다.";
 }

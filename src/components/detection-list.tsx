@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
-import { STATUS_FILTERS, STATUS_LABEL, sourceHost, type DetectionRow } from "@/lib/detections";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, Info, X } from "lucide-react";
+import { STATUS_FILTERS, STATUS_LABEL, sourceHost, missingVerdictReason, type DetectionRow } from "@/lib/detections";
 import { VERDICTS, PERIODS, OCR_PRESENCE, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
 import styles from "./detections.module.css";
 import FilterSelect from "./filter-select";
 
 const PER_PAGE = 10;
 const LIST_POSITION_KEY = "sentinel:detection-list-position";
-function VerdictBadge({ value }: { value: boolean | null }) {
-  return value === null ? <span className={styles.cellNone} title="판정 미제공">미제공</span>
+function VerdictBadge({ value, source }: { value: boolean | null; source?: string | null }) {
+  return value === null ? <span className={styles.cellNone} title={missingVerdictReason(source)}>미제공</span>
     : <span className={styles.verdictBadge} data-flagged={value}>{value ? "양성" : "음성"}</span>;
 }
 export default function DetectionList({ items }: { items: DetectionRow[] }) {
@@ -67,8 +67,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const hasText = items.some((item) => item.textFlagged !== null);
   const hasImage = items.some((item) => imageVerdict(item) !== null);
   const typeOptions = [{ key: "text", label: "텍스트 양성", Icon: FileText, available: hasText },
-    { key: "image", label: "이미지 양성", Icon: ImageIcon, available: hasImage },
-    { key: "ocr", label: "OCR 양성", Icon: ScanText, available: true }];
+    { key: "image", label: "이미지 양성", Icon: ImageIcon, available: hasImage }];
 
   function update(values: Record<string, string>) {
     const next = new URLSearchParams(window.location.search);
@@ -95,7 +94,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
     ...(filters.query ? [{ label: `검색: ${filters.query}`, clear: () => update({ q: "" }) }] : []),
     ...(filters.verdict !== "all" ? [{ label: `판정: ${VERDICTS.find((v) => v.key === filters.verdict)?.label}`, clear: () => update({ verdict: "all", types: "" }) }] : []),
     ...(filters.status !== "all" ? [{ label: `검토: ${STATUS_FILTERS.find((v) => v.key === filters.status)?.label}`, clear: () => update({ status: "all" }) }] : []),
-    ...filters.types.map((type) => ({ label: type === "text" ? "텍스트 양성" : type === "image" ? "이미지 양성" : "OCR 양성", clear: () => update({ types: filters.types.filter((v) => v !== type).join(",") }) })),
+    ...filters.types.map((type) => ({ label: type === "text" ? "텍스트 양성" : "이미지 양성", clear: () => update({ types: filters.types.filter((v) => v !== type).join(",") }) })),
     ...(filters.period !== "all" ? [{ label: filters.period === "custom" ? `${filters.from || "시작일"} ~ ${filters.to || "종료일"}` : PERIODS.find((p) => p.key === filters.period)?.label, clear: () => update({ period: "all", from: "", to: "" }) }] : []),
   ];
   return (
@@ -145,7 +144,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
           <table className={`${styles.table} ${styles.filteredTable}`}><thead><tr><th scope="col">게시글</th><th scope="col">종합 판정</th><th scope="col">텍스트</th><th scope="col">이미지</th><th scope="col">탐지 시각</th><th scope="col">검토 상태</th></tr></thead>
             <tbody>{rows.map((item) => <tr className={styles.row} key={item.id}>
               <td className={styles.postCell}><Link href={`/detections/${encodeURIComponent(item.id)}?${detailQuery}`} className={styles.summaryLink} prefetch={false} onClick={(event) => { if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) rememberPosition(); }}>{item.summary}</Link><div className={styles.postMeta}><span>{item.nickname}</span><a className={styles.sourceLink} href={item.sourceUrl} target="_blank" rel="noreferrer noopener">{sourceHost(item.sourceUrl) || item.platform}</a></div></td>
-              <td><VerdictBadge value={item.isDrug} /></td><td><VerdictBadge value={item.textFlagged} /></td><td><VerdictBadge value={imageVerdict(item)} /></td>
+              <td><VerdictBadge value={item.isDrug} /></td><td><VerdictBadge value={item.textFlagged} source={item.textSource} /></td><td><VerdictBadge value={imageVerdict(item)} /></td>
               <td><time className={styles.detectedAt}>{item.detectedAt}</time></td><td><span className={styles.status} data-status={item.status}>{STATUS_LABEL[item.status]}</span></td>
             </tr>)}</tbody>
           </table>

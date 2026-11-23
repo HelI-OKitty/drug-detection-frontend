@@ -164,17 +164,48 @@ test("partial failures and missing target results cannot be reported as success"
   assert.equal((await crawl.triggerCrawl(40)).success, false);
 });
 
-test("provisional OCR verdict accepts only explicit numeric prediction", async () => {
-  const values=[1,0,null,undefined,true,"1"];
-  globalThis.fetch=async()=>Response.json(values.map((ocr_prediction,i)=>({...rows[0],id:`ocr-${i}`,ocr_prediction,has_ocr_text:true,ocr_score:1})));
-  const result=await detections.fetchDetections();
-  assert.equal(result.ok,true);
-  assert.deepEqual(result.items.map(row=>row.ocrFlagged),[true,false,null,null,null,null]);
-  assert.deepEqual(filterDetections(result.items,readFilters(new URLSearchParams('types=ocr')),'2026-11-23').map(row=>row.id),['ocr-0']);
-});
 test("analysis statistics reuse supplied list without another list request", async () => {
   let calls=0;
   globalThis.fetch=async(url)=>{calls++;assert.equal(new URL(url).pathname,'/detections/id-0');return Response.json({...rows[0],image_ai_results:[]});};
   assert.ok(await detections.fetchAnalysisStats([{id:'id-0'}]));
   assert.equal(calls,1);
+});
+
+test("null text predictions preserve source instead of becoming negative", async () => {
+  for (const source of ['no_supported_characters','model','rule','future_reason']) {
+    const raw = {...rows[0], text_ai_result:{prediction:null,source,text_score:null,matched_terms:[],matched_intents:[]}};
+    globalThis.fetch = async () => Response.json([raw]);
+    const list = await detections.fetchDetections();
+    assert.equal(list.items[0].textFlagged,null);
+    assert.equal(list.items[0].textSource,source);
+    globalThis.fetch = async () => Response.json(raw);
+    const detail = await detections.fetchDetectionDetail(raw.id);
+    assert.equal(detail.detection.textAnalysis.flagged,null);
+    assert.equal(detail.detection.textAnalysis.source,source);
+  }
+});
+test("detail OCR arrays retain every verdict and score; stats count images once", async () => {
+  const ocr = (text,prediction,score) => ({ocr_text:text,prediction,ocr_text_score:score,matched_terms:['term'],matched_intents:['intent']});
+  const raw = {...rows[0],image_ai_results:[
+    {image_url:'https://example.com/a.png',prediction:0,image_score:.1,detected_objects:[],ocr_text_results:[ocr('first',1,90),ocr('second',0,0),{...ocr('third',null,null),source:'no_supported_characters'}]},
+    {image_url:'https://example.com/b.png',prediction:0,image_score:.2,detected_objects:[]},
+  ]};
+  globalThis.fetch = async () => Response.json(raw);
+  const {detection} = await detections.fetchDetectionDetail(raw.id);
+  assert.equal(detection.images[0].ocrText,'first\nsecond\nthird');
+  assert.deepEqual(detection.images[0].ocrResults.map(r=>[r.flagged,r.probDrug]),[[true,.9],[false,0],[null,null]]);
+  assert.deepEqual(detection.images[0].ocrResults[0].matchedTerms,['term']);
+  assert.deepEqual(detection.images[1].ocrResults,[]);
+  const stats = await detections.fetchAnalysisStats([{id:raw.id}]);
+  assert.equal(stats.withOcr,1);
+  assert.equal(stats.withoutOcr,1);
+});
+test("crawl defaults omitted failed count to zero without accepting invalid counts", async () => {
+  process.env.INTERNAL_API_KEY = 'test';
+  for (const failed of [undefined,null,-1,'0']) {
+    globalThis.fetch = async url=>Response.json(url.endsWith('/profile') ? {id:'a'} : {results:[{admin_id:'a',total:1,saved:1,skipped:0,failed}]});
+    const result = await crawl.triggerCrawl(10);
+    assert.equal(result.success,failed===undefined);
+    if(result.success) assert.equal(result.result.failed,0);
+  }
 });

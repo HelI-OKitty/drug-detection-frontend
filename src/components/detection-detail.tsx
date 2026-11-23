@@ -7,6 +7,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
 import {
   STATUS_LABEL,
+  missingVerdictReason,
   scoreColors,
   shortUrl,
   toPercent,
@@ -125,17 +126,11 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
   }, [viewerUrl]);
   const textAnalysis = detection.textAnalysis;
   const textScore = textAnalysis ? textAnalysis.probDrug : null;
-  // 이미지별 OCR 분석 점수는 toRow의 imageAnalyses에서 가져온다.
-  // 실제 이미지가 있을 때만 인덱스가 1:1로 대응하므로 길이가 맞을 때만 사용한다.
-  const analyses =
-    detection.images.length > 0 && detection.images.length === detection.imageAnalyses.length
-      ? detection.imageAnalyses
-      : null;
   const detectedNames = [
     ...new Set(detection.images.flatMap((image) => image.detectedObjects.map((object) => object.name))),
   ];
-  const ocrScores = (analyses ?? [])
-    .map((analysis) => analysis.ocrScore)
+  const ocrScores = detection.images.flatMap((image) => image.ocrResults)
+    .map((ocr) => ocr.probDrug)
     .filter((score): score is number => score !== null);
   const ocrMax = ocrScores.length > 0 ? Math.max(...ocrScores) : null;
 
@@ -193,7 +188,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
           <details className={styles.verdictRule}><summary>판정 기준</summary><p>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</p></details>
         </div>
         <div className={styles.componentVerdicts}>
-          <div><div className={styles.verdictHeading}><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong></div>{textScore !== null ? <div className={styles.summaryScore}><span>모델 점수</span><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b></div> : <small>{textAnalysis ? "모델 점수 미제공" : "분석 미제공"}</small>}</div>
+          <div><div className={styles.verdictHeading}><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong></div>{textScore !== null ? <div className={styles.summaryScore}><span>모델 점수</span><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b></div> : <small>{detection.textFlagged === null ? missingVerdictReason(textAnalysis?.source) : "모델 점수 미제공"}</small>}</div>
           <div><div className={styles.verdictHeading}><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong></div>
             <details className={styles.verdictRule}><summary>객체·OCR 요약</summary>
               <p><span className={styles.summaryLabel}>검출 객체</span>{detectedNames.length ? detectedNames.join(", ") : detection.images.length ? "미검출" : "미제공"}</p>
@@ -230,14 +225,14 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
             <header className={styles.analysisHeader}>
               <h2 className={styles.asideTitle} id="text-analysis-title">텍스트 분석 근거</h2>
               {textAnalysis && (
-                <span className={styles.analysisBadge} data-flagged={textAnalysis.flagged}>
-                  {textAnalysis.flagged ? "텍스트 양성" : "텍스트 음성"}
+                <span className={styles.analysisBadge} data-flagged={textAnalysis.flagged ?? undefined}>
+                  {textAnalysis.flagged === null ? "텍스트 판정 미제공" : textAnalysis.flagged ? "텍스트 양성" : "텍스트 음성"}
                 </span>
               )}
             </header>
             {textAnalysis ? (
               <>
-                <p className={styles.evidenceNote}>판정 방식: {textAnalysis.source === "rule" ? "규칙 · 사전 매칭" : textAnalysis.source === "model" ? "AI 모델" : "미제공"}</p>
+                <p className={styles.evidenceNote}>판정 방식: {textAnalysis.source === "rule" ? "규칙 · 사전 매칭" : textAnalysis.source === "model" ? "AI 모델" : textAnalysis.source === "no_supported_characters" ? "분석 가능한 문자 없음" : textAnalysis.source ?? "미제공"}</p>
                 {/* prob_drug는 ML 모델 점수, matched_*는 사전 기반 규칙 결과로 서로 다른 분석이다. */}
                 {textAnalysis.probDrug !== null ? (
                   <div className={styles.probRow}>
@@ -255,9 +250,9 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                       {toPercent(textAnalysis.probDrug, 2)}
                     </strong>
                   </div>
-                ) : textAnalysis.source !== "rule" ? (
+                ) : textAnalysis.flagged === null || textAnalysis.source !== "rule" ? (
                   <p className={styles.ruleNote}>
-                    {textAnalysis.source === "model" ? "모델로 판정되었습니다. 확률 점수는 제공되지 않습니다." : "판정 방식과 확률 점수가 제공되지 않았습니다."}
+                    {textAnalysis.flagged === null ? missingVerdictReason(textAnalysis.source) : textAnalysis.source === "model" ? "모델로 판정되었습니다. 확률 점수는 제공되지 않습니다." : "판정 방식과 확률 점수가 제공되지 않았습니다."}
                   </p>
                 ) : null}
                 {textAnalysis.matchedTerms.length > 0 && (
@@ -301,7 +296,6 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
             {detection.images.length > 0 ? (
               <><p className={styles.evidenceNote}>이미지를 선택하면 원본을 볼 수 있습니다.</p><ul className={styles.imageRows}>
                 {detection.images.map((image, index) => {
-                  const ocrScore = analyses ? analyses[index].ocrScore : null;
                   return (
                     <li className={styles.imageRow} key={`${image.url}-${index}`}>
                       {brokenUrls.includes(image.url) ? (
@@ -361,26 +355,19 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                             이미지 속 텍스트 (OCR)
                             <span className={styles.mutedBadge}>{image.ocrText ? "텍스트 추출됨" : "추출 텍스트 없음"}</span>
                           </p>
-                          {image.ocrText && (
-                            <>
-                              <p className={styles.ocrText}>{image.ocrText}</p>
-                              <p className={styles.ocrDisclaimer}>추출된 문구이며 OCR 양성 판정은 아닙니다. 별도 판정은 아직 제공되지 않습니다.</p>
-                              {ocrScore !== null && (
-                                <div className={styles.probRow}>
-                                  <span className={styles.probLabel}>마약 의심 비율</span>
-                                  <div className={styles.probTrack} aria-hidden="true">
-                                    <i
-                                      className={styles.probFill}
-                                      style={{ width: toPercent(ocrScore), background: scoreColors(ocrScore).stroke }}
-                                    />
-                                  </div>
-                                  <strong className={styles.probValue} style={{ color: scoreColors(ocrScore).fg }}>
-                                    {toPercent(ocrScore, 2)}
-                                  </strong>
-                                </div>
-                              )}
-                            </>
-                          )}
+                          {image.ocrResults.map((ocr, ocrIndex) => (
+                            <div key={ocrIndex}>
+                              <p className={styles.ocrText}>{ocr.text}</p>
+                              <p className={styles.ocrDisclaimer}>{ocr.flagged === null ? missingVerdictReason(ocr.source) : ocr.flagged ? "OCR 판정 · 양성" : "OCR 판정 · 음성"}</p>
+                              {ocr.probDrug !== null && <div className={styles.probRow}>
+                                <span className={styles.probLabel}>마약 의심 비율</span>
+                                <div className={styles.probTrack} aria-hidden="true"><i className={styles.probFill} style={{ width: toPercent(ocr.probDrug), background: scoreColors(ocr.probDrug).stroke }} /></div>
+                                <strong className={styles.probValue} style={{ color: scoreColors(ocr.probDrug).fg }}>{toPercent(ocr.probDrug, 2)}</strong>
+                              </div>}
+                              {ocr.matchedTerms.length > 0 && <p className={styles.ocrDisclaimer}>매칭 용어: {ocr.matchedTerms.join(", ")}</p>}
+                              {ocr.matchedIntents.length > 0 && <p className={styles.ocrDisclaimer}>매칭 의도: {ocr.matchedIntents.join(", ")}</p>}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </li>

@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ChevronDown, FileText, ImagePlus, Info, ScanSearch, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
-import { scoreColors, toPercent } from "@/lib/detections";
+import { scoreColors, toPercent, missingVerdictReason } from "@/lib/detections";
 import { MAX_ANALYZE_IMAGES as MAX_IMAGES, MAX_IMAGE_BYTES, analyzeContent, type AnalysisSource, type AnalyzeResult } from "@/lib/text-detector";
 import viewerStyles from "./detections.module.css";
 import styles from "./settings.module.css";
@@ -231,7 +231,7 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
     <div className={`${styles.page} ${hideIntro ? styles.trialForm : ""}`}>
       {showOutcome && <header className={styles.outcomeHeader}>
         <h2 ref={outcomeHeading} tabIndex={-1}>{pending ? "분석 중" : error ? "분석 실패" : unsupportedOnly ? "분석할 수 없는 텍스트" : "분석 결과"}</h2>
-        {(pending || needsRetry) && <p>{pending ? "결과를 확인하고 있습니다. 잠시만 기다려 주세요." : error ? error : unsupportedOnly ? "입력 내용을 수정한 뒤 다시 분석해 주세요." : textResultMissing ? "텍스트 판정이 누락되었습니다. 다시 시도해 주세요." : "텍스트를 분석하지 못했습니다. 이미지 결과를 확인하거나 입력을 수정해 주세요."}</p>}
+        {(pending || needsRetry) && <p>{pending ? "결과를 확인하고 있습니다. 잠시만 기다려 주세요." : error ? error : unsupportedOnly ? "입력 내용을 수정한 뒤 다시 분석해 주세요." : textResultMissing ? missingVerdictReason(results?.textResult?.source) : "텍스트를 분석하지 못했습니다. 이미지 결과를 확인하거나 입력을 수정해 주세요."}</p>}
         {!pending && <div className={styles.outcomeActions}>
           {needsRetry ? <>
             <button type="button" className={styles.editInputButton} onClick={() => returnToInput(false)}><ArrowLeft aria-hidden="true" />입력 수정하기</button>
@@ -351,12 +351,12 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
             <h2 id="overall-title" className={styles.resultTitle}>종합 판정 · {results.isDrug ? "양성" : textResultMissing ? "확인 필요" : "음성"}</h2>
           </div>
           <p className={styles.itemMeta}>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</p>
-          {textResultMissing && <p className={styles.itemMeta}>텍스트 판정이 누락되었습니다. 다시 분석해 주세요.</p>}
+          {textResultMissing && <p className={styles.itemMeta}>{missingVerdictReason(results?.textResult?.source)}</p>}
           <div className={styles.analysisColumns} data-split={Boolean(text.trim() && results.imageResults.length)}>
             {Boolean(text.trim()) && <section className={styles.analysisPanel}>
               <div className={styles.analysisPanelHeader}>
               <span className={styles.itemIcon} aria-hidden="true"><FileText /></span>
-              <h3 className={styles.itemTitle}>텍스트 분석 {!textUnsupported && <><Verdict positive={results.textResult?.isDrug ?? null} /><SourceTag source={results.textResult?.source ?? null} /></>}</h3>
+              <h3 className={styles.itemTitle}>텍스트 분석 <Verdict positive={results.textResult?.isDrug ?? null} /><SourceTag source={results.textResult?.source ?? null} /></h3>
               </div>
               <div className={styles.itemBody}>
                 {textUnsupported ? <UnsupportedNote retry /> : <>
@@ -398,8 +398,9 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
                       const ocrUnsupported = ocr.source === "no_supported_characters";
                       return (
                       <div key={ocrIndex} className={styles.subBlock}>
-                        <p className={styles.subTitle}>OCR 분석 {ocrIndex + 1}{!ocrUnsupported && <><Verdict positive={ocr.isDrug} /><SourceTag source={ocr.source} /></>}</p>
+                        <p className={styles.subTitle}>OCR 분석 {ocrIndex + 1}<Verdict positive={ocr.isDrug} /><SourceTag source={ocr.source} /></p>
                         {ocrUnsupported ? <UnsupportedNote /> : <>
+                          {ocr.isDrug === null && <p className={styles.itemMeta}>{missingVerdictReason(ocr.source)}</p>}
                           {ocr.source !== "rule" && <Score label="OCR 마약 확률" value={ocr.score} />}
                           <DisclosureText text={ocr.text} />
                           <MatchTags terms={ocr.matchedTerms} intents={ocr.matchedIntents} />

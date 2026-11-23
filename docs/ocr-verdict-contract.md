@@ -1,24 +1,9 @@
-# OCR 판정 임시 응답 규격
+# OCR 응답 계약
 
-프론트엔드에서 먼저 정한 임시 규격입니다. 백엔드에서 이미 제공되는 필드라는 뜻은 아닙니다.
+배포된 OpenAPI 기준으로 기존 임시 `ocr_prediction` 계약은 사용하지 않습니다.
 
-`GET /detections`의 각 게시글 항목에 `ocr_prediction`을 추가합니다.
-
-```json
-[
-  {
-    "id": "example-id",
-    "content": "게시글 본문",
-    "is_drug": true,
-    "ocr_prediction": 1
-  }
-]
-```
-
-- `1`: OCR 양성
-- `0`: OCR 음성
-- `null` 또는 필드 누락: 판정 미제공
-- 여러 이미지의 OCR 중 하나라도 양성이면 게시글 단위 `ocr_prediction`은 `1`입니다.
-- 텍스트 추출 여부나 OCR 점수로 양성을 추정하지 않습니다.
-- 기존 종합 판정 `is_drug`는 서버 값 그대로 사용합니다. OCR 필터가 종합 판정을 변경하지 않습니다.
-- 규격 확정 시 `src/lib/detections-api.ts`의 `ocrFlagged` 매핑을 수정하면 됩니다.
+- 목록: `image_ai_results[].has_ocr_text`는 OCR 텍스트 존재 여부입니다. 양성·음성을 의미하지 않습니다.
+- 상세·단순 분석: `image_ai_results[].ocr_text_results[]`에서 문구별 `ocr_text`, `prediction`, `ocr_text_score`, `matched_terms`, `matched_intents`를 읽습니다.
+- `prediction: null`은 미제공으로 유지하고 `source`가 있으면 미제공 사유를 표시합니다.
+- OCR 배열이 생략되면 빈 배열로 처리합니다. 존재 여부나 점수로 양성 판정을 만들지 않습니다.
+- 종합 판정 `is_drug`는 서버 응답 그대로 유지합니다.

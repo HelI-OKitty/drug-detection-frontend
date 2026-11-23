@@ -65,7 +65,7 @@ test('invalid inputs are rejected before fetch and request size is bounded', asy
   await assert.rejects(analyzeContent({images:['a'.repeat(4*1024*1024 + 4)]}), /파일당 3MB/);
 });
 test('malformed or legacy responses and incomplete image batches cannot appear as valid results', async () => {
-  for (const body of [null, {}, {is_drug:false}, response({is_drug:'false'}), response({text_ai_result:{}}), response({image_ai_results:null})]) {
+  for (const body of [null, {}, response({is_drug:'false'}), response({text_ai_result:{}}), response({image_ai_results:null})]) {
     globalThis.fetch = async () => Response.json(body);
     await assert.rejects(analyzeContent({text:'테스트'}), /결과를 확인/);
   }
@@ -163,4 +163,17 @@ test('allows five 3MB images while enforcing individual size and count limits', 
   }
   assert.equal(prepareAnalyzeRequest({ images: [Buffer.alloc(MAX_IMAGE_BYTES + 1).toString('base64')] }).status, 413);
   assert.equal(prepareAnalyzeRequest({ images: Array(6).fill('aA==') }).status, 422);
+});
+
+test('optional response fields default safely, but requested image results remain required', async () => {
+  globalThis.fetch = async () => Response.json({is_drug:false});
+  const text = await analyzeContent({text:'test'});
+  assert.equal(text.textResult,null);
+  assert.deepEqual(text.imageResults,[]);
+  await assert.rejects(analyzeContent({images:['aA==']}), /누락/);
+  globalThis.fetch = async () => Response.json({is_drug:false,image_ai_results:[{prediction:0,image_score:0,detected_objects:[]}]});
+  const image = await analyzeContent({images:['aA==']});
+  assert.deepEqual(image.imageResults[0].ocrResults,[]);
+  globalThis.fetch = async () => Response.json(response({text_ai_result:textResult({prediction:null,source:'future_reason'})}));
+  assert.equal((await analyzeContent({text:'test'})).textResult.source,'future_reason');
 });

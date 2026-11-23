@@ -28,19 +28,7 @@ test('invalid URL filters are normalized; OCR text or scores never imply OCR pos
   assert.equal(filters.verdict, 'all');
   assert.equal(filters.status, 'all');
   assert.equal(filters.from, '');
-  assert.deepEqual(filters.types, ['ocr', 'text']);
-});
-
-test('OCR filter requires explicit positive verdict, combines with text by OR', () => {
-  const samples = [
-    {...rows[0], id:'positive', textFlagged:false, ocrFlagged:true},
-    {...rows[0], id:'negative', textFlagged:false, ocrFlagged:false},
-    {...rows[0], id:'unknown', textFlagged:false, imageAnalyses:[{flagged:true,hasOcrText:true,ocrScore:1}]},
-    {...rows[0], id:'text-only'},
-  ];
-  const filter = query => filterDetections(samples, readFilters(new URLSearchParams(query)), '2026-11-11').map(row=>row.id);
-  assert.deepEqual(filter('verdict=positive&types=ocr'), ['positive']);
-  assert.deepEqual(filter('verdict=positive&types=text,ocr'), ['positive','text-only']);
+  assert.deepEqual(filters.types, ['text']);
 });
 
 test('dashboard counts preserve negative, positive and missing verdicts separately',()=>{

@@ -41,8 +41,7 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
   return {
     id,
     isDrug: typeof raw.is_drug === "boolean" ? raw.is_drug : null,
-    // 임시 OCR 계약: 게시글 단위 ocr_prediction (1 / 0 / null).
-    ocrFlagged: raw.ocr_prediction === 1 ? true : raw.ocr_prediction === 0 ? false : null,
+    textSource: textAnalysis?.source ?? null,
     textScore: textAnalysis ? textAnalysis.probDrug : null,
     textFlagged: textAnalysis ? textAnalysis.flagged : null,
     imageAnalyses,
@@ -91,18 +90,31 @@ function toImageSummaries(raw: unknown): ImageAnalysisSummary[] {
   });
 }
 
+function toOcrResults(image: Record<string, unknown>): DetectionImage["ocrResults"] {
+  if (!Array.isArray(image.ocr_text_results)) return [];
+  return image.ocr_text_results.flatMap((raw) => {
+    if (!raw || typeof raw !== "object") return [];
+    const ocr = raw as Record<string, unknown>;
+    if (typeof ocr.ocr_text !== "string") return [];
+    const analysis = toTextAnalysis({ ...ocr, text_score: ocr.ocr_text_score });
+    return analysis ? [{ ...analysis, text: ocr.ocr_text }] : [];
+  });
+}
+
 function toImages(raw: unknown): DetectionImage[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item) => {
     if (typeof item !== "object" || item === null) return [];
     const image = item as Record<string, unknown>;
     if (typeof image.image_url !== "string" || !image.image_url) return [];
+    const ocrResults = toOcrResults(image);
     return [{
       url: image.image_url,
       flagged: image.prediction === 1,
       score: typeof image.image_score === "number" ? image.image_score : 0,
       detectedObjects: toDetectedObjects(image.detected_objects),
-      ocrText: typeof image.ocr_text === "string" ? image.ocr_text.trim() : "",
+      ocrText: ocrResults.map((ocr) => ocr.text).filter((text) => text.trim()).join("\n"),
+      ocrResults,
     }];
   });
 }
@@ -118,8 +130,8 @@ function toTextAnalysis(raw: unknown): TextAnalysis | null {
   const score = typeof text.text_score === "number" && Number.isFinite(text.text_score)
     ? text.text_score / 100 : null;
   return {
-    flagged: text.prediction === 1,
-    source: text.source === "model" || text.source === "rule" ? text.source : null,
+    flagged: text.prediction === 1 ? true : text.prediction === 0 ? false : null,
+    source: typeof text.source === "string" ? text.source : null,
     // 규칙 양성(prediction=1)을 확률로 둔갑시키지 않는다. 점수는 model 판정일 때만 존재한다.
     probDrug: score !== null && score >= 0 && score <= 1 ? score : null,
     matchedTerms: toStringList(text.matched_terms),
@@ -302,7 +314,7 @@ export async function fetchAnalysisStats(items?: DetectionRow[]): Promise<Analys
           if (typeof item !== "object" || item === null) continue;
           const image = item as Record<string, unknown>;
           imageTotal += 1;
-          if (typeof image.ocr_text === "string" && image.ocr_text.trim()) withOcr += 1;
+          if (toOcrResults(image).some((ocr) => ocr.text.trim())) withOcr += 1;
           if (Array.isArray(image.detected_objects)) {
             for (const objectRaw of image.detected_objects) {
               if (typeof objectRaw !== "object" || objectRaw === null) continue;
