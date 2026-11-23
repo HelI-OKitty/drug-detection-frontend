@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "단순 분석 | SENTINEL" };
 export default function AnalyzePage() {
   return (
     <ConsoleShell memberInfo={<MemberInfo />}>
-      <main><RequireAuth><div className={styles.dashboard}><AnalyzeForm hideIntro /></div></RequireAuth></main>
+      <main className={styles.analysisMain}><RequireAuth><div className={styles.dashboard}><AnalyzeForm hideIntro /></div></RequireAuth></main>
     </ConsoleShell>
   );
 }

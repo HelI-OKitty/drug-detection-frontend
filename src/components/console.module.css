@@ -18,6 +18,8 @@
 .sidebarFooter small { display:block; color:#8a98aa; font-size:10px; margin-top:6px; }
 .avatar { display:grid; place-items:center; width:36px; height:36px; border:1px solid #d7e0e9; border-radius:9px; background:#e4eaf0; color:#059d69; font-family:monospace; }
 .workspace { min-width:0; }
+.workspace > main { width:100%; max-width:1440px; margin-inline:auto; }
+.workspace > main.analysisMain { max-width:1120px; }
 /* 회원 정보·로그인 버튼 등 어떤 내용이 와도 높이가 변하지 않도록 고정한다. */
 .topbar { position:sticky; top:0; z-index:30; background:#fff; font-size:14px; }
 .topbar::after { content:""; position:absolute; top:100%; left:0; right:0; height:12px; pointer-events:none; clip-path:inset(0); }
