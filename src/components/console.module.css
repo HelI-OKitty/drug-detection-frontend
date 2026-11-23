@@ -170,14 +170,15 @@
 .sidebarToggle svg { width:20px; height:20px; }
 @media(min-width:761px) {
   .sidebar { padding-top:0; }
-  .sidebarHeader { min-height:72px; }
+  .sidebarHeader { min-height:72px; margin:0 -16px; padding:0 16px; border-bottom:1px solid #e4eaf0; }
   .sidebar .nav { margin-top:16px; }
   .shell.collapsed { grid-template-columns:72px minmax(0,1fr); }
   .collapsed .sidebar { padding-left:12px; padding-right:12px; }
-  .collapsed .sidebarHeader { justify-content:center; }
+  .collapsed .sidebarHeader { justify-content:center; margin:0 -12px; padding:0 12px; }
   .collapsed .sidebarHeader .brand { display:none; }
   .collapsed .brand span, .collapsed .nav a span { display:none; }
   .collapsed .nav > p { height:1px; overflow:hidden; font-size:0; margin:14px 8px 8px; background:#e0e7ee; }
+  .collapsed .nav > p:first-child { display:none; }
   .collapsed .nav a { justify-content:center; padding:10px; }
 }
 @media(max-width:760px) {
