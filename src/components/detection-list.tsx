@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
 import { STATUS_FILTERS, STATUS_LABEL, sourceHost, type DetectionRow } from "@/lib/detections";
 import { VERDICTS, PERIODS, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
@@ -19,6 +19,11 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams.toString());
   const filters = readFilters(params);
+  const [searchText, setSearchText] = useState(filters.query);
+  const composing = useRef(false);
+  useEffect(() => {
+    if (!composing.current) setSearchText(filters.query);
+  }, [filters.query]);
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
   const filtered = filterDetections(items, filters, today);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
@@ -62,7 +67,8 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const hasText = items.some((item) => item.textFlagged !== null);
   const hasImage = items.some((item) => imageVerdict(item) !== null);
   const typeOptions = [{ key: "text", label: "텍스트 양성", Icon: FileText, available: hasText },
-    { key: "image", label: "이미지 양성", Icon: ImageIcon, available: hasImage }];
+    { key: "image", label: "이미지 양성", Icon: ImageIcon, available: hasImage },
+    { key: "ocr", label: "OCR 양성", Icon: ScanText, available: true }];
 
   function update(values: Record<string, string>) {
     const next = new URLSearchParams(window.location.search);
@@ -78,6 +84,8 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
     update({ verdict: "positive", types: (current.includes(type) ? current.filter((v) => v !== type) : [...current, type]).join(",") });
   }
   function reset() {
+    composing.current = false;
+    setSearchText("");
     const next = new URLSearchParams();
     next.set("filters", expanded ? "open" : "closed");
     window.history.replaceState(null, "", `${window.location.pathname}?${next}`);
@@ -86,7 +94,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
     ...(filters.query ? [{ label: `검색: ${filters.query}`, clear: () => update({ q: "" }) }] : []),
     ...(filters.verdict !== "all" ? [{ label: `판정: ${VERDICTS.find((v) => v.key === filters.verdict)?.label}`, clear: () => update({ verdict: "all", types: "" }) }] : []),
     ...(filters.status !== "all" ? [{ label: `검토: ${STATUS_FILTERS.find((v) => v.key === filters.status)?.label}`, clear: () => update({ status: "all" }) }] : []),
-    ...filters.types.map((type) => ({ label: type === "text" ? "텍스트 양성" : "이미지 양성", clear: () => update({ types: filters.types.filter((v) => v !== type).join(",") }) })),
+    ...filters.types.map((type) => ({ label: type === "text" ? "텍스트 양성" : type === "image" ? "이미지 양성" : "OCR 양성", clear: () => update({ types: filters.types.filter((v) => v !== type).join(",") }) })),
     ...(filters.period !== "all" ? [{ label: filters.period === "custom" ? `${filters.from || "시작일"} ~ ${filters.to || "종료일"}` : PERIODS.find((p) => p.key === filters.period)?.label, clear: () => update({ period: "all", from: "", to: "" }) }] : []),
   ];
   return (
@@ -94,7 +102,17 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
       <h1 className={styles.srOnly}>탐지 게시글</h1>
       <section className={styles.filterPanel} aria-label="탐지 게시글 필터">
         <div className={styles.filterSearchRow}>
-          <div className={styles.search}><Search aria-hidden="true" /><input type="search" value={filters.query} onChange={(e) => update({ q: e.target.value })} placeholder="게시글 내용 · 작성자 · 키워드 검색" aria-label="탐지 게시글 검색" /></div>
+          <div className={styles.search}><Search aria-hidden="true" /><input type="search" value={searchText}
+            onCompositionStart={() => { composing.current = true; }}
+            onCompositionEnd={(event) => {
+              composing.current = false;
+              setSearchText(event.currentTarget.value);
+              update({ q: event.currentTarget.value });
+            }}
+            onChange={(event) => {
+              setSearchText(event.target.value);
+              if (!composing.current) update({ q: event.target.value });
+            }} placeholder="게시글 내용 · 작성자 · 키워드 검색" aria-label="탐지 게시글 검색" /></div>
           <button className={styles.resetButton} onClick={reset} disabled={!active.length}><RotateCcw size={15} aria-hidden="true" />초기화</button>
         </div>
         <div className={styles.verdictTabs} role="group" aria-label="종합 판정">
@@ -112,7 +130,6 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
           <div className={styles.filterLabel}><SlidersHorizontal size={15} aria-hidden="true" />양성 유형 <small>복수 선택 · 선택한 유형 중 하나 이상</small></div>
           <div className={styles.typeButtons} role="group" aria-label="양성 유형">
             {typeOptions.map(({ key, label, Icon, available }) => <button key={key} disabled={!available && !filters.types.includes(key)} aria-pressed={filters.types.includes(key)} onClick={() => toggleType(key)}><Icon size={16} aria-hidden="true" />{label}{!available && <small>미제공</small>}</button>)}
-            <button disabled title="OCR의 개별 판정이 제공되면 사용할 수 있습니다"><ScanText size={16} aria-hidden="true" />OCR 양성<small>연동 대기</small></button>
           </div>
           <p className={styles.filterHint}><Info size={14} aria-hidden="true" />{!hasText || !hasImage ? "목록에 개별 판정이 없는 유형은 필터를 사용할 수 없습니다. " : "유형 필터는 개별 판정이 제공된 게시글만 포함합니다. "}OCR 추출 여부와 OCR 양성 판정은 다릅니다.</p>
         </div>
