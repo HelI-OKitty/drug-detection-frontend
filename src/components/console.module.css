@@ -169,6 +169,9 @@
 .sidebarToggle:focus-visible { outline:2px solid #087e56; outline-offset:2px; }
 .sidebarToggle svg { width:20px; height:20px; }
 @media(min-width:761px) {
+  .sidebar { padding-top:0; }
+  .sidebarHeader { min-height:72px; }
+  .sidebar .nav { margin-top:16px; }
   .shell.collapsed { grid-template-columns:72px minmax(0,1fr); }
   .collapsed .sidebar { padding-left:12px; padding-right:12px; }
   .collapsed .sidebarHeader { justify-content:center; }
