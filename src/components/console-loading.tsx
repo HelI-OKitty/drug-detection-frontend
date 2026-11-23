@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import {
-  ArrowLeft, Hash, KeyRound, Power, Radar, ScanSearch, Timer, UserCog,
+  ArrowLeft, Hash, KeyRound, Power, Radar, Timer, UserCog,
 } from "lucide-react";
 import { ConsoleShell } from "./console-shell";
 import styles from "./console.module.css";
@@ -213,14 +213,18 @@ function CrawlSkeleton() {
 
 function AnalyzeSkeleton() {
   return (
-    <div className={formStyles.page}>
-      <CardSkeleton Icon={ScanSearch} title="단순 분석">
-        <div style={{ display: "grid", gap: 14 }}>
-          <Sk w="70%" h={12} />
-          <Sk h={220} r={11} />
-          <Sk w={120} h={44} r={10} />
+    <div className={styles.dashboard}>
+      <div className={formStyles.trialForm}>
+        <div className={formStyles.formStack}>
+          <section className={formStyles.card}>
+            <div className={formStyles.cardBody}>
+              <div className={formStyles.field}><Sk w={70} h={16} /><Sk h={200} r={8} /></div>
+              <div className={`${formStyles.field} ${formStyles.imageField}`}><Sk w={70} h={16} /><Sk h={100} r={8} /></div>
+            </div>
+          </section>
+          <div className={formStyles.footer}><Sk w={220} h={14} /><Sk w={136} h={44} r={8} /></div>
         </div>
-      </CardSkeleton>
+      </div>
     </div>
   );
 }
