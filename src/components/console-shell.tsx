@@ -39,8 +39,16 @@ export function ConsoleShell({ children, memberInfo }: { children: ReactNode; me
   return (
     <div className={`${styles.shell} ${collapsed ? styles.collapsed : ""}`}>
       <aside id="console-sidebar" className={styles.sidebar}>
+        <div className={styles.sidebarHeader}>
         <Link href="/" className={styles.brand} aria-label="SENTINEL 홈"><i /><span>SENTINEL</span></Link>
-        <nav aria-label="콘솔 메뉴" className={styles.nav}>
+          <button type="button" className={styles.sidebarToggle} onClick={toggleSidebar}
+            aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            aria-expanded={!collapsed} aria-controls="console-navigation">
+            {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+          </button>
+        </div>
+        <nav id="console-navigation" aria-label="콘솔 메뉴" className={styles.nav}>
           <p>모니터링</p>
           <Link href="/dashboard" aria-label="대시보드" title={collapsed ? "대시보드" : undefined} aria-current={pathname === "/dashboard" ? "page" : undefined}><LayoutDashboard aria-hidden="true" /><span>대시보드</span></Link>
           <Link href="/analyze" aria-label="단순 분석" title={collapsed ? "단순 분석" : undefined} aria-current={pathname === "/analyze" ? "page" : undefined}><ScanText aria-hidden="true" /><span>단순 분석</span></Link>
@@ -53,12 +61,6 @@ export function ConsoleShell({ children, memberInfo }: { children: ReactNode; me
       </aside>
       <div className={styles.workspace}>
         <header className={styles.topbar}>
-          <button type="button" className={styles.sidebarToggle} onClick={toggleSidebar}
-            aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
-            title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
-            aria-expanded={!collapsed} aria-controls="console-sidebar">
-            {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
-          </button>
           <strong>{title}</strong><div className={styles.memberInfo}>{memberInfo}</div></header>
         {children}
       </div>
