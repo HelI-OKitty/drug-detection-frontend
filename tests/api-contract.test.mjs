@@ -209,3 +209,11 @@ test("crawl defaults omitted failed count to zero without accepting invalid coun
     if(result.success) assert.equal(result.result.failed,0);
   }
 });
+
+test("list OCR verdict uses only is_ocr_drug booleans independently of OCR presence", async () => {
+  const values = [true,false,null,undefined,1,0,'true'];
+  globalThis.fetch = async () => Response.json(values.map((value,index)=>({...rows[0],id:String(index),is_ocr_drug:value,image_ai_results:[{prediction:0,image_score:0,has_ocr_text:true}]})));
+  const {items} = await detections.fetchDetections();
+  assert.deepEqual(items.map(item=>item.ocrFlagged),[true,false,null,null,null,null,null]);
+  assert.ok(items.every(item=>item.imageAnalyses[0].hasOcrText));
+});

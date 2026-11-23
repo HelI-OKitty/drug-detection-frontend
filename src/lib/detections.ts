@@ -48,6 +48,8 @@ export type ImageAnalysisSummary = {
 };
 
 export type DetectionRow = {
+  /** 목록 게시글 단위 is_ocr_drug. OCR 존재 여부와 별개인 명시적 판정. */
+  ocrFlagged?: boolean | null;
   /** 텍스트 판정 미제공 사유를 포함하는 원본 source. */
   textSource?: string | null;
   id: string;

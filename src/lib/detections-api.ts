@@ -41,6 +41,7 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
   return {
     id,
     isDrug: typeof raw.is_drug === "boolean" ? raw.is_drug : null,
+    ocrFlagged: typeof raw.is_ocr_drug === "boolean" ? raw.is_ocr_drug : null,
     textSource: textAnalysis?.source ?? null,
     textScore: textAnalysis ? textAnalysis.probDrug : null,
     textFlagged: textAnalysis ? textAnalysis.flagged : null,
