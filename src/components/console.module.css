@@ -19,7 +19,8 @@
 .avatar { display:grid; place-items:center; width:36px; height:36px; border:1px solid #d7e0e9; border-radius:9px; background:#e4eaf0; color:#059d69; font-family:monospace; }
 .workspace { min-width:0; }
 /* 회원 정보·로그인 버튼 등 어떤 내용이 와도 높이가 변하지 않도록 고정한다. */
-.topbar { position:sticky; top:0; z-index:30; background:#f8fafb; font-size:14px; }
+.topbar { position:sticky; top:0; z-index:30; background:#fff; font-size:14px; }
+.topbar[data-scrolled=true] { box-shadow:0 4px 12px #17253514; }
 .topbarContent { height:72px; border-bottom:1px solid #e4eaf0; padding:0 28px; display:flex; align-items:center; gap:20px; }
 .withHeaderActions { --console-header-height:120px; }
 .headerActions { padding:0 28px; border-bottom:1px solid #e4eaf0; }

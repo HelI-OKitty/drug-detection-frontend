@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, PanelLeftClose, PanelLeftOpen, Radar, ScanText, SlidersHorizontal, TriangleAlert, UserCog } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import styles from "./console.module.css";
 
 function pageTitle(pathname: string) {
@@ -21,6 +21,21 @@ export function ConsoleShell({ children, memberInfo, headerActions }: { children
   const pathname = usePathname();
   const title = pageTitle(pathname);
   const [collapsed, setCollapsed] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    function update() {
+      setScrolled(window.scrollY > 0 && (headerRef.current?.getBoundingClientRect().top ?? 1) <= 0);
+    }
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     try {
@@ -60,7 +75,7 @@ export function ConsoleShell({ children, memberInfo, headerActions }: { children
         </nav>
       </aside>
       <div className={styles.workspace}>
-        <header className={styles.topbar}>
+        <header ref={headerRef} className={styles.topbar} data-scrolled={scrolled}>
           <div className={styles.topbarContent}><strong>{title}</strong><div className={styles.memberInfo}>{memberInfo}</div></div>
           {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
         </header>
