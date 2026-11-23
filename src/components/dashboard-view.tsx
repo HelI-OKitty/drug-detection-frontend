@@ -32,6 +32,7 @@ function RatioBar({
   bLabel,
   aColor,
   bColor,
+  unit = "건",
 }: {
   a: number;
   b: number;
@@ -39,6 +40,7 @@ function RatioBar({
   bLabel: string;
   aColor: string;
   bColor: string;
+  unit?: string;
 }) {
   const total = a + b;
   return (
@@ -48,8 +50,8 @@ function RatioBar({
         <i style={{ width: `${total > 0 ? (b / total) * 100 : 0}%`, background: bColor }} />
       </div>
       <div className={styles.ratioLegend}>
-        <span><i style={{ background: aColor }} />{aLabel} {a.toLocaleString("ko-KR")}건 · {percent(a, total)}%</span>
-        <span><i style={{ background: bColor }} />{bLabel} {b.toLocaleString("ko-KR")}건 · {percent(b, total)}%</span>
+        <span><i style={{ background: aColor }} />{aLabel} {a.toLocaleString("ko-KR")}{unit} · {percent(a, total)}%</span>
+        <span><i style={{ background: bColor }} />{bLabel} {b.toLocaleString("ko-KR")}{unit} · {percent(b, total)}%</span>
       </div>
     </div>
   );
@@ -59,7 +61,6 @@ function RatioBar({
 function CountBars({ items }: { items: { name: string; count: number }[] }) {
   if (items.length === 0) return <p className={styles.statEmpty}>집계된 항목이 없습니다.</p>;
   const max = Math.max(1, ...items.map((item) => item.count));
-  const total = items.reduce((acc, item) => acc + item.count, 0);
   return (
     <ul className={ui.countBars}>
       {items.map((item) => (
@@ -68,7 +69,7 @@ function CountBars({ items }: { items: { name: string; count: number }[] }) {
           <i className={ui.countTrack} aria-hidden="true">
             <b style={{ width: `${(item.count / max) * 100}%`, background: item.count === max ? "var(--accent)" : "var(--chart-muted)" }} />
           </i>
-          <span className={ui.countValue}>{item.count}건 · {percent(item.count, total)}%</span>
+          <span className={ui.countValue}>{item.count.toLocaleString("ko-KR")}건</span>
         </li>
       ))}
     </ul>
@@ -108,7 +109,7 @@ export default function DashboardView({
       <div className={ui.overview}>
         {metrics.map((metric) => <section key={metric.title} data-priority={metric.pending || undefined}>
           <h2>{metric.title}</h2>
-          <p className={ui.metric} data-pending={metric.pending && metric.value > 0}>{metric.value.toLocaleString("ko-KR")}<small>건</small></p>
+          <p className={ui.metric}>{metric.value.toLocaleString("ko-KR")}<small>건</small></p>
           {preview ? <span className={ui.muted}>{metric.action}</span> : <Link href={metric.href} className={metric.pending ? ui.primaryAction : undefined}>{metric.action}<ArrowUpRight size={15} aria-hidden="true" /></Link>}
         </section>)}
       </div>
@@ -127,7 +128,11 @@ export default function DashboardView({
           <header><div><h2>검토 현황</h2><p>전체 탐지 게시글 기준</p></div></header>
           <div className={ui.review}>
             <div className={ui.ring} style={{ background: `conic-gradient(var(--attention) 0% ${pendingPercent}%, var(--track) ${pendingPercent}% 100%)` }} role="img" aria-label={`전체 중 미확인 ${pendingPercent}%`}><span><strong>{pendingPercent}%</strong>미확인</span></div>
-            <div><p>{summary.unconfirmed > 0 ? "검토할 게시글이 있습니다" : "미확인 게시글이 없습니다"}</p><span>미확인 {summary.unconfirmed.toLocaleString("ko-KR")}건 / 전체 {summary.total.toLocaleString("ko-KR")}건</span>
+            <div className={ui.reviewSummary}>
+              <dl>
+                <div><dt><i aria-hidden="true" />미확인</dt><dd>{summary.unconfirmed.toLocaleString("ko-KR")}건</dd></div>
+                <div><dt>전체 게시글</dt><dd>{summary.total.toLocaleString("ko-KR")}건</dd></div>
+              </dl>
               {!preview && <Link href="/detections?status=unreviewed">미확인 목록 보기 <ArrowUpRight size={15} aria-hidden="true" /></Link>}
             </div>
           </div>
@@ -147,7 +152,7 @@ export default function DashboardView({
             <header><div><h2>이미지 분석</h2><p>분석된 이미지 {image.total.toLocaleString("ko-KR")}장</p></div></header>
             <div className={ui.body}>
               <h3>검출 객체 분포</h3><CountBars items={image.objects} />
-              <h3>이미지 내 텍스트</h3><RatioBar a={image.withOcr} b={image.withoutOcr} aLabel="텍스트 포함" bLabel="텍스트 없음" aColor="var(--accent)" bColor="var(--track)" />
+              <h3>이미지 내 텍스트</h3><RatioBar a={image.withOcr} b={image.withoutOcr} aLabel="텍스트 포함" bLabel="텍스트 없음" unit="장" aColor="var(--accent)" bColor="var(--track)" />
             </div>
           </section>
         </div>
