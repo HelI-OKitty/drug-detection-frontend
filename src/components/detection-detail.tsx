@@ -256,11 +256,11 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                       {toPercent(textAnalysis.probDrug, 2)}
                     </strong>
                   </div>
-                ) : (
+                ) : textAnalysis.source !== "rule" ? (
                   <p className={styles.ruleNote}>
-                    {textAnalysis.source === "rule" ? "규칙(사전 매칭)으로 판정되었습니다." : textAnalysis.source === "model" ? "모델로 판정되었습니다. 확률 점수는 제공되지 않습니다." : "판정 방식과 확률 점수가 제공되지 않았습니다."}
+                    {textAnalysis.source === "model" ? "모델로 판정되었습니다. 확률 점수는 제공되지 않습니다." : "판정 방식과 확률 점수가 제공되지 않았습니다."}
                   </p>
-                )}
+                ) : null}
                 {textAnalysis.matchedTerms.length > 0 && (
                   <div className={styles.matchGroup}>
                     <h3 className={styles.matchTitle}>매칭된 용어 (단어 사전)</h3>
