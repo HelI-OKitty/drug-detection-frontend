@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, ExternalLink, ImageOff, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ExternalLink, ImageOff, Trash2, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
 import {
@@ -115,6 +115,31 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
     setBrokenUrls((current) => (current.includes(url) ? current : [...current, url]));
   }
 
+  function renderImageThumbnail(url: string, index: number) {
+    const label = `이미지 ${index + 1}`;
+    if (brokenUrls.includes(url)) {
+      return (
+        <span className={styles.rowThumbBroken} role="img" aria-label={`${label} 원본을 불러오지 못함`}>
+          <ImageOff aria-hidden="true" />
+          <small>원본을 불러오지 못함</small>
+        </span>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        className={styles.rowThumb}
+        onClick={() => setViewerUrl(url)}
+        aria-label={`${label} 원본 크기로 보기`}
+      >
+        {/* 외부 플랫폼 이미지라 호스트를 예측할 수 없어 next/image 대신 img를 쓴다. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="" loading="lazy" onError={() => markBroken(url)} />
+      </button>
+    );
+  }
+
   // 이미지 원본 보기는 Esc 키로도 닫는다.
   useEffect(() => {
     if (!viewerUrl) return;
@@ -202,8 +227,10 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
           </div>
         </section>
         <div className={styles.mainColumn}>
-          <article className={styles.postCard} id="post-original" aria-labelledby="post-title">
-            <h2 className={styles.evidenceTitle} id="post-title">게시글 원문</h2>
+          <details className={styles.postCard} id="post-original" open>
+            <summary className={styles.postToggle}>
+              <h2 className={styles.evidenceTitle}>게시글 원문<ChevronDown size={18} aria-hidden="true" /></h2>
+            </summary>
             <header className={styles.postHeader}>
               <div className={styles.postIdentity}>
                 <strong>{detection.nickname}</strong>
@@ -216,13 +243,21 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
               {highlightKeywords(detection.content, detection.keywords)}
             </p>
 
+            {detection.images.length > 0 && (
+              <ul className={styles.postImages} aria-label="첨부 이미지">
+                {detection.images.map((image, index) => (
+                  <li key={`${image.url}-${index}`}>{renderImageThumbnail(image.url, index)}</li>
+                ))}
+              </ul>
+            )}
+
             {detection.keywords.length > 0 && (
               <div className={styles.postKeywords} aria-label="탐지 키워드">
                 <span className={styles.postKeywordsLabel}>탐지 키워드</span>
                 <span className={styles.postKeywordList}>{detection.keywords.join(" · ")}</span>
               </div>
             )}
-          </article>
+          </details>
 
           <section className={styles.analysisCard} aria-labelledby="text-analysis-title">
             <header className={styles.analysisHeader}>
@@ -301,28 +336,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                 {detection.images.map((image, index) => {
                   return (
                     <li className={styles.imageRow} key={`${image.url}-${index}`}>
-                      {brokenUrls.includes(image.url) ? (
-                        <span className={styles.rowThumbBroken} role="img" aria-label={`이미지 ${index + 1} 원본을 불러오지 못함`}>
-                          <ImageOff aria-hidden="true" />
-                          <small>원본을 불러오지 못함</small>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          className={styles.rowThumb}
-                          onClick={() => setViewerUrl(image.url)}
-                          aria-label={`이미지 ${index + 1} 원본 크기로 보기`}
-                        >
-                          {/* 외부 플랫폼 이미지라 호스트를 예측할 수 없어 next/image 대신 img를 쓴다. */}
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={image.url}
-                            alt={`이미지 ${index + 1}`}
-                            loading="lazy"
-                            onError={() => markBroken(image.url)}
-                          />
-                        </button>
-                      )}
+                      {renderImageThumbnail(image.url, index)}
                       <div className={styles.rowBody}>
                         <div className={styles.imageEvidenceTitle}><h3 className={styles.rowTitle}>이미지 {index + 1}</h3><span className={styles.analysisBadge} data-flagged={image.flagged}>{image.flagged ? "이미지 양성" : "이미지 음성"}</span></div>
 
