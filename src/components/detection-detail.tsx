@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, ExternalLink, ImageOff, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ExternalLink, ImageOff, Trash2, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { confirmDetection, deleteDetection } from "@/app/detections/[id]/actions";
 import {
@@ -115,6 +115,31 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
     setBrokenUrls((current) => (current.includes(url) ? current : [...current, url]));
   }
 
+  function renderImageThumbnail(url: string, index: number) {
+    const label = `이미지 ${index + 1}`;
+    if (brokenUrls.includes(url)) {
+      return (
+        <span className={styles.rowThumbBroken} role="img" aria-label={`${label} 원본을 불러오지 못함`}>
+          <ImageOff aria-hidden="true" />
+          <small>원본을 불러오지 못함</small>
+        </span>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        className={styles.rowThumb}
+        onClick={() => setViewerUrl(url)}
+        aria-label={`${label} 원본 크기로 보기`}
+      >
+        {/* 외부 플랫폼 이미지라 호스트를 예측할 수 없어 next/image 대신 img를 쓴다. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="" loading="lazy" onError={() => markBroken(url)} />
+      </button>
+    );
+  }
+
   // 이미지 원본 보기는 Esc 키로도 닫는다.
   useEffect(() => {
     if (!viewerUrl) return;
@@ -176,34 +201,36 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
     <div className={styles.page}>
       <h1 className={styles.srOnly}>탐지 게시글 검토</h1>
 
-      <section className={styles.verdictSummary} aria-label="분석 판정 요약">
-        <div className={styles.overallVerdict}>
-          <div><h2>종합 판정</h2><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong></div>
-          <p>{verdictExplanation}</p>
-        </div>
-        <div className={styles.componentVerdicts}>
-          <div>
-            <span className={styles.verdictHeading}>텍스트 판정</span>
-            <div className={styles.verdictResult}>
-              <strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong>
-              {textScore !== null && <div className={styles.summaryScore}><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b><span>모델 점수</span></div>}
-            </div>
-            {textScore === null && <small>{detection.textFlagged === null ? missingVerdictReason(textAnalysis?.source) : textAnalysis?.source === "rule" ? "규칙 · 사전 매칭" : "모델 점수 미제공"}</small>}
-          </div>
-          <div>
-            <span className={styles.verdictHeading}>이미지 판정{detection.images.length > 0 && ` · ${detection.images.length}장`}</span>
-            <div className={styles.verdictResult}>
-              <strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong>
-              {imageMax !== null && <div className={styles.summaryScore}><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b><span>{detection.images.length > 1 ? "이미지 마약 확률 · 최댓값" : "이미지 마약 확률"}</span></div>}
-            </div>
-            {imageMax === null && <small>해당 게시글에는 이미지가 없습니다.</small>}
-          </div>
-        </div>
-      </section>
       <div className={`${styles.detailLayout} ${styles.reviewLayout}`}>
+        <section className={`${styles.verdictSummary} ${styles.reviewVerdictSummary}`} aria-label="분석 판정 요약">
+          <div className={styles.overallVerdict}>
+            <div><h2>종합 판정</h2><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong></div>
+            <p>{verdictExplanation}</p>
+          </div>
+          <div className={styles.componentVerdicts}>
+            <div>
+              <span className={styles.verdictHeading}>텍스트 판정</span>
+              <div className={styles.verdictResult}>
+                <strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong>
+                {textScore !== null && <div className={styles.summaryScore}><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b><span>모델 점수</span></div>}
+              </div>
+              {textScore === null && <small>{detection.textFlagged === null ? missingVerdictReason(textAnalysis?.source) : textAnalysis?.source === "rule" ? "규칙 · 사전 매칭" : "모델 점수 미제공"}</small>}
+            </div>
+            <div>
+              <span className={styles.verdictHeading}>이미지 판정{detection.images.length > 0 && ` · ${detection.images.length}장`}</span>
+              <div className={styles.verdictResult}>
+                <strong data-positive={imageFlagged === null ? undefined : imageFlagged}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong>
+                {imageMax !== null && <div className={styles.summaryScore}><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b><span>{detection.images.length > 1 ? "이미지 마약 확률 · 최댓값" : "이미지 마약 확률"}</span></div>}
+              </div>
+              {imageMax === null && <small>해당 게시글에는 이미지가 없습니다.</small>}
+            </div>
+          </div>
+        </section>
         <div className={styles.mainColumn}>
-          <article className={styles.postCard} id="post-original" aria-labelledby="post-title">
-            <h2 className={styles.evidenceTitle} id="post-title">게시글 원문</h2>
+          <details className={styles.postCard} id="post-original" open>
+            <summary className={styles.postToggle}>
+              <h2 className={styles.evidenceTitle}>게시글 원문<ChevronDown size={18} aria-hidden="true" /></h2>
+            </summary>
             <header className={styles.postHeader}>
               <div className={styles.postIdentity}>
                 <strong>{detection.nickname}</strong>
@@ -222,7 +249,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                 <span className={styles.postKeywordList}>{detection.keywords.join(" · ")}</span>
               </div>
             )}
-          </article>
+          </details>
 
           <section className={styles.analysisCard} aria-labelledby="text-analysis-title">
             <header className={styles.analysisHeader}>
@@ -301,28 +328,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
                 {detection.images.map((image, index) => {
                   return (
                     <li className={styles.imageRow} key={`${image.url}-${index}`}>
-                      {brokenUrls.includes(image.url) ? (
-                        <span className={styles.rowThumbBroken} role="img" aria-label={`이미지 ${index + 1} 원본을 불러오지 못함`}>
-                          <ImageOff aria-hidden="true" />
-                          <small>원본을 불러오지 못함</small>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          className={styles.rowThumb}
-                          onClick={() => setViewerUrl(image.url)}
-                          aria-label={`이미지 ${index + 1} 원본 크기로 보기`}
-                        >
-                          {/* 외부 플랫폼 이미지라 호스트를 예측할 수 없어 next/image 대신 img를 쓴다. */}
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={image.url}
-                            alt={`이미지 ${index + 1}`}
-                            loading="lazy"
-                            onError={() => markBroken(image.url)}
-                          />
-                        </button>
-                      )}
+                      {renderImageThumbnail(image.url, index)}
                       <div className={styles.rowBody}>
                         <div className={styles.imageEvidenceTitle}><h3 className={styles.rowTitle}>이미지 {index + 1}</h3><span className={styles.analysisBadge} data-flagged={image.flagged}>{image.flagged ? "이미지 양성" : "이미지 음성"}</span></div>
 

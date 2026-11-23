@@ -322,7 +322,13 @@
 .evidenceNav a:hover { color:#087e56; border-color:#9bd6be; }
 .evidenceNav span { border-radius:5px; padding:2px 6px; background:#edf3f6; font-size:11px; }
 .evidenceTitle { margin:0 0 20px; font-size:15px; color:#243447; }
-.reviewLayout h2[id], .reviewLayout article[id] { scroll-margin-top:calc(var(--console-header-height,72px) + 24px); }
+.reviewLayout h2[id], .reviewLayout details[id] { scroll-margin-top:calc(var(--console-header-height,72px) + 24px); }
+.postToggle { cursor:pointer; list-style:none; }
+.postToggle::-webkit-details-marker { display:none; }
+.postToggle h2 { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.postToggle svg { flex-shrink:0; color:#52657b; }
+.postCard[open] > .postToggle svg { transform:rotate(180deg); }
+.postCard:not([open]) .postToggle h2 { margin-bottom:0; }
 .reviewLayout .asideTitle { font-family:inherit; font-size:14px; letter-spacing:0; font-weight:600; color:#334155; }
 .platformTag { margin-left:auto; padding:6px 9px; border-radius:7px; background:#edf4f8; color:#52657b; font-size:11px; white-space:nowrap; }
 .evidenceNote { margin:0 0 18px; color:#64748b; font-size:12px; line-height:1.8; }
@@ -383,6 +389,7 @@
 @media(max-width:600px) { .selectField { width:calc(50% - 6px); } }
 
 .verdictSummary { word-break:keep-all; overflow-wrap:anywhere; margin-bottom:20px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; }
+.reviewVerdictSummary { grid-column:1 / -1; margin:0; }
 .overallVerdict { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:12px 24px; padding:18px 24px; border-bottom:1px solid #edf1f5; }
 .overallVerdict > div { display:flex; align-items:center; gap:12px; }
 .overallVerdict h2 { margin:0; font-size:13px; font-weight:500; color:#52657b; }
