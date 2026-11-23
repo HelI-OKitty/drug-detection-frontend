@@ -161,3 +161,19 @@
   .preview .trendToggles button { min-height:44px; padding:6px 8px; }
   .preview .chartArea { height:120px; }
 }
+
+.sidebarToggle { display:grid; place-items:center; flex-shrink:0; width:36px; height:36px; padding:0; border:0; border-radius:6px; background:transparent; color:#52657b; cursor:pointer; }
+.sidebarToggle:hover { background:#edf1f4; }
+.sidebarToggle:focus-visible { outline:2px solid #087e56; outline-offset:2px; }
+.sidebarToggle svg { width:20px; height:20px; }
+@media(min-width:761px) {
+  .shell.collapsed { grid-template-columns:72px minmax(0,1fr); }
+  .collapsed .sidebar { padding-left:12px; padding-right:12px; }
+  .collapsed .brand { margin-left:0; justify-content:center; height:25px; }
+  .collapsed .brand span, .collapsed .nav a span { display:none; }
+  .collapsed .nav > p { height:1px; overflow:hidden; font-size:0; margin:14px 8px 8px; background:#e0e7ee; }
+  .collapsed .nav a { justify-content:center; padding:10px; }
+}
+@media(max-width:760px) {
+  .collapsed .sidebar { display:none; }
+}
