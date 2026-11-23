@@ -81,11 +81,13 @@ export default function DashboardView({
   preview = false,
   summary = PREVIEW_SUMMARY,
   stats = null,
+  verdictCounts = null,
 }: {
   preview?: boolean;
   summary?: DashboardSummary;
   /** 상세 응답에서 집계한 분석 통계 */
   stats?: AnalysisStats | null;
+  verdictCounts?: { positive: number; negative: number; unknown: number } | null;
 }) {
   // 예시 데이터는 비로그인 미리보기에서만 사용한다.
   const text = stats
@@ -97,6 +99,12 @@ export default function DashboardView({
   const weekTotal = summary.trend.reduce((sum, day) => sum + day.count, 0);
   const maxCount = Math.max(1, ...summary.trend.map((day) => day.count));
   const pendingPercent = Math.min(100, percent(summary.unconfirmed, summary.total));
+  const verdictTotal = verdictCounts ? verdictCounts.positive + verdictCounts.negative + verdictCounts.unknown : 0;
+  const verdictSegments = verdictCounts ? [
+    { key: "positive", label: "양성", count: verdictCounts.positive, color: "#cf2548" },
+    { key: "negative", label: "음성", count: verdictCounts.negative, color: "#087e56" },
+    { key: "unknown", label: "판정 미제공", count: verdictCounts.unknown, color: "#94a3b8" },
+  ] : [];
   const metrics = [
     { title: "미확인 게시글", value: summary.unconfirmed, href: "/detections?status=unreviewed", action: "검토하기", pending: true },
     { title: "오늘 탐지", value: summary.today, href: "/detections?period=today", action: "오늘 게시글" },
@@ -114,6 +122,20 @@ export default function DashboardView({
           {preview ? <span className={ui.muted}>{metric.action}</span> : <Link href={metric.href} className={metric.pending ? ui.primaryAction : undefined}>{metric.action}<ArrowUpRight size={15} aria-hidden="true" /></Link>}
         </section>)}
       </div>
+
+      {!preview && <section className={`${ui.panel} ${ui.verdictDistribution}`} aria-label="전체 종합 판정 비율">
+        <header><h2>종합 판정 분포</h2>{verdictCounts && <span>전체 목록 {verdictTotal.toLocaleString("ko-KR")}건 기준</span>}</header>
+        {!verdictCounts ? <p className={ui.empty}>판정 통계를 불러오지 못했습니다.</p> : verdictTotal === 0 ? <p className={ui.empty}>아직 탐지 게시글이 없습니다.</p> : <div className={ui.verdictBody}>
+          <div className={ui.ring} aria-hidden="true" style={{ background: `conic-gradient(#cf2548 0% ${verdictCounts.positive / verdictTotal * 100}%, #087e56 ${verdictCounts.positive / verdictTotal * 100}% ${(verdictCounts.positive + verdictCounts.negative) / verdictTotal * 100}%, #94a3b8 ${(verdictCounts.positive + verdictCounts.negative) / verdictTotal * 100}% 100%)` }}><span><strong>{verdictTotal.toLocaleString("ko-KR")}</strong>전체 게시글</span></div>
+          <div>
+          <div className={ui.distributionBar} aria-hidden="true">{verdictSegments.map((segment) => <i key={segment.key} style={{ width: `${segment.count / verdictTotal * 100}%`, background: segment.color }} />)}</div>
+          <div className={ui.distributionLegend}>{verdictSegments.map((segment) => <Link key={segment.key} href={`/detections?verdict=${segment.key}`}>
+            <span><i style={{ background: segment.color }} aria-hidden="true" />{segment.label}</span>
+            <strong>{(segment.count / verdictTotal * 100).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%</strong><small>{segment.count.toLocaleString("ko-KR")}건</small>
+          </Link>)}</div>
+          </div>
+        </div>}
+      </section>}
 
       <div className={ui.activity}>
         <section className={ui.panel}>
