@@ -130,7 +130,7 @@ export default function AccountSettings({ initialProfile }: { initialProfile: Pr
       </section>}
 
       <Link href="/settings/account/password" className={styles.passwordLink}>
-        <KeyRound aria-hidden="true" /><span>비밀번호 변경</span><ChevronRight aria-hidden="true" />
+        <KeyRound aria-hidden="true" /><span>비밀번호 변경하기</span><ChevronRight aria-hidden="true" />
       </Link>
 
       <div className={styles.footer}>
