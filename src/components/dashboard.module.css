@@ -1,7 +1,7 @@
-.dashboard { --accent:#087e56; --accent-hover:#066543; --accent-soft:#edf7f2; --attention:#b7792d; --chart-muted:#a8bcb3; --track:#e9efec; padding:24px 28px 40px; color:#243447; }
+.dashboard { --accent:#087e56; --accent-hover:#07885a; --attention:#cf2548; --chart-muted:#94a3b8; --track:#eef2f6; padding:24px 28px 40px; color:#243447; }
 .srOnly { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
 .overview { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); padding:24px 0; background:#fff; border:1px solid #e0e7ee; border-radius:10px; }
-.overview section { padding:0 24px; border-right:1px solid #e8edf1; }
+.overview section { padding:0 24px; border-right:1px solid #e6edf3; }
 .overview section:last-child { border:0; }
 .overview h2 { margin:0; color:#64748b; font-size:13px; font-weight:500; }
 .metric { margin:14px 0; font-size:40px; line-height:1.15; font-weight:650; letter-spacing:-1.4px; font-variant-numeric:tabular-nums; }
@@ -40,7 +40,7 @@
 .body { padding:24px; }
 .countBars { display:flex; flex-direction:column; gap:14px; margin:0; padding:0; list-style:none; }
 .countBars li { display:grid; grid-template-columns:minmax(64px,100px) minmax(32px,1fr) 88px; align-items:center; gap:14px; }
-.countName { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:500; color:#34483e; }
+.countName { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:500; color:#243447; }
 .countTrack { height:6px; border-radius:3px; background:var(--track); overflow:hidden; }
 .countTrack b { display:block; height:100%; border-radius:3px; }
 .countValue { text-align:right; font-size:11px; color:#64748b; font-variant-numeric:tabular-nums; white-space:nowrap; }
@@ -49,7 +49,7 @@
 .methods { margin-top:20px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; }
 .methods summary { display:flex; justify-content:space-between; align-items:center; padding:18px 24px; cursor:pointer; font-size:13px; list-style:none; }
 .methods summary::-webkit-details-marker { display:none; }
-.methods summary:hover { background:#f7faf8; border-radius:10px; }
+.methods summary:hover { background:#f8fafc; border-radius:10px; }
 .methods[open] summary svg { transform:rotate(180deg); }
 .methods > div { padding:4px 24px 24px; max-width:640px; }
 .empty { margin:0; padding:72px 24px; color:#74849a; font-size:13px; text-align:center; }
