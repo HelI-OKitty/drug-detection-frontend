@@ -58,17 +58,18 @@ function RatioBar({
 }
 
 /** 항목별 건수를 가로 막대로 나열한다. */
-function CountBars({ items }: { items: { name: string; count: number }[] }) {
+function CountBars({ items, ranked = false }: { items: { name: string; count: number }[]; ranked?: boolean }) {
   if (items.length === 0) return <p className={styles.statEmpty}>집계된 항목이 없습니다.</p>;
   const max = Math.max(1, ...items.map((item) => item.count));
   return (
-    <ul className={ui.countBars}>
-      {items.map((item) => (
+    <ul className={ranked ? ui.rankList : ui.countBars}>
+      {items.map((item, index) => (
         <li key={item.name}>
+          {ranked && <span className={ui.rank}>{index + 1}</span>}
           <span className={ui.countName} title={item.name}>{item.name}</span>
-          <i className={ui.countTrack} aria-hidden="true">
-            <b style={{ width: `${(item.count / max) * 100}%`, background: item.count === max ? "var(--accent)" : "var(--chart-muted)" }} />
-          </i>
+          {!ranked && <i className={ui.countTrack} aria-hidden="true">
+            <b style={{ width: `${(item.count / max) * 100}%`, background: "var(--accent)" }} />
+          </i>}
           <span className={ui.countValue}>{item.count.toLocaleString("ko-KR")}건</span>
         </li>
       ))}
@@ -145,14 +146,18 @@ export default function DashboardView({
             <header><div><h2>텍스트 분석</h2><p>분석된 텍스트 {text.total.toLocaleString("ko-KR")}건</p></div></header>
             <div className={ui.body}>
               <h3>자주 탐지된 용어</h3><CountBars items={text.terms} />
-              <h3>탐지된 의도</h3><CountBars items={text.intents} />
+              <h3>탐지된 의도</h3><CountBars items={text.intents} ranked />
             </div>
           </section>
           <section className={ui.panel}>
             <header><div><h2>이미지 분석</h2><p>분석된 이미지 {image.total.toLocaleString("ko-KR")}장</p></div></header>
             <div className={ui.body}>
               <h3>검출 객체 분포</h3><CountBars items={image.objects} />
-              <h3>이미지 내 텍스트</h3><RatioBar a={image.withOcr} b={image.withoutOcr} aLabel="텍스트 포함" bLabel="텍스트 없음" unit="장" aColor="var(--accent)" bColor="var(--track)" />
+              <h3>이미지 내 텍스트</h3>
+              <dl className={ui.ocrSummary}>
+                <div><dt>텍스트 포함</dt><dd>{image.withOcr.toLocaleString("ko-KR")}<small>장</small></dd></div>
+                <div><dt>텍스트 없음</dt><dd>{image.withoutOcr.toLocaleString("ko-KR")}<small>장</small></dd></div>
+              </dl>
             </div>
           </section>
         </div>
