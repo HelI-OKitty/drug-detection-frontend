@@ -203,7 +203,10 @@ export default function DashboardView({
           <section className={ui.panel}>
             <header><div><h2>이미지 분석</h2><p>양성 게시글의 이미지 {image.total.toLocaleString("ko-KR")}장</p></div></header>
             <div className={ui.body}>
-              <h3>검출 객체 분포</h3><CountBars items={image.objects} />
+              <h3>검출 객체 분포</h3>
+              {image.objects === null
+                ? <p className={styles.statEmpty}>검출 객체 통계를 불러오지 못했습니다.</p>
+                : <CountBars items={image.objects} />}
               <h3>이미지 내 텍스트</h3>
               <dl className={ui.ocrSummary}>
                 <div><dt>텍스트 포함</dt><dd>{image.withOcr.toLocaleString("ko-KR")}<small>장</small></dd></div>

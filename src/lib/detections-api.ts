@@ -243,7 +243,7 @@ export type AnalysisStats = {
   imageTotal: number;
   withOcr: number;
   withoutOcr: number;
-  objects: { name: string; count: number }[];
+  objects: { name: string; count: number }[] | null;
 };
 
 function parseCounts(value: unknown, nameKey: string) {
@@ -257,14 +257,18 @@ function parseCounts(value: unknown, nameKey: string) {
   return counts;
 }
 
-export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
+async function fetchDashboardAnalytics(): Promise<AnalysisStats | null> {
   try {
     const { status, data } = await request("/dashboard/analytics");
+    if (status !== 200) {
+      if (status !== 401 && status !== 403) console.warn(`[dashboard] GET /dashboard/analytics returned HTTP ${status}`);
+      return null;
+    }
     const { trend: rawTrend, text, image } = asRecord(data);
     const { analyzed, top_terms, top_intents, source } = asRecord(text);
     const { model, rule } = asRecord(source);
     const { total_images, ocr_with_text, ocr_without_text, objects: rawObjects } = asRecord(image);
-    if (status !== 200 || !Array.isArray(rawTrend) || !isCount(analyzed) || !isCount(model)
+    if (!Array.isArray(rawTrend) || !isCount(analyzed) || !isCount(model)
       || !isCount(rule) || !isCount(total_images) || !isCount(ocr_with_text)
       || !isCount(ocr_without_text)) return null;
 
@@ -294,6 +298,70 @@ export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
   } catch {
     return null;
   }
+}
+
+/** 상세 응답을 요청하지 않고 목록에서 확인할 수 있는 통계만 집계한다. */
+async function fetchListAnalysisStats(): Promise<AnalysisStats | null> {
+  const { status, data } = await request("/detections");
+  if (status !== 200 || !Array.isArray(data)) return null;
+
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const trend: DashboardTrend = Array.from({ length: 7 }, (_, index) => ({
+    date: new Date(today.getTime() - (6 - index) * 86_400_000).toISOString().slice(0, 10),
+    positive: 0,
+    negative: 0,
+  }));
+  const days = new Map(trend.map((day) => [day.date, day]));
+  const stats: AnalysisStats = {
+    trend, analyzedText: 0, textModel: 0, textRuleOnly: 0, terms: [], intents: [],
+    imageTotal: 0, withOcr: 0, withoutOcr: 0, objects: null,
+  };
+  const terms = new Map<string, number>();
+  const intents = new Map<string, number>();
+  const add = (counts: Map<string, number>, names: string[]) => {
+    for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
+  };
+
+  for (const item of data) {
+    const raw = asRecord(item);
+    if (typeof raw.is_drug !== "boolean") continue;
+    if (typeof raw.detected_at === "string") {
+      // Mongo에서 시간대 없이 직렬화한 날짜도 UTC로 저장된다.
+      const iso = /^\d{4}-\d{2}-\d{2}T[\d:.]+$/.test(raw.detected_at)
+        ? `${raw.detected_at}Z` : raw.detected_at;
+      const detectedAt = new Date(iso);
+      const day = Number.isFinite(detectedAt.getTime()) && days.get(detectedAt.toISOString().slice(0, 10));
+      if (day) day[raw.is_drug ? "positive" : "negative"]++;
+    }
+    if (!raw.is_drug) continue;
+
+    const text = toTextAnalysis(raw.text_ai_result);
+    if (text) {
+      stats.analyzedText++;
+      if (text.source === "model") stats.textModel++;
+      if (text.source === "rule") stats.textRuleOnly++;
+      add(terms, text.matchedTerms);
+      add(intents, text.matchedIntents);
+    }
+    if (!Array.isArray(raw.image_ai_results)) continue;
+    for (const item of raw.image_ai_results) {
+      const { has_ocr_text } = asRecord(item);
+      if (typeof has_ocr_text !== "boolean") continue;
+      stats.imageTotal++;
+      if (has_ocr_text) stats.withOcr++;
+      else stats.withoutOcr++;
+    }
+  }
+
+  const top = (counts: Map<string, number>) => [...counts]
+    .sort(([, a], [, b]) => b - a).slice(0, 10)
+    .map(([name, count]) => ({ name, count }));
+  return { ...stats, terms: top(terms), intents: top(intents) };
+}
+
+export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
+  return await fetchDashboardAnalytics() ?? await fetchListAnalysisStats().catch(() => null);
 }
 
 /** 크롤링 회차(수집 기록). 저장된 탐지의 detected_at을 시간 간격으로 묶어 1회 실행으로 본다. */

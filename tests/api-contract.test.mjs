@@ -185,6 +185,25 @@ test("analysis statistics come from the aggregate endpoint", async () => {
   });
   globalThis.fetch = async () => Response.json({ trend });
   assert.equal(await detections.fetchAnalysisStats(), null);
+
+  const date = new Date().toISOString();
+  globalThis.fetch = async (url) => {
+    if (new URL(url).pathname === "/dashboard/analytics") return new Response(null, { status: 500 });
+    assert.equal(new URL(url).pathname, "/detections");
+    return Response.json([
+      { ...rows[0], detected_at: date, text_ai_result: { source: "rule", matched_terms: ["term"] },
+        image_ai_results: [{ has_ocr_text: true, is_ocr_drug: false }, { has_ocr_text: false }] },
+      { ...rows[1], detected_at: date },
+      { ...rows[1], detected_at: date, is_drug: null },
+    ]);
+  };
+  const fallback = await detections.fetchAnalysisStats();
+  assert.deepEqual(fallback.trend.at(-1), { date: date.slice(0, 10), positive: 1, negative: 1 });
+  assert.deepEqual(fallback.terms, [{ name: "term", count: 1 }]);
+  assert.equal(fallback.textRuleOnly, 1);
+  assert.equal(fallback.withOcr, 1);
+  assert.equal(fallback.withoutOcr, 1);
+  assert.equal(fallback.objects, null);
 });
 
 test("null text predictions preserve source instead of becoming negative", async () => {
