@@ -53,11 +53,10 @@ function UnsupportedNote({ retry }: { retry?: boolean }) {
     <div className={styles.unsupportedNote} role="status">
       <span className={styles.unsupportedIcon} aria-hidden="true"><Info /></span>
       <div className={styles.unsupportedBody}>
-        <strong className={styles.unsupportedTitle}>분석할 수 있는 텍스트가 아니에요</strong>
+        <strong className={styles.unsupportedTitle}>텍스트를 분석할 수 없습니다</strong>
         <p className={styles.unsupportedDetail}>
-          특수문자·숫자·이모지만 있어 판정할 단어를 찾지 못했어요.{retry && " 한글이나 영문이 포함된 문장을 입력해 주세요."}
+          특수문자·숫자·이모지만으로는 판정할 수 없습니다.{retry && " 한글이나 영문이 포함된 문장을 입력해 주세요."}
         </p>
-        {retry && <p className={styles.unsupportedExample}>예: <b>이 약 어디서 구할 수 있나요?</b></p>}
       </div>
     </div>
   );
@@ -180,14 +179,14 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
     void addFiles(files);
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
+  function handleDrop(event: DragEvent<HTMLElement>) {
     event.preventDefault();
     setDragging(false);
     if (pending || reading || images.length >= MAX_IMAGES) return;
     void addFiles(Array.from(event.dataTransfer.files));
   }
 
-  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+  function handleDragOver(event: DragEvent<HTMLElement>) {
     // 드롭을 허용하려면 dragover에서 기본 동작을 막아야 한다.
     event.preventDefault();
     if (!pending && !reading && images.length < MAX_IMAGES) setDragging(true);
@@ -230,12 +229,21 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
   const unsupportedOnly = Boolean(results && textUnsupported && results.imageResults.length === 0);
   const textResultMissing = Boolean(results && text.trim() && !textUnsupported && results.textResult?.isDrug == null);
   const needsRetry = Boolean(error || textResultMissing || textUnsupported);
+  const sortedImageResults = (results?.imageResults ?? [])
+    .map((result, index) => ({ result, index }))
+    .sort((a, b) => (b.result.score ?? -1) - (a.result.score ?? -1));
 
   return (
     <div className={`${styles.page} ${hideIntro ? styles.trialForm : ""}`}>
       {showOutcome && <header className={styles.outcomeHeader}>
         <h2 ref={outcomeHeading} tabIndex={-1}>{pending ? "분석 중" : error ? "분석 실패" : unsupportedOnly ? "분석할 수 없는 텍스트" : "분석 결과"}</h2>
         {(pending || needsRetry) && <p>{pending ? "결과를 확인하고 있습니다. 잠시만 기다려 주세요." : error ? error : unsupportedOnly ? "입력 내용을 수정한 뒤 다시 분석해 주세요." : textResultMissing ? "텍스트 판정이 누락되었습니다. 다시 시도해 주세요." : "텍스트를 분석하지 못했습니다. 이미지 결과를 확인하거나 입력을 수정해 주세요."}</p>}
+        {!pending && <div className={styles.outcomeActions}>
+          {needsRetry ? <>
+            <button type="button" className={styles.editInputButton} onClick={() => returnToInput(false)}><ArrowLeft aria-hidden="true" />입력 수정하기</button>
+            <button type="button" className={styles.saveButton} onClick={() => void runAnalysis()}>다시 시도</button>
+          </> : <button type="button" className={styles.saveButton} onClick={() => returnToInput(true)}>새로 분석하기</button>}
+        </div>}
       </header>}
       {!showOutcome && <form className={styles.formStack} onSubmit={handleSubmit}>
         <section className={styles.card} aria-labelledby={hideIntro ? undefined : "analyze-title"} aria-label={hideIntro ? "게시글 분석" : undefined}>
@@ -273,7 +281,7 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
                 onChange={handleFiles}
                 disabled={pending || reading}
               />
-              <div
+              {images.length === 0 && <div
                 className={styles.dropZone}
                 data-dragging={dragging}
                 data-disabled={pending || reading || images.length >= MAX_IMAGES}
@@ -293,12 +301,10 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
               >
                 <ImagePlus aria-hidden="true" />
                 <span className={styles.dropZoneText}>
-                  {images.length >= MAX_IMAGES
-                    ? `이미지는 최대 ${MAX_IMAGES}장까지 추가할 수 있습니다`
-                    : hideIntro ? <><strong>파일 선택</strong> 또는 여기로 이미지 끌어놓기</> : <><strong>이미지를 끌어다 놓거나 클릭</strong>해 추가</>}
+                  {hideIntro ? <><strong>파일 선택</strong> 또는 여기로 이미지 끌어놓기</> : <><strong>이미지를 끌어다 놓거나 클릭</strong>해 추가</>}
                 </span>
-                {images.length < MAX_IMAGES && <small>최대 {MAX_IMAGES}장 · 전체 3MB 이하</small>}
-              </div>
+                <small>최대 {MAX_IMAGES}장 · 전체 3MB 이하</small>
+              </div>}
               {images.length > 0 && (
                 <ul className={styles.thumbGrid}>
                   {images.map((image) => (
@@ -317,8 +323,17 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
                       </button>
                     </li>
                   ))}
+                  {images.length < MAX_IMAGES && <li className={styles.addImageItem}>
+                    <button type="button" className={styles.addImageTile} disabled={pending || reading}
+                      data-dragging={dragging} aria-label="이미지 추가"
+                      onClick={() => fileInput.current?.click()} onDragOver={handleDragOver}
+                      onDragLeave={(event) => { event.preventDefault(); setDragging(false); }} onDrop={handleDrop}>
+                      <ImagePlus size={24} aria-hidden="true" /><span>이미지 추가</span>
+                    </button>
+                  </li>}
                 </ul>
               )}
+              {images.length > 0 && <p className={styles.imageLimit}>{images.length} / {MAX_IMAGES}장 · 전체 3MB 이하</p>}
             </div>
           </div>
         </section>
@@ -359,8 +374,8 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
                 </>}
               </div>
             </section>}
-            {results.imageResults.length > 0 && <ul className={styles.imageResultList}>
-            {results.imageResults.map((result, index) => (
+            {results.imageResults.length > 0 && <ul className={styles.imageResultList} aria-label="이미지 결과 · 탐지 점수 높은 순">
+            {sortedImageResults.map(({ result, index }) => (
               <li key={images[index].id} className={styles.analysisPanel}>
                 <div className={styles.analysisPanelHeader}>
                 <button type="button" className={styles.thumbZoom} onClick={() => setViewerUrl(images[index].dataUrl)} aria-label={`이미지 ${index + 1} 원본 크기로 보기`}>
@@ -407,12 +422,7 @@ export default function AnalyzeForm({ title = "단순 분석", hideIntro = false
         </section>
       )}
 
-      {showOutcome && !pending && <div className={styles.outcomeActions}>
-        {needsRetry ? <>
-          <button type="button" className={styles.editInputButton} onClick={() => returnToInput(false)}><ArrowLeft aria-hidden="true" />입력 수정하기</button>
-          <button type="button" className={styles.saveButton} onClick={() => void runAnalysis()}>다시 시도</button>
-        </> : <button type="button" className={styles.saveButton} onClick={() => returnToInput(true)}>새로 분석하기</button>}
-      </div>}
+
 
       {viewerUrl && (
         <div
