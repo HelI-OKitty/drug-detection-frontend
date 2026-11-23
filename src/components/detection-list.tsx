@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
 import { STATUS_FILTERS, STATUS_LABEL, sourceHost, type DetectionRow } from "@/lib/detections";
 import { VERDICTS, PERIODS, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
 import styles from "./detections.module.css";
@@ -151,13 +151,13 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
         {!rows.length && <div className={styles.filterEmpty} role="status"><Search size={26} aria-hidden="true" /><strong>{items.length ? "조건에 맞는 게시글이 없습니다" : "아직 수집된 게시글이 없습니다"}</strong><p>{items.length ? "선택한 판정이나 기간을 바꿔 다시 확인해 보세요." : "크롤링으로 수집된 게시글이 여기에 표시됩니다."}</p>{active.length > 0 && <button className={styles.resetButton} onClick={reset}>필터 초기화</button>}</div>}
         <nav className={styles.filterPagination} aria-label="페이지 이동">
           <div className={styles.pageSteps}>
-            {[10, 5].map((step) => <button key={step} type="button" className={styles.pageButton} disabled={page === 1} aria-label={`${step}페이지 이전`} onClick={() => update({ page: String(Math.max(1, page - step)) })}>−{step}</button>)}
+            {[10, 5].map((step) => <button key={step} type="button" className={styles.pageButton} disabled={page === 1} aria-label={`${step}페이지 이전`} title={`${step}페이지 이전`} onClick={() => update({ page: String(Math.max(1, page - step)) })}>{step === 10 ? <ChevronsLeft size={18} aria-hidden="true" /> : <ChevronLeft size={18} aria-hidden="true" />}</button>)}
           </div>
           <div className={styles.pageNumbers}>
             {pageNumbers.map((number) => <button key={number} type="button" className={styles.pageButton} aria-label={`${number}페이지`} aria-current={page === number ? "page" : undefined} onClick={() => update({ page: String(number) })}>{number}</button>)}
           </div>
           <div className={styles.pageSteps}>
-            {[5, 10].map((step) => <button key={step} type="button" className={styles.pageButton} disabled={page === totalPages} aria-label={`${step}페이지 다음`} onClick={() => update({ page: String(Math.min(totalPages, page + step)) })}>+{step}</button>)}
+            {[5, 10].map((step) => <button key={step} type="button" className={styles.pageButton} disabled={page === totalPages} aria-label={`${step}페이지 다음`} title={`${step}페이지 다음`} onClick={() => update({ page: String(Math.min(totalPages, page + step)) })}>{step === 10 ? <ChevronsRight size={18} aria-hidden="true" /> : <ChevronRight size={18} aria-hidden="true" />}</button>)}
           </div>
         </nav>
       </div>
