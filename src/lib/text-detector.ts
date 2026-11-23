@@ -8,7 +8,7 @@ export const MAX_ANALYZE_BODY_BYTES = MAX_ANALYZE_IMAGES * Math.ceil(MAX_IMAGE_B
 export type AnalyzePayload = { text?: string; images?: string[] };
 export type AnalyzedObject = { className: string; confidence: number | null };
 /** 판정 방식. no_supported_characters는 텍스트 모델이 분석할 수 없는 입력을 뜻한다. */
-export type AnalysisSource = "rule" | "model" | "no_supported_characters" | null;
+export type AnalysisSource = string | null;
 export type TextAnalyzeResult = {
   isDrug: boolean | null;
   source: AnalysisSource;
@@ -80,7 +80,7 @@ function strings(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 function parseSource(value: unknown): AnalysisSource {
-  return value === "rule" || value === "model" || value === "no_supported_characters" ? value : null;
+  return typeof value === "string" ? value : null;
 }
 export async function analyzeContent(payload: AnalyzePayload): Promise<AnalyzeResult> {
   const prepared = prepareAnalyzeRequest(payload);
@@ -103,7 +103,9 @@ export async function analyzeContent(payload: AnalyzePayload): Promise<AnalyzeRe
   if (response.status === 504) throw new Error("분석 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
   if (!response.ok) throw new Error("분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   const raw = record(await response.json().catch(() => null));
-  if (typeof raw.is_drug !== "boolean" || !Array.isArray(raw.image_ai_results) || raw.text_ai_result === undefined) {
+  if (raw.image_ai_results === undefined) raw.image_ai_results = [];
+  if (raw.text_ai_result === undefined) raw.text_ai_result = null;
+  if (typeof raw.is_drug !== "boolean" || !Array.isArray(raw.image_ai_results)) {
     throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
   }
   const requestedImages = prepared.body.images?.length ?? 0;
@@ -127,7 +129,7 @@ export async function analyzeContent(payload: AnalyzePayload): Promise<AnalyzeRe
   const imageResults = raw.image_ai_results.map((item) => {
     const image = record(item);
     if (!Array.isArray(image.detected_objects) || (image.ocr_text_results !== undefined
-      ? !Array.isArray(image.ocr_text_results) : typeof image.ocr_text !== "string")) {
+      ? !Array.isArray(image.ocr_text_results) : image.ocr_text !== undefined && typeof image.ocr_text !== "string")) {
       throw new Error("분석 결과를 확인할 수 없습니다. 다시 시도해 주세요.");
     }
     const ocrResults = Array.isArray(image.ocr_text_results) ? image.ocr_text_results.map((item) => {

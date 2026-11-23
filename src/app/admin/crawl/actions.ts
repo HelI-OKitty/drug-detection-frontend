@@ -70,10 +70,11 @@ export async function triggerCrawl(maxResults: number): Promise<
         message: `크롤링 실행에 실패했습니다${partial}: ${detail || (response.ok ? "일부 게시글을 처리하지 못했습니다" : `서버 오류 ${response.status}`)}. 탐지 게시글 목록에서 저장 결과를 확인해 주세요.`,
       };
     }
-    if (!data || ![data.total, data.saved, data.skipped, data.failed].every((value) => Number.isInteger(value) && value >= 0)) {
+    const failed = data?.failed === undefined ? 0 : data.failed;
+    if (!data || ![data.total, data.saved, data.skipped, failed].every((value) => Number.isInteger(value) && value >= 0)) {
       return { success: false, message: "서버의 응답을 확인할 수 없습니다. 탐지 게시글 목록에서 결과를 확인해 주세요." };
     }
-    return { success: true, result: { total: data.total, saved: data.saved, skipped: data.skipped, failed: data.failed } };
+    return { success: true, result: { total: data.total, saved: data.saved, skipped: data.skipped, failed } };
   } catch (error) {
     if (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)) {
       return { success: false, message: "크롤링 응답 대기 시간이 초과되었습니다. 실행은 계속될 수 있으니 잠시 후 탐지 게시글 목록을 확인해 주세요." };

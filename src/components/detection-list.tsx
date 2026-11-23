@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
-import { STATUS_FILTERS, STATUS_LABEL, sourceHost, type DetectionRow } from "@/lib/detections";
+import { STATUS_FILTERS, STATUS_LABEL, sourceHost, missingVerdictReason, type DetectionRow } from "@/lib/detections";
 import { VERDICTS, PERIODS, OCR_PRESENCE, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
 import styles from "./detections.module.css";
 import FilterSelect from "./filter-select";
 
 const PER_PAGE = 10;
 const LIST_POSITION_KEY = "sentinel:detection-list-position";
-function VerdictBadge({ value }: { value: boolean | null }) {
-  return value === null ? <span className={styles.cellNone} title="판정 미제공">미제공</span>
+function VerdictBadge({ value, source }: { value: boolean | null; source?: string | null }) {
+  return value === null ? <span className={styles.cellNone} title={missingVerdictReason(source)}>미제공</span>
     : <span className={styles.verdictBadge} data-flagged={value}>{value ? "양성" : "음성"}</span>;
 }
 export default function DetectionList({ items }: { items: DetectionRow[] }) {
@@ -139,13 +139,13 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
       </section>
       <div className={styles.resultsHeader}><p role="status">검색 결과 <strong>{filtered.length.toLocaleString()}건</strong><span> / 전체 {items.length.toLocaleString()}건</span></p><small>종합 판정 탭의 건수는 전체 목록 기준</small></div>
       {active.length > 0 && <div className={styles.activeFilters} aria-label="적용된 필터">{active.map((filter, i) => <button key={i} onClick={filter.clear} aria-label={`${filter.label} 필터 해제`}>{filter.label}<X size={13} aria-hidden="true" /></button>)}</div>}
-      <p className={styles.scrollHint}>표를 좌우로 움직이면 텍스트·이미지 판정과 검토 상태를 확인할 수 있습니다.</p>
+      <p className={styles.scrollHint}>표를 좌우로 움직이면 텍스트·이미지·OCR 판정과 검토 상태를 확인할 수 있습니다.</p>
       <div className={styles.card}>
         <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="탐지 결과 표. 좁은 화면에서 좌우로 스크롤할 수 있습니다">
-          <table className={`${styles.table} ${styles.filteredTable}`}><thead><tr><th scope="col">게시글</th><th scope="col">종합 판정</th><th scope="col">텍스트</th><th scope="col">이미지</th><th scope="col">탐지 시각</th><th scope="col">검토 상태</th></tr></thead>
+          <table className={`${styles.table} ${styles.filteredTable}`}><thead><tr><th scope="col">게시글</th><th scope="col">종합 판정</th><th scope="col">텍스트</th><th scope="col">이미지</th><th scope="col">OCR</th><th scope="col">탐지 시각</th><th scope="col">검토 상태</th></tr></thead>
             <tbody>{rows.map((item) => <tr className={styles.row} key={item.id}>
               <td className={styles.postCell}><Link href={`/detections/${encodeURIComponent(item.id)}?${detailQuery}`} className={styles.summaryLink} prefetch={false} onClick={(event) => { if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) rememberPosition(); }}>{item.summary}</Link><div className={styles.postMeta}><span>{item.nickname}</span><a className={styles.sourceLink} href={item.sourceUrl} target="_blank" rel="noreferrer noopener">{sourceHost(item.sourceUrl) || item.platform}</a></div></td>
-              <td><VerdictBadge value={item.isDrug} /></td><td><VerdictBadge value={item.textFlagged} /></td><td><VerdictBadge value={imageVerdict(item)} /></td>
+              <td><VerdictBadge value={item.isDrug} /></td><td><VerdictBadge value={item.textFlagged} source={item.textSource} /></td><td><VerdictBadge value={imageVerdict(item)} /></td><td>{item.imageAnalyses.some((image) => image.hasOcrText) ? <VerdictBadge value={item.ocrFlagged ?? null} /> : <span className={styles.cellNone}>OCR 없음</span>}</td>
               <td><time className={styles.detectedAt}>{item.detectedAt}</time></td><td><span className={styles.status} data-status={item.status}>{STATUS_LABEL[item.status]}</span></td>
             </tr>)}</tbody>
           </table>

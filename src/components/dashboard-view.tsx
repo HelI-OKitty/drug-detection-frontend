@@ -107,7 +107,7 @@ export default function DashboardView({
   ] : [];
   const metrics = [
     { title: "미확인 게시글", value: summary.unconfirmed, href: "/detections?status=unreviewed", action: "검토하기", pending: true },
-    { title: "오늘 탐지", value: summary.today, href: "/detections?period=today&verdict=positive", action: "오늘 양성 게시글" },
+    { title: "오늘 탐지", value: summary.today, href: "/detections?period=today", action: "오늘 게시글" },
     { title: "전체 탐지", value: summary.total, href: "/detections", action: "전체 목록" },
   ];
 
