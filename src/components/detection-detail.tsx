@@ -187,16 +187,15 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
         <div className={styles.overallVerdict}>
           <div><h2>종합 판정</h2><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong></div>
           <p>{verdictExplanation}</p>
-          <details className={styles.verdictRule}><summary>판정 기준</summary><p>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</p></details>
         </div>
         <div className={styles.componentVerdicts}>
           <div><div className={styles.verdictHeading}><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong></div>{textScore !== null ? <div className={styles.summaryScore}><span>모델 점수</span><b style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</b></div> : <small>{detection.textFlagged === null ? missingVerdictReason(textAnalysis?.source) : "모델 점수 미제공"}</small>}</div>
           <div><div className={styles.verdictHeading}><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong></div>
-            {imageMax !== null ? <div className={styles.summaryScore}><span>이미지 최고 점수 · {detection.images.length}장</span><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b></div> : <small>이미지 분석 미제공</small>}
-            <details className={styles.verdictRule}><summary>객체·OCR 요약</summary>
+            {imageMax !== null ? <div className={styles.summaryScore}><span>이미지 최고 점수 · {detection.images.length}장</span><b style={{ color: scoreColors(imageMax).fg }}>{toPercent(imageMax, 2)}</b></div> : <small>해당 게시글에는 이미지가 없습니다.</small>}
+            {detection.images.length > 0 && <details className={styles.verdictRule}><summary>객체·OCR 요약</summary>
               <p><span className={styles.summaryLabel}>검출 객체</span>{detectedNames.length ? detectedNames.join(", ") : detection.images.length ? "미검출" : "미제공"}</p>
               <p><span className={styles.summaryLabel}>OCR 분석 점수</span><b style={ocrMax !== null ? { color: scoreColors(ocrMax).fg } : undefined}>{ocrMax !== null ? toPercent(ocrMax, 2) : "미제공"}</b></p>
-            </details>
+            </details>}
             </div>
         </div>
       </section>
