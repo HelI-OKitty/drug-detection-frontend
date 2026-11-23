@@ -19,57 +19,6 @@ const PREVIEW_SUMMARY: DashboardSummary = {
   ],
 };
 
-/** 비로그인 미리보기 전용 예시 통계. 운영 화면에서는 사용하지 않는다. */
-function buildMockStats(summary: DashboardSummary) {
-  const positive = summary.total;
-  const negative = positive > 0 ? Math.round(positive * 2.4) + 4 : 0;
-  const total = positive + negative;
-  const trend = summary.trend.map((day, index) => ({
-    date: day.date,
-    positive: day.count,
-    negative: day.count > 0 ? day.count * 2 + ((index * 7) % 5) + 1 : (index * 3) % 4,
-  }));
-  const model = Math.round(total * 0.72);
-  const withOcr = Math.round(total * 0.46);
-  const scale = (ratio: number, min = 1) => (positive > 0 ? Math.max(min, Math.round(positive * ratio)) : 0);
-  return {
-    total,
-    positive,
-    negative,
-    trend,
-    text: {
-      model,
-      ruleOnly: total - model,
-      // 단어 사전(용어) 매칭 분포
-      terms: [
-        { name: "브액", count: scale(0.52) },
-        { name: "아이스", count: scale(0.38) },
-        { name: "작대기", count: scale(0.29) },
-        { name: "빙두", count: scale(0.17) },
-        { name: "대마", count: scale(0.08) },
-      ],
-      // 동사 사전(의도) 매칭 분포
-      intents: [
-        { name: "팝니다", count: scale(0.44) },
-        { name: "문의", count: scale(0.31) },
-        { name: "배송", count: scale(0.22) },
-        { name: "거래", count: scale(0.13) },
-        { name: "구합니다", count: scale(0.06) },
-      ],
-    },
-    image: {
-      withOcr,
-      withoutOcr: total - withOcr,
-      objects: [
-        { name: "Cocaine", count: scale(0.21) },
-        { name: "Heroin", count: scale(0.13) },
-        { name: "Shrooms", count: scale(0.09) },
-        { name: "Marijuana", count: scale(0.05) },
-      ],
-    },
-  };
-}
-
 function percent(part: number, total: number) {
   return total > 0 ? Math.round((part / total) * 100) : 0;
 }
@@ -147,14 +96,13 @@ export default function DashboardView({
   /** 상세 응답에서 집계한 분석 통계 */
   stats?: AnalysisStats | null;
 }) {
-  const mock = preview ? buildMockStats(summary) : null;
   // 예시 데이터는 비로그인 미리보기에서만 사용한다.
   const text = stats
     ? { total: stats.analyzedText, model: stats.textModel, ruleOnly: stats.textRuleOnly, terms: stats.terms, intents: stats.intents }
-    : mock ? { total: mock.total, ...mock.text } : { total: 0, model: 0, ruleOnly: 0, terms: [], intents: [] };
+    : { total: 0, model: 0, ruleOnly: 0, terms: [], intents: [] };
   const image = stats
     ? { total: stats.imageTotal, withOcr: stats.withOcr, withoutOcr: stats.withoutOcr, objects: stats.objects }
-    : mock ? { total: mock.total, withOcr: mock.image.withOcr, withoutOcr: mock.image.withoutOcr, objects: mock.image.objects } : { total: 0, withOcr: 0, withoutOcr: 0, objects: [] };
+    : { total: 0, withOcr: 0, withoutOcr: 0, objects: [] };
   const trend = summary.trend.map((day) => ({ ...day, total: day.count, positive: 0, negative: 0 }));
   const metrics = [
     { title: "전체 탐지", value: summary.total, tone: "blue", Icon: BarChart3, foot: "저장된 탐지 게시글" },
@@ -185,7 +133,7 @@ export default function DashboardView({
         </section>
       </div>
 
-      {!stats && !preview ? <p role="status">분석 통계를 불러오지 못했습니다.</p> : <div className={`${styles.panels} ${styles.panelsEven}`}>
+      {!preview && (!stats ? <p role="status">분석 통계를 불러오지 못했습니다.</p> : <div className={`${styles.panels} ${styles.panelsEven}`}>
         <section className={styles.panel}>
           <header>
             <h2><FileText aria-hidden="true" />텍스트 분석 통계</h2>
@@ -226,7 +174,7 @@ export default function DashboardView({
             <CountBars items={image.objects} color={COLOR.positive} />
           </div>
         </section>
-      </div>}
+      </div>)}
     </div>
   );
 }

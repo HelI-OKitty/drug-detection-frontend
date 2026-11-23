@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, FileText, ImagePlus, Info, ListChecks, ScanSearch, ShieldCheck, Sparkles, TriangleAlert, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, FileText, ImagePlus, Info, ScanSearch, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
 import { scoreColors, toPercent } from "@/lib/detections";
 import { analyzeContent, type AnalysisSource, type AnalyzeResult } from "@/lib/text-detector";
@@ -26,8 +26,8 @@ function Verdict({ positive }: { positive: boolean | null }) {
   return <span className={styles.itemBadge} data-tone={positive ? "danger" : "safe"}>{positive ? "양성" : "음성"}</span>;
 }
 function SourceTag({ source }: { source: AnalysisSource }) {
-  if (source === "model") return <span className={styles.sourceTag}><Sparkles aria-hidden="true" />AI 모델</span>;
-  if (source === "rule") return <span className={styles.sourceTag}><ListChecks aria-hidden="true" />규칙 매칭</span>;
+  if (source === "model") return <span className={styles.sourceTag}>AI 모델</span>;
+  if (source === "rule") return <span className={styles.sourceTag}>규칙 매칭</span>;
   return null;
 }
 // 규칙 판정에서 걸린 키워드·의도를 평문 대신 칩으로 보여준다. 매칭이 하나도 없으면 아예 렌더하지 않는다.
@@ -92,7 +92,7 @@ function readImage(file: File): Promise<PickedImage> {
   });
 }
 
-export default function AnalyzeForm({ title = "단순 분석" }: { title?: string }) {
+export default function AnalyzeForm({ title = "단순 분석", hideIntro = false }: { title?: string; hideIntro?: boolean }) {
   const [text, setText] = useState("");
   const [images, setImages] = useState<PickedImage[]>([]);
   const [pending, setPending] = useState(false);
@@ -104,6 +104,27 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const inFlight = useRef(false);
+  const [showOutcome, setShowOutcome] = useState(false);
+  const outcomeHeading = useRef<HTMLHeadingElement>(null);
+  const inputHeading = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (showOutcome) {
+      outcomeHeading.current?.focus();
+      outcomeHeading.current?.scrollIntoView({ block: "start" });
+    }
+  }, [showOutcome, pending]);
+
+  function returnToInput(clear: boolean) {
+    resetOutcome();
+    setViewerUrl(null);
+    if (clear) {
+      setText("");
+      setImages([]);
+    }
+    setShowOutcome(false);
+    requestAnimationFrame(() => inputHeading.current?.focus());
+  }
 
   // 이미지 원본 보기는 Esc 키로도 닫는다.
   useEffect(() => {
@@ -179,6 +200,10 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await runAnalysis();
+  }
+
+  async function runAnalysis() {
     if (inFlight.current || readingFiles.current) return;
     resetOutcome();
     if (!text.trim() && images.length === 0) {
@@ -186,6 +211,7 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
       return;
     }
     inFlight.current = true;
+    if (hideIntro) setShowOutcome(true);
     setPending(true);
     try {
       setResults(await analyzeContent({ text, images: images.map((image) => image.base64) }));
@@ -203,20 +229,25 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
   // 텍스트만 입력했는데 분석 불가면 종합 판정 카드를 숨기고 폼 쪽 안내로 대신한다.
   const unsupportedOnly = Boolean(results && textUnsupported && results.imageResults.length === 0);
   const textResultMissing = Boolean(results && text.trim() && !textUnsupported && results.textResult?.isDrug == null);
+  const needsRetry = Boolean(error || textResultMissing || textUnsupported);
 
   return (
-    <div className={styles.page}>
-      <form className={styles.formStack} onSubmit={handleSubmit}>
-        <section className={styles.card} aria-labelledby="analyze-title">
-          <header className={styles.cardHeader}>
+    <div className={`${styles.page} ${hideIntro ? styles.trialForm : ""}`}>
+      {showOutcome && <header className={styles.outcomeHeader}>
+        <h2 ref={outcomeHeading} tabIndex={-1}>{pending ? "분석 중" : error ? "분석 실패" : unsupportedOnly ? "분석할 수 없는 텍스트" : "분석 결과"}</h2>
+        {(pending || needsRetry) && <p>{pending ? "결과를 확인하고 있습니다. 잠시만 기다려 주세요." : error ? error : unsupportedOnly ? "입력 내용을 수정한 뒤 다시 분석해 주세요." : textResultMissing ? "텍스트 판정이 누락되었습니다. 다시 시도해 주세요." : "텍스트를 분석하지 못했습니다. 이미지 결과를 확인하거나 입력을 수정해 주세요."}</p>}
+      </header>}
+      {!showOutcome && <form className={styles.formStack} onSubmit={handleSubmit}>
+        <section className={styles.card} aria-labelledby={hideIntro ? undefined : "analyze-title"} aria-label={hideIntro ? "게시글 분석" : undefined}>
+          {!hideIntro && <header className={styles.cardHeader}>
             <h2 id="analyze-title"><ScanSearch aria-hidden="true" />{title}</h2>
-            <small>텍스트 {text.length.toLocaleString("ko-KR")}자 · 이미지 {images.length}/{MAX_IMAGES}</small>
-          </header>
+          </header>}
           <div className={styles.cardBody}>
-            <p className={styles.help}>텍스트와 이미지를 함께 분석합니다. 게시글의 종합 판정과 텍스트·이미지별 결과를 나누어 확인할 수 있습니다.</p>
+            {!hideIntro && <p className={styles.help}>텍스트나 이미지를 입력하면 분석 결과를 확인할 수 있습니다.</p>}
             <div className={styles.field}>
-              <label htmlFor="analyze-text">분석할 텍스트 (선택)</label>
+              <label htmlFor="analyze-text">{hideIntro ? <>텍스트 <span>선택</span></> : "분석할 텍스트 (선택)"}</label>
               <textarea
+                ref={inputHeading}
                 id="analyze-text"
                 rows={4}
                 value={text}
@@ -230,8 +261,8 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
               />
             </div>
 
-            <div className={styles.field} style={{ marginTop: 16 }}>
-              <label htmlFor="analyze-images">이미지 (선택, 최대 {MAX_IMAGES}장 · 전체 3MB 이하)</label>
+            <div className={`${styles.field} ${styles.imageField}`}>
+              <label htmlFor="analyze-images">{hideIntro ? <>이미지 <span>선택</span></> : `이미지 (선택, 최대 ${MAX_IMAGES}장 · 전체 3MB 이하)`}</label>
               <input
                 ref={fileInput}
                 id="analyze-images"
@@ -264,7 +295,7 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
                 <span className={styles.dropZoneText}>
                   {images.length >= MAX_IMAGES
                     ? `이미지는 최대 ${MAX_IMAGES}장까지 추가할 수 있습니다`
-                    : <><strong>이미지를 끌어다 놓거나 클릭</strong>해 추가</>}
+                    : hideIntro ? <><strong>파일 선택</strong> 또는 여기로 이미지 끌어놓기</> : <><strong>이미지를 끌어다 놓거나 클릭</strong>해 추가</>}
                 </span>
                 {images.length < MAX_IMAGES && <small>최대 {MAX_IMAGES}장 · 전체 3MB 이하</small>}
               </div>
@@ -294,13 +325,13 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
 
         <div className={styles.footer}>
           <p role="status" aria-live="polite" aria-atomic="true" className={error ? styles.error : styles.savedNote}>
-            {pending ? "텍스트와 이미지를 분석하고 있습니다. 잠시만 기다려 주세요…" : reading ? "이미지를 읽고 있습니다…" : error}
+            {pending ? "텍스트와 이미지를 분석하고 있습니다. 잠시만 기다려 주세요…" : reading ? "이미지를 읽고 있습니다…" : error || (hideIntro ? "텍스트나 이미지 중 하나만 입력해도 됩니다." : "")}
           </p>
           <button type="submit" className={styles.saveButton} disabled={!canSubmit}>
             <ScanSearch aria-hidden="true" />{pending ? "분석 중…" : "분석하기"}
           </button>
         </div>
-      </form>
+      </form>}
 
       {unsupportedOnly && <UnsupportedNote retry />}
 
@@ -374,6 +405,13 @@ export default function AnalyzeForm({ title = "단순 분석" }: { title?: strin
           </div>
         </section>
       )}
+
+      {showOutcome && !pending && <div className={styles.outcomeActions}>
+        {needsRetry ? <>
+          <button type="button" className={styles.editInputButton} onClick={() => returnToInput(false)}><ArrowLeft aria-hidden="true" />입력 수정하기</button>
+          <button type="button" className={styles.saveButton} onClick={() => void runAnalysis()}>다시 시도</button>
+        </> : <button type="button" className={styles.saveButton} onClick={() => returnToInput(true)}>새로 분석하기</button>}
+      </div>}
 
       {viewerUrl && (
         <div

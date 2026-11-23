@@ -266,7 +266,6 @@ export default function CrawlConsole({
       )}
 
       <section className={styles.group} aria-label="자동 크롤링 모니터링">
-        <p className={styles.groupLabel}>자동 크롤링 모니터링</p>
 
         <section className={styles.card} aria-labelledby="auto-crawl-title">
           <header className={styles.cardHeader}>
@@ -274,8 +273,8 @@ export default function CrawlConsole({
             <small>
               {settings
                 ? crawlEnabled
-                  ? `ON · ${intervalLabel(settings.scheduleInterval)} 주기`
-                  : "OFF"
+                  ? `사용 중 · ${intervalLabel(settings.scheduleInterval)} 주기`
+                  : "꺼짐"
                 : "설정을 불러오지 못함"}
             </small>
           </header>
@@ -315,7 +314,7 @@ export default function CrawlConsole({
               <p className={styles.error} role="alert">서버 수집 기록을 불러오지 못했습니다. 새로고침으로 다시 시도해 주세요.</p>
             )}
             {!hasRows ? runsLoaded && (
-              <p className={styles.historyEmpty}>아직 저장된 수집 기록이 없습니다. 새 게시글이 저장되면 여기에 표시됩니다.</p>
+              <p className={styles.historyEmpty}>저장된 수집 기록이 없습니다.</p>
             ) : (
               <div className={styles.tableWrap}>
                 <table className={styles.historyTable} aria-live="polite">
