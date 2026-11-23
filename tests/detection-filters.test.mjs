@@ -47,3 +47,16 @@ test('dashboard counts preserve negative, positive and missing verdicts separate
   assert.deepEqual(countVerdicts(rows),{positive:4,negative:1,unknown:1});
   assert.deepEqual(countVerdicts([]),{positive:0,negative:0,unknown:0});
 });
+
+test('OCR presence uses image has_ocr_text independently of positive verdicts', () => {
+  const samples = [
+    {...rows[0], id:'with', isDrug:false, imageAnalyses:[{hasOcrText:false},{hasOcrText:true}]},
+    {...rows[0], id:'without', imageAnalyses:[{hasOcrText:false}]},
+    {...rows[0], id:'no-image', imageAnalyses:[]},
+  ];
+  const filter = query => filterDetections(samples, readFilters(new URLSearchParams(query)), '2026-11-11').map(row=>row.id);
+  assert.deepEqual(filter('has_ocr_text=true'), ['with']);
+  assert.deepEqual(filter('has_ocr_text=false'), ['without','no-image']);
+  assert.deepEqual(filter('has_ocr_text=true&verdict=positive'), []);
+  assert.deepEqual(filter('has_ocr_text=invalid'), ['with','without','no-image']);
+});

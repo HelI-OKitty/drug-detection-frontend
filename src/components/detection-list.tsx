@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
 import { STATUS_FILTERS, STATUS_LABEL, sourceHost, type DetectionRow } from "@/lib/detections";
-import { VERDICTS, PERIODS, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
+import { VERDICTS, PERIODS, OCR_PRESENCE, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
 import styles from "./detections.module.css";
 import FilterSelect from "./filter-select";
 
@@ -32,7 +32,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const firstVisiblePage = Math.max(1, Math.min(page - 2, totalPages - 4));
   const pageNumbers = Array.from({ length: Math.min(5, totalPages) }, (_, index) => firstVisiblePage + index);
   const rows = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const advancedCount = Number(filters.status !== "all") + Number(filters.period !== "all") + filters.types.length;
+  const advancedCount = Number(filters.status !== "all") + Number(filters.period !== "all") + Number(filters.hasOcrText !== "all") + filters.types.length;
   const expanded = params.get("filters") === "open" || (params.get("filters") !== "closed" && advancedCount > 0);
   const detailQuery = new URLSearchParams(searchParams.toString());
   detailQuery.set("page", String(page));
@@ -74,7 +74,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
     const next = new URLSearchParams(window.location.search);
     next.delete("page");
     for (const [key, value] of Object.entries(values)) {
-      if (!value || (["verdict", "status", "period"].includes(key) && value === "all")) next.delete(key);
+      if (!value || (["verdict", "status", "period", "has_ocr_text"].includes(key) && value === "all")) next.delete(key);
       else next.set(key, value);
     }
     window.history.replaceState(null, "", `${window.location.pathname}${next.size ? `?${next}` : ""}`);
@@ -91,6 +91,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
     window.history.replaceState(null, "", `${window.location.pathname}?${next}`);
   }
   const active = [
+    ...(filters.hasOcrText !== "all" ? [{ label: `OCR 텍스트: ${filters.hasOcrText === "true" ? "있음" : "없음"}`, clear: () => update({ has_ocr_text: "all" }) }] : []),
     ...(filters.query ? [{ label: `검색: ${filters.query}`, clear: () => update({ q: "" }) }] : []),
     ...(filters.verdict !== "all" ? [{ label: `판정: ${VERDICTS.find((v) => v.key === filters.verdict)?.label}`, clear: () => update({ verdict: "all", types: "" }) }] : []),
     ...(filters.status !== "all" ? [{ label: `검토: ${STATUS_FILTERS.find((v) => v.key === filters.status)?.label}`, clear: () => update({ status: "all" }) }] : []),
@@ -123,6 +124,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
         <div className={styles.filterFields}>
           <FilterSelect label="검토 상태" value={filters.status} options={STATUS_FILTERS} onChange={(status) => update({ status })} />
           <FilterSelect label="탐지 기간" hint="KST 기준" value={filters.period} options={PERIODS} onChange={(period) => update({ period, from: "", to: "" })} />
+          <FilterSelect label="OCR 텍스트" value={filters.hasOcrText} options={OCR_PRESENCE} onChange={(has_ocr_text) => update({ has_ocr_text })} />
           {filters.period === "custom" && <div className={styles.dateRange}><label>시작일<input type="date" value={filters.from} max={filters.to || undefined} onChange={(e) => update({ from: e.target.value })} /></label><span>–</span><label>종료일<input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => update({ to: e.target.value })} /></label></div>}
         </div>
         {invalidRange && <p className={styles.filterError} role="alert">종료일은 시작일 이후로 선택해 주세요.</p>}

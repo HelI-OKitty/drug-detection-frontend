@@ -6,6 +6,9 @@ export const VERDICTS = [
   { key: "negative", label: "음성" },
   { key: "unknown", label: "판정 미제공" },
 ] as const;
+export const OCR_PRESENCE = [
+  { key: "all", label: "전체" }, { key: "true", label: "있음" }, { key: "false", label: "없음" },
+] as const;
 export const PERIODS = [
   { key: "all", label: "전체 기간" }, { key: "today", label: "오늘" },
   { key: "7", label: "최근 7일" }, { key: "30", label: "최근 30일" },
@@ -13,6 +16,7 @@ export const PERIODS = [
 ] as const;
 export type DetectionFilters = {
   query: string;
+  hasOcrText: string;
   verdict: string;
   status: string;
   types: string[];
@@ -26,6 +30,7 @@ export function readFilters(params: URLSearchParams): DetectionFilters {
   const period = params.get("period") ?? "all";
   return {
     query: params.get("q") ?? "",
+    hasOcrText: ["true", "false"].includes(params.get("has_ocr_text") ?? "") ? params.get("has_ocr_text")! : "all",
     verdict: VERDICTS.some((v) => v.key === verdict) ? verdict : "all",
     status: ["unreviewed", "reviewing", "confirmed"].includes(status) ? status : "all",
     types: [...new Set((params.get("types") ?? "").split(",").filter((v) => v === "text" || v === "image" || v === "ocr"))],
@@ -57,6 +62,7 @@ export function filterDetections(items: DetectionRow[], filters: DetectionFilter
   if (from && to && from > to) return [];
   return items.filter((item) => {
     if (!verdictMatches(item, filters.verdict)) return false;
+    if (filters.hasOcrText !== "all" && item.imageAnalyses.some((image) => image.hasOcrText) !== (filters.hasOcrText === "true")) return false;
     if (filters.status !== "all" && filters.status !== item.status) return false;
     // 여러 유형 선택은 OR. 종합 양성 중 실제 개별 판정이 확인된 항목만 포함한다.
     if (filters.types.length && (item.isDrug !== true || !filters.types.some((type) =>
