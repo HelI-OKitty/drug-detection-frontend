@@ -193,8 +193,13 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
           <details className={styles.verdictRule}><summary>판정 기준</summary><p>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성으로 판단합니다.</p></details>
         </div>
         <div className={styles.componentVerdicts}>
-          <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong><a href="#text-analysis-title">분석 근거 보기</a></div>
-          <div><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong><a href="#image-analysis-title">분석 근거 보기</a></div>
+          <div><span>텍스트 판정</span><strong data-positive={detection.textFlagged === true}>{detection.textFlagged === null ? "미제공" : detection.textFlagged ? "양성" : "음성"}</strong><small>{textScore !== null ? `모델 점수 ${toPercent(textScore, 2)}` : textAnalysis ? "모델 점수 미제공" : "분석 미제공"}</small><a href="#text-analysis-title">분석 근거 보기</a></div>
+          <div><span>이미지 판정</span><strong data-positive={imageFlagged === true}>{imageFlagged === null ? "미제공" : imageFlagged ? "양성" : "음성"}</strong>
+            <details className={styles.verdictRule}><summary>객체·OCR 요약</summary>
+              <p>검출 객체: {detectedNames.length ? detectedNames.join(", ") : detection.images.length ? "미검출" : "미제공"}</p>
+              <p>OCR 분석 점수: {ocrMax !== null ? toPercent(ocrMax, 2) : "미제공"}</p>
+            </details>
+            <a href="#image-analysis-title">분석 근거 보기</a></div>
           <div><span>검토 상태</span><strong>{STATUS_LABEL[status]}</strong><small>담당자 검토 · AI 판정과 별개</small></div>
         </div>
       </section>
@@ -402,60 +407,6 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
               <button type="button" onClick={() => setConfirmOpen(true)} disabled={pending !== null}><Trash2 size={15} aria-hidden="true" />삭제…</button>
             </div>
           </section>
-          <section className={styles.asideCard} aria-labelledby="risk-title">
-            <h2 className={styles.asideTitle} id="risk-title">분석 요약</h2>
-            <dl className={styles.breakdown}>
-              <div className={styles.breakdownRow}>
-                <dt>텍스트</dt>
-                <dd>
-                  {textScore !== null ? (
-                    <>
-                      <i className={styles.breakdownTrack} aria-hidden="true">
-                        <b style={{ width: toPercent(textScore), background: scoreColors(textScore).stroke }} />
-                      </i>
-                      <span className={styles.breakdownValue} style={{ color: scoreColors(textScore).fg }}>{toPercent(textScore, 2)}</span>
-                    </>
-                  ) : textAnalysis ? (
-                    // 모델 점수 없이 규칙 매칭만 수행된 경우
-                    <span className={styles.breakdownText}>
-                      {textAnalysis.flagged ? "의심" : "정상"} (점수 없음)
-                    </span>
-                  ) : (
-                    <span className={styles.breakdownEmpty}>분석 없음</span>
-                  )}
-                </dd>
-              </div>
-              <div className={styles.breakdownRow}>
-                <dt>객체</dt>
-                <dd>
-                  {detectedNames.length > 0 ? (
-                    <span className={styles.breakdownText}>
-                      {detectedNames[0]}
-                      {detectedNames.length > 1 && ` 외 ${detectedNames.length - 1}종`}
-                    </span>
-                  ) : (
-                    <span className={styles.breakdownEmpty}>{detection.images.length ? "미검출" : "미제공"}</span>
-                  )}
-                </dd>
-              </div>
-              <div className={styles.breakdownRow}>
-                <dt>OCR</dt>
-                <dd>
-                  {ocrMax !== null ? (
-                    <>
-                      <i className={styles.breakdownTrack} aria-hidden="true">
-                        <b style={{ width: toPercent(ocrMax), background: scoreColors(ocrMax).stroke }} />
-                      </i>
-                      <span className={styles.breakdownValue} style={{ color: scoreColors(ocrMax).fg }}>{toPercent(ocrMax, 2)}</span>
-                    </>
-                  ) : (
-                    <span className={styles.breakdownEmpty}>판정 미제공</span>
-                  )}
-                </dd>
-              </div>
-            </dl>
-          </section>
-
           <section className={styles.asideCard} aria-labelledby="meta-title">
             <h2 className={styles.asideTitle} id="meta-title">수집 정보</h2>
             <dl className={styles.metaList}>
