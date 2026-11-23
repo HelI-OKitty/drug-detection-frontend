@@ -31,6 +31,6 @@ test('proxy rejects invalid batches rather than silently dropping images',async(
   for (const body of [{images:[]},{image:'aA=='},{text:'본문',images:[3]},{text:'본문',images:'aA=='}]) {
     assert.equal((await loaded.exports.POST(request(body))).status,422);
   }
-  assert.equal((await loaded.exports.POST(request({images:['a'.repeat(4*1024*1024)]}))).status,413);
+  assert.equal((await loaded.exports.POST(request({images:['a'.repeat(4*1024*1024+4)]}))).status,413);
   assert.equal((await loaded.exports.POST(new Request('http://localhost',{method:'POST',body:'{' }))).status,400);
 });

@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 export default function TryPage() {
   return (
     <div className={homeStyles.home}>
-      <header className={homeStyles.header}>
-        <div className={homeStyles.headerInner}>
+      <header className={`${homeStyles.header} ${styles.header}`}>
+        <div className={`${homeStyles.headerInner} ${styles.headerInner}`}>
           <Link href="/" className={homeStyles.brand}><i />SENTINEL</Link>
           <div className={homeStyles.headerActions}>
             <Link href="/" className={styles.backLink}><ArrowLeft aria-hidden="true" />홈으로</Link>
@@ -23,10 +23,10 @@ export default function TryPage() {
       </header>
       <main className={styles.main}>
         <div className={styles.intro}>
-          <h1>SENTINEL 체험하기</h1>
-          <p>로그인·회원가입 없이 텍스트나 이미지를 넣고 분석 결과를 확인하세요.</p>
+          <h1>체험하기</h1>
+          <p>로그인 없이 텍스트나 이미지를 분석해 보세요.</p>
         </div>
-        <AnalyzeForm title="게시글 분석 체험" />
+        <AnalyzeForm hideIntro />
       </main>
     </div>
   );

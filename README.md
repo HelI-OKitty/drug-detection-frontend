@@ -1,151 +1,140 @@
-# drug-detection-frontend
+# SENTINEL
 
-Next.js App Router와 TypeScript 기반의 마약 탐지 서비스 프론트엔드 프로젝트입니다.
-회원가입·로그인 화면과 배포된 백엔드 인증 API가 연결되어 있습니다.
+텍스트·이미지·OCR 분석 결과를 확인하고, 탐지 게시글을 검토하는 관리자 웹 콘솔입니다.
 
-## 기술 스택
+[![CI](https://github.com/HelI-OKitty/drug-detection-frontend/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/HelI-OKitty/drug-detection-frontend/actions/workflows/ci.yml)
 
-- Next.js 15
-- React 19
-- TypeScript 5
-- Tailwind CSS 4
-- ESLint 9
-- npm
+[빠른 시작](#빠른-시작) · [화면과 기능](#화면과-기능) · [API 연동](#api-연동) · [검증과 배포](#검증과-배포)
 
-## 실행 방법
+## 화면과 기능
 
-의존성을 설치합니다.
+![SENTINEL 대시보드: 판정 분포, 검토 현황, 일별 탐지 추이](docs/images/dashboard.png)
 
-```bash
-npm install
-```
+> 위 스크린샷은 실제 컴포넌트에 예시 데이터를 넣어 촬영했습니다. 운영 대시보드는 API 데이터를 사용합니다.
 
-개발 서버를 실행합니다.
+| 화면 | 주요 기능 |
+| --- | --- |
+| 대시보드 `/dashboard` | 전체·오늘·미확인 건수, 종합 판정 분포, 검토 현황, 최근 추이, 분석 통계 |
+| 탐지 목록 `/detections` | 검색, 판정·검토·기간·OCR 유무 필터, 개별 양성 유형 OR 필터, 페이지 선택 |
+| 탐지 상세 `/detections/[id]` | 게시글 원문, 텍스트·이미지·OCR 근거, 점수, 검토 확정, 삭제 확인 |
+| 단순 분석 `/analyze` | 텍스트·이미지 입력, 결과 화면, 재시도, 새 분석, 이미지 점수순 정렬 |
+| 공개 체험 `/try` | 로그인 없이 같은 분석 흐름 체험 |
+| 크롤링 `/monitoring` | 수동 수집, 수집 기록, 자동 실행 설정 상태 |
+| 설정 `/settings/detection`, `/settings/account` | 키워드·주기·수집 건수, 계정 정보, 별도 비밀번호 변경 화면 |
 
-```bash
-npm run dev
-```
+사이드바 접기와 고정 탐색을 지원합니다. 목록의 필터·페이지는 URL에 저장하며 상세에서 돌아올 때 이전 위치를 복원합니다.
 
-브라우저에서 `http://localhost:8080`으로 접속해 화면을 확인할 수 있습니다.
+<details>
+<summary>텍스트·이미지 분석 화면 보기</summary>
 
-## 사용 가능한 스크립트
+![로그인 없이 사용하는 텍스트·이미지 분석 입력 화면](docs/images/analysis.png)
 
-```bash
-npm run dev
-```
+텍스트 또는 이미지만 입력해도 분석할 수 있습니다. 이미지 업로드는 **파일당 3MB, 최대 5장**입니다.
 
-개발 서버를 실행합니다.
+</details>
 
-```bash
-npm run build
-```
+## 빠른 시작
 
-프로덕션 빌드를 생성합니다.
-
-```bash
-npm run start
-```
-
-생성된 프로덕션 빌드를 실행합니다. 먼저 `npm run build`가 필요합니다.
-
-```bash
-npm run lint
-```
-
-ESLint로 코드 품질을 검사합니다.
-
-## 프로젝트 구조
-
-```text
-drug-detection-frontend/
-├─ src/
-│  └─ app/
-│     ├─ globals.css     # 전역 스타일 및 Tailwind CSS import
-│     ├─ layout.tsx      # 앱 공통 HTML 레이아웃과 메타데이터
-│     └─ page.tsx        # 루트 경로('/') 홈 화면
-├─ eslint.config.mjs     # ESLint flat config
-├─ next.config.ts        # Next.js 설정
-├─ package.json          # scripts 및 의존성
-├─ package-lock.json     # npm lockfile
-├─ postcss.config.mjs    # Tailwind CSS용 PostCSS 설정
-└─ tsconfig.json         # TypeScript 설정 및 @/* 경로 별칭
-```
-
-## 현재 구현 상태
-
-- `src/app/layout.tsx`에서 한국어 문서 언어(`lang="ko"`)와 기본 메타데이터를 설정합니다.
-- `/`는 서비스 소개 홈입니다. 가입 성공 시 `/login`, 로그인 성공 시 `/dashboard`로 이동합니다.
-- `/dashboard`는 예시 데이터로 구성한 대시보드입니다. 대시보드와 텍스트 분석 화면의 공통 사이드바에서 기능을 이동할 수 있습니다.
-- 홈·대시보드·텍스트 분석 화면의 우측 상단은 HttpOnly 쿠키의 토큰으로 `/profile`을 조회해 회원 이름과 이메일을 표시합니다. 비로그인 상태에서는 로그인·시작하기 링크를 표시합니다.
-- `/text-detector`에서 텍스트를 입력하고 분석 결과를 확인할 수 있습니다. `POST /public/analyze`의 `is_drug` 응답으로 의심 여부를 표시하며, 서버가 제공하지 않는 점수나 상세 근거는 표시하지 않습니다.
-- `src/app/globals.css`는 Tailwind CSS를 불러오고 기본 배경색, 글자색, 박스 모델, 폰트 스타일을 정의합니다.
-- TypeScript는 strict mode로 설정되어 있습니다.
-- `@/*` 경로 별칭은 `src/*`를 가리킵니다.
-
-## 개발 참고
-
-### 회원가입 임시 중단
-
-`SIGNUP_ENABLED`는 기본적으로 비활성화됩니다. `/signup`에 중단 안내를 표시하고, 회원가입 서버 액션도 백엔드 호출 전에 거절합니다. 로그인은 계속 사용할 수 있습니다. 다시 열려면 배포 환경에 `SIGNUP_ENABLED=true`를 설정하고 재배포합니다.
-
-프론트 차단만으로 백엔드 URL에 대한 직접 요청을 막을 수는 없습니다. 백엔드의 `POST /auth/signup`에서도 계정 생성 전에 가입 허용 여부를 검사하고, 중단 중에는 `403`과 안내용 `detail`을 반환해야 합니다.
-
-### 배포 환경에서 수동 크롤링
-
-`/admin/crawl`의 서버 액션은 `BACKEND_API_URL`과 `INTERNAL_API_KEY`를 사용합니다. 로컬 `.env.local` 값은 배포 서버에 자동으로 전달되지 않으므로 배포 플랫폼의 서버 환경 변수에도 설정해야 합니다. 내부 키는 백엔드 값과 일치해야 하며 공개 환경 변수로 설정하지 않습니다.
-
-- 내부 키 미설정: 프론트 서버 환경 변수 설정을 확인합니다.
-- 내부 API 인증 오류(401/403): 백엔드와 프론트의 내부 키가 같은지 확인합니다.
-- 서버 오류(500): 백엔드 로그에서 해당 요청의 예외를 확인합니다. 프론트는 백엔드가 반환한 문자열 `detail` 또는 상태 코드를 표시합니다. 백엔드는 사용자에게 공개 가능한 오류 설명만 `detail`에 넣어야 합니다.
-- 응답 시간 초과: 크롤링 요청은 최대 270초 대기하며, `/admin/crawl`의 Vercel 실행 제한은 300초입니다. 프로필 조회와 오류 응답에 필요한 시간을 남깁니다. 수집이 계속될 수 있으므로 목록을 확인한 뒤 재시도합니다. 장시간 작업이 필요하면 백엔드가 작업을 접수하고 별도 워커에서 실행하도록 변경해야 합니다.
-
-Vercel 프로젝트의 Settings → Environment Variables에서 배포 대상(Production/Preview)에 `BACKEND_API_URL`, 백엔드와 동일한 `INTERNAL_API_KEY`, `SIGNUP_ENABLED=false`를 설정하고 재배포합니다. 키에는 `NEXT_PUBLIC_` 접두사를 붙이지 않습니다. Fluid Compute 활성화 여부와 해당 플랜의 [실행 시간 제한](https://vercel.com/docs/functions/configuring-functions/duration)을 확인합니다.
-
-백엔드 저장소는 https://github.com/HelI-OKitty/drug-detection-backend 입니다. 수동 수집은 Cloud Run의 `/crawl/trigger`에서 실행하므로 X API 토큰과 AI 서버 설정은 백엔드에 필요합니다. Vercel은 이 요청을 중계합니다.
-
-인증 폼은 `src/components/auth-form.tsx`, 서버 액션은 `src/app/auth-actions.ts`, 백엔드 요청은 `src/lib/auth-api.ts`에 있습니다.
-
-- 회원가입: `POST /auth/signup`에 이름·이메일·비밀번호를 전달합니다. 비밀번호 확인은 프론트에서 검증하며 API에는 보내지 않습니다. 가입 후 로그인을 별도로 진행합니다.
-- 로그인: `POST /auth/login` 후 Bearer 토큰으로 `GET /profile`을 조회하고, 성공하면 대시보드로 이동합니다.
-- 토큰: Next.js 서버에서 HttpOnly·SameSite=Lax 세션 쿠키로 저장합니다. 프로덕션에서는 Secure를 적용하며 브라우저 스크립트에 토큰을 반환하지 않습니다.
-- 기본 API 주소는 배포된 Cloud Run 서버입니다. 변경하려면 `.env.example`을 참고해 `.env.local`의 `BACKEND_API_URL`을 설정한 후 서버를 재시작합니다.
-- 텍스트 분석은 `src/lib/text-detector.ts`와 `src/app/text-detector/actions.ts`에서 처리합니다. 같은 `BACKEND_API_URL`을 사용하며, 현재 백엔드 명세상 인증이 필요하지 않습니다. 빈 입력, 중복 제출, 통신 오류, 60초 시간 초과 및 잘못된 응답을 처리합니다.
-- 현재 범위는 가입·로그인, 사용자 정보 확인, 텍스트 분석입니다. 대시보드의 실데이터 연결, 보호된 페이지, 자동 토큰 갱신, 로그아웃은 아직 구현하지 않았습니다.
-
-요청 계약 테스트는 TypeScript 직접 실행을 지원하는 Node.js 22.18 이상에서 실행합니다. 실제 서버나 계정을 변경하지 않습니다.
-
-```bash
-node --test tests/*.test.mjs
-```
-
-
-### API 명세 기준 (2026-11-04)
-
-[헬로키티 API 명세서](https://app.notion.com/p/40db448bdf9d80d2bc6bf79627082ea5)의 요청·응답 형식을 사용합니다.
-- 탐지 판정은 `is_drug`로 읽습니다. 목록의 텍스트·이미지 결과 두 칸은 유지하며, 개별 분석이 제공되지 않으면 `–`로 표시합니다. 상세 응답의 분석 결과를 사용하고 없는 점수를 생성하지 않습니다.
-- 대시보드는 `total`, `today`, `unconfirmed`, `trend[].count`를 그대로 표시합니다.
-- 분석 방식은 상세의 `text_ai_result.source`, 단순 분석의 `text_source`로 구분합니다.
-- 수동 크롤링은 `POST /crawl/trigger`에 로그인한 관리자의 `admin_id`를 지정하며, `results`에서 해당 관리자의 결과와 `failed`·`error`를 확인합니다.
-
-- [단순 분석 최신 응답 예시](https://app.notion.com/p/0a7b448bdf9d821ab7c201c95bf3d2e3)의 `prob_drug_percent`는 백분율로 처리합니다. 예: `12.18` → `12.18%`. 텍스트·OCR 추가 분석에 모두 적용하며, 범위 밖 값이나 null은 확률 미제공으로 처리합니다. 해당 필드가 없는 구버전 응답에서는 `prob_drug`(0~1)를 사용합니다.
-- 새 명세에도 탐지 목록의 텍스트·이미지 개별 판정은 정의되어 있지 않습니다. 목록 두 열의 미제공 표시는 유지합니다. `개발 전`·`확정X`이고 요청·응답 정의가 없는 항목은 연동 대상에 포함하지 않습니다.
-
-## CI/CD
-
-Node.js 22 LTS를 사용합니다 (`.nvmrc`, `package.json`의 `engines`). 로컬에서 CI와 동일한 검증을 실행하려면:
+Node.js **22.18 이상인 22.x**와 npm을 사용합니다. 테스트는 Node의 TypeScript 직접 실행 기능을 사용합니다.
 
 ```bash
 nvm use
 npm ci
+cp .env.example .env.local
+npm run dev
+```
+
+개발 서버: [http://localhost:8080](http://localhost:8080)
+
+`.env.local`을 환경에 맞게 설정합니다.
+
+| 변수 | 용도 | 기본값 |
+| --- | --- | --- |
+| `BACKEND_API_URL` | 서버에서 사용하는 백엔드 주소 | 배포된 Cloud Run API |
+| `INTERNAL_API_KEY` | 수동 크롤링의 `X-Internal-Key` 인증 | 없음. 수동 실행 시 필요 |
+| `SIGNUP_ENABLED` | 회원가입 허용 여부 | `false` |
+
+실제 키는 저장소에 올리지 않습니다. 내부 키에 `NEXT_PUBLIC_` 접두사를 붙이지 않습니다. 로그인·분석 기능에는 내부 크롤링 키가 필요하지 않습니다.
+
+## API 연동
+
+[현재 API 명세](https://drug-detection-671085027854.asia-northeast3.run.app/docs#/) · [OpenAPI JSON](https://drug-detection-671085027854.asia-northeast3.run.app/openapi.json) · [백엔드 저장소](https://github.com/HelI-OKitty/drug-detection-backend)
+
+| 기능 | 백엔드 API |
+| --- | --- |
+| 인증 | `POST /auth/login`, `/auth/signup`, `/auth/refresh`, `/auth/logout` |
+| 프로필·비밀번호 | `GET /profile`, `PATCH /profile` |
+| 탐지 목록·상세 | `GET /detections`, `GET /detections/{id}` |
+| 검토·삭제 | `PATCH /detections/{id}/status`, `DELETE /detections/{id}` |
+| 대시보드 | `GET /dashboard/summary` 및 목록·상세 응답 집계 |
+| 분석 | 브라우저 `POST /api/analyze` → 백엔드 `POST /public/analyze` |
+| 크롤링 | `POST /crawl/trigger` |
+| 크롤링 설정 | `GET/PATCH /crawl-settings`, `PATCH /crawl-settings/toggle` |
+
+### 판정과 OCR 처리
+
+- 종합 판정은 서버의 `is_drug`를 그대로 사용합니다. 검토 상태 변경은 AI 판정을 변경하지 않습니다.
+- 개별 `prediction: null`은 **미제공**입니다. `source`를 보존하고, 알려진 사유는 설명으로 표시합니다. 점수로 양성·음성을 추정하지 않습니다.
+- 목록의 `image_ai_results[].has_ocr_text`는 OCR 텍스트 존재 여부입니다. `false`면 `is_ocr_drug`와 무관하게 OCR 판정 집계에서 제외합니다.
+- `image_ai_results[].is_ocr_drug`는 OCR 판정입니다. OCR 대상 중 하나라도 `true`면 양성, 모두 명시적으로 `false`면 음성, 판정이 누락되면 미제공입니다. OCR 대상이 없으면 **OCR 없음**으로 표시합니다.
+- 상세·단순 분석의 OCR은 `ocr_text_results[]`에서 문구별 판정·점수·매칭 정보를 읽습니다.
+- 양성 유형을 여러 개 선택하면 **OR**로 검색합니다. OCR 유무 필터와는 별개입니다.
+
+[OCR 계약 상세](docs/ocr-verdict-contract.md)
+
+### 실제 데이터와 예시 데이터
+
+로그인 후 목록·상세·대시보드·설정은 실제 API를 사용하며, 조회 실패를 mock 데이터로 대체하지 않습니다. **비로그인 홈의 대시보드 미리보기와 README 대시보드 스크린샷만 예시 데이터**입니다. 자동 테스트의 응답 대역은 운영 화면에 포함되지 않습니다.
+
+다음은 API 응답을 바탕으로 프론트에서 처리하는 부분입니다.
+
+- 목록 검색·필터·페이지 이동: 조회한 전체 목록을 대상으로 처리합니다.
+- 대시보드 분석 통계: 게시글별 상세 응답을 집계합니다. 게시글 수만큼 상세 요청이 추가되므로 규모가 커지면 전용 통계 API가 필요합니다.
+- 크롤링 회차와 다음 실행 시각: 저장된 탐지 시각과 설정 주기로 **추정**합니다. 백엔드 실행 이력 자체는 아닙니다.
+- 탐지 설정 조회 실패: 기본값과 실패 안내를 표시합니다.
+
+### 인증과 실행 제한
+
+액세스·리프레시 토큰은 서버에서 HttpOnly·SameSite=Lax 쿠키로 저장하며, 프로덕션에서는 Secure를 적용합니다. 미들웨어가 만료 임박 토큰을 갱신합니다.
+
+회원가입은 기본적으로 비활성화됩니다. 다시 열려면 `SIGNUP_ENABLED=true`로 설정합니다. 백엔드의 가입 허용 정책도 함께 맞춰야 합니다.
+
+수동 크롤링은 로그인한 관리자의 ID와 서버의 내부 키를 사용합니다. 크롤링 요청은 최대 270초 대기하며 `/monitoring`의 함수 실행 시간 설정은 300초입니다. 시간 초과 후에도 백엔드 수집이 이어질 수 있습니다.
+
+이미지 5장을 전송할 수 있도록 프론트 요청 제한은 base64 인코딩을 고려한 21MiB입니다. 배포 플랫폼과 백엔드의 실제 요청 크기 제한도 별도로 충족해야 합니다.
+
+## 개발 구조
+
+```text
+src/
+├── app/                 # App Router 페이지, 서버 액션, 분석 프록시
+├── components/          # 콘솔·목록·상세·분석 UI와 CSS Modules
+├── lib/                 # API 요청, 응답 매핑, 필터, 공통 타입
+└── middleware.ts        # 토큰 갱신
+tests/                   # API 계약·필터·인증 테스트
+docs/                    # OCR 계약 및 README 화면 이미지
+```
+
+Next.js 15 · React 19 · TypeScript 5 · CSS Modules / Tailwind CSS 4 · Lucide · ESLint 9
+
+## 검증과 배포
+
+| 명령 | 설명 |
+| --- | --- |
+| `npm run dev` | 개발 서버, 포트 8080 |
+| `npm run lint` | ESLint 검사 |
+| `npm test` | API 계약·필터·인증 회귀 테스트 |
+| `npm run build` | 프로덕션 빌드 및 타입 검사 |
+| `npm run start` | 프로덕션 서버, 기본 포트 3000 |
+| `npm run verify` | 린트 → 테스트 → 프로덕션 빌드 |
+
+```bash
 npm run verify
 ```
 
-`verify`는 린트 → API 계약 테스트 → Next.js 프로덕션 빌드(타입 검사 포함)를 순서대로 실행합니다. 하나라도 실패하면 이후 단계는 실행되지 않습니다. 테스트는 응답 대역을 사용하므로 실제 서버 계정이나 API 키가 필요하지 않습니다.
+테스트는 응답 대역을 사용하므로 실제 계정이나 내부 키 없이 실행하며, 운영 데이터를 변경하지 않습니다. 개발 산출물은 `.next-dev`, 프로덕션 빌드는 `.next`에 분리합니다.
 
-- **CI:** `develop`·`release` 대상 PR과 두 브랜치의 push에서 GitHub Actions가 실행됩니다. Actions 화면에서 수동 실행도 가능합니다. 같은 브랜치의 이전 실행은 새 실행으로 대체됩니다.
-- **CD:** 기존 Vercel Git 연동을 사용합니다. 현재 Production 브랜치는 `release`이며 다른 브랜치는 Preview 배포입니다. `vercel.json`이 설치를 `npm ci`, 빌드를 `npm run verify`로 지정하므로 검증 실패 시 해당 배포는 실패하고 기존 운영 배포가 유지됩니다. GitHub CI 완료를 기다리는 방식이 아니라 Vercel에서도 같은 검증을 수행합니다.
-- `BACKEND_API_URL`, `INTERNAL_API_KEY`, `SIGNUP_ENABLED`는 Vercel의 각 환경에 설정합니다. GitHub Actions에는 운영 비밀값을 전달하지 않습니다.
-- 이 설정을 `release`에 반영한 뒤부터 Production 배포에도 적용됩니다. 기본 브랜치에 병합하기 전에는 Actions 수동 실행 메뉴가 보이지 않을 수 있습니다.
-- PR 병합 자체를 막으려면 GitHub 브랜치 보호에서 `Lint, test and build`를 필수 검사로 지정합니다. 워크플로 추가만으로 브랜치 보호가 활성화되지는 않습니다.
-
-[Vercel 빌드 설정 문서](https://vercel.com/docs/project-configuration/vercel-json#buildcommand)
+- GitHub Actions는 `develop`·`release` 대상 PR과 해당 브랜치 push에서 검증합니다.
+- Vercel은 `vercel.json`에 따라 `npm ci`와 `npm run verify`를 실행합니다.
+- 배포 환경 변수와 Production 브랜치는 Vercel 프로젝트 설정에서 관리합니다. 로컬 `.env.local`은 배포 환경에 자동 전달되지 않습니다.
+- PR 병합을 검증 결과에 연동하려면 브랜치 보호의 필수 검사로 `Lint, test and build`를 지정합니다.

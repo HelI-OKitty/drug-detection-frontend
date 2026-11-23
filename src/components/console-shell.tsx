@@ -2,46 +2,83 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, LayoutDashboard, Radar, ScanText, SlidersHorizontal, TriangleAlert, UserCog } from "lucide-react";
-import type { ReactNode } from "react";
+import { LayoutDashboard, PanelLeftClose, PanelLeftOpen, Radar, ScanText, SlidersHorizontal, TriangleAlert, UserCog } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import styles from "./console.module.css";
 
-/** 경로별 상단 제목과 브레드크럼. 상세는 접두사로 판별한다. */
-function topbarLabels(pathname: string) {
-  if (pathname === "/analyze") return { title: "단순 분석", crumb: "analyze" };
-  if (pathname === "/detections") return { title: "탐지 게시글 목록", crumb: "detections" };
-  if (pathname.startsWith("/detections/")) {
-    return { title: "탐지 게시글 상세", crumb: `detections / ${pathname.slice("/detections/".length)}` };
-  }
-  if (pathname === "/monitoring") return { title: "크롤링 모니터링", crumb: "monitoring / crawl" };
-  if (pathname === "/settings/detection") return { title: "탐지 설정", crumb: "settings / detection" };
-  if (pathname === "/settings/account") return { title: "계정 관리", crumb: "settings / account" };
-  return { title: "탐지 대시보드", crumb: "dashboard / summary" };
+function pageTitle(pathname: string) {
+  if (pathname === "/analyze") return "단순 분석";
+  if (pathname === "/detections") return "탐지 게시글";
+  if (pathname.startsWith("/detections/")) return "탐지 게시글 상세";
+  if (pathname === "/monitoring") return "크롤링 모니터링";
+  if (pathname === "/settings/detection") return "탐지 설정";
+  if (pathname === "/settings/account/password") return "비밀번호 변경";
+  if (pathname === "/settings/account") return "계정 관리";
+  return "대시보드";
 }
 
-export function ConsoleShell({ children, memberInfo }: { children: ReactNode; memberInfo: ReactNode }) {
+export function ConsoleShell({ children, memberInfo, headerActions }: { children: ReactNode; memberInfo: ReactNode; headerActions?: ReactNode }) {
   const pathname = usePathname();
-  const { title, crumb } = topbarLabels(pathname);
+  const title = pageTitle(pathname);
+  const [collapsed, setCollapsed] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    function update() {
+      setScrolled(window.scrollY > 0 && (headerRef.current?.getBoundingClientRect().top ?? 1) <= 0);
+    }
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem("sentinel:sidebar-collapsed") === "true");
+    } catch { /* Keep navigation usable when storage is unavailable. */ }
+  }, []);
+
+  function toggleSidebar() {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem("sentinel:sidebar-collapsed", String(next));
+    } catch { /* The toggle still works without persistence. */ }
+  }
+
   return (
-    <div className={styles.shell}>
-      <aside className={styles.sidebar}>
-        <Link href="/" className={styles.brand}><i />SENTINEL</Link>
-        <p className={styles.caption}>NARCOTICS WATCH CONSOLE</p>
-        <nav aria-label="콘솔 메뉴" className={styles.nav}>
+    <div className={`${styles.shell} ${collapsed ? styles.collapsed : ""} ${headerActions ? styles.withHeaderActions : ""}`}>
+      <aside id="console-sidebar" className={styles.sidebar}>
+        <div className={styles.sidebarHeader}>
+        <Link href="/" className={styles.brand} aria-label="SENTINEL 홈"><i /><span>SENTINEL</span></Link>
+          <button type="button" className={styles.sidebarToggle} onClick={toggleSidebar}
+            aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            aria-expanded={!collapsed} aria-controls="console-navigation">
+            {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+          </button>
+        </div>
+        <nav id="console-navigation" aria-label="콘솔 메뉴" className={styles.nav}>
           <p>모니터링</p>
-          <Link href="/dashboard" aria-current={pathname === "/dashboard" ? "page" : undefined}><LayoutDashboard aria-hidden="true" />대시보드</Link>
-          <Link href="/analyze" aria-current={pathname === "/analyze" ? "page" : undefined}><ScanText aria-hidden="true" />단순 분석</Link>
-          <Link href="/detections" aria-current={pathname.startsWith("/detections") ? "page" : undefined}><TriangleAlert aria-hidden="true" />탐지 게시글</Link>
-          <Link href="/monitoring" aria-current={pathname === "/monitoring" ? "page" : undefined}><Radar aria-hidden="true" />크롤링 모니터링</Link>
+          <Link href="/dashboard" aria-label="대시보드" title={collapsed ? "대시보드" : undefined} aria-current={pathname === "/dashboard" ? "page" : undefined}><LayoutDashboard aria-hidden="true" /><span>대시보드</span></Link>
+          <Link href="/analyze" aria-label="단순 분석" title={collapsed ? "단순 분석" : undefined} aria-current={pathname === "/analyze" ? "page" : undefined}><ScanText aria-hidden="true" /><span>단순 분석</span></Link>
+          <Link href="/detections" aria-label="탐지 게시글" title={collapsed ? "탐지 게시글" : undefined} aria-current={pathname.startsWith("/detections") ? "page" : undefined}><TriangleAlert aria-hidden="true" /><span>탐지 게시글</span></Link>
+          <Link href="/monitoring" aria-label="크롤링 모니터링" title={collapsed ? "크롤링 모니터링" : undefined} aria-current={pathname === "/monitoring" ? "page" : undefined}><Radar aria-hidden="true" /><span>크롤링 모니터링</span></Link>
           <p>설정</p>
-          <Link href="/settings/detection" aria-current={pathname === "/settings/detection" ? "page" : undefined}><SlidersHorizontal aria-hidden="true" />탐지 설정</Link>
-          <button disabled><Bell aria-hidden="true" />알림 채널 <small>준비 중</small></button>
-          <Link href="/settings/account" aria-current={pathname === "/settings/account" ? "page" : undefined}><UserCog aria-hidden="true" />계정 관리</Link>
+          <Link href="/settings/detection" aria-label="탐지 설정" title={collapsed ? "탐지 설정" : undefined} aria-current={pathname === "/settings/detection" ? "page" : undefined}><SlidersHorizontal aria-hidden="true" /><span>탐지 설정</span></Link>
+          <Link href="/settings/account" aria-label="계정 관리" title={collapsed ? "계정 관리" : undefined} aria-current={pathname.startsWith("/settings/account") ? "page" : undefined}><UserCog aria-hidden="true" /><span>계정 관리</span></Link>
         </nav>
-        <div className={styles.sidebarFooter}><span className={styles.avatar}>S</span><div>모니터링 콘솔<small>안전한 내일을 위한 시작</small></div></div>
       </aside>
       <div className={styles.workspace}>
-        <header className={styles.topbar}><strong>{title}</strong><span className={styles.breadcrumb}>/ {crumb}</span><div className={styles.memberInfo}>{memberInfo}</div></header>
+        <header ref={headerRef} className={styles.topbar} data-scrolled={scrolled}>
+          <div className={styles.topbarContent}><strong>{title}</strong><div className={styles.memberInfo}>{memberInfo}</div></div>
+          {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
+        </header>
         {children}
       </div>
     </div>

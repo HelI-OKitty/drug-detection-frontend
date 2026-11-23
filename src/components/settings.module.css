@@ -1,13 +1,13 @@
 .page { max-width:860px; padding:24px 28px 40px; display:flex; flex-direction:column; gap:20px; }
 
 /* ───────── 설정 카드 공통 ───────── */
-.card { border:1px solid #e0e7ee; border-radius:15px; background:#fff; overflow:hidden; }
+.card { border:1px solid #e0e7ee; border-radius:10px; background:#fff; overflow:hidden; }
 .cardHeader { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:20px; border-bottom:1px solid #e6edf3; }
 .cardHeader h2 { display:flex; align-items:center; gap:10px; margin:0; font-size:14px; font-weight:600; }
-.cardHeader h2 > svg { width:17px; height:17px; flex-shrink:0; color:#00ac74; stroke-width:1.7; }
-.cardHeader > small { font-size:10px; color:#8a9bb1; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+.cardHeader h2 > svg { width:17px; height:17px; flex-shrink:0; color:#74849a; stroke-width:1.7; }
+.cardHeader > small { font-size:12px; color:#64748b; }
 .cardBody { padding:20px; }
-.help { margin:0 0 16px; font-size:12px; line-height:1.7; color:#8a9bb1; }
+.help { margin:0 0 16px; font-size:13px; line-height:1.7; color:#64748b; }
 .error { margin:10px 0 0; font-size:12px; color:#cf2548; }
 
 /* ───────── 키워드 칩 ───────── */
@@ -93,9 +93,9 @@
 .monitoringText > strong { font-size:13px; font-weight:600; }
 .monitoringText > span { font-size:12px; color:#52657b; }
 .monitoringArrow { width:17px; height:17px; flex-shrink:0; color:#07885a; }
-.guard { display:grid; place-items:center; gap:12px; padding:70px 20px; border:1px solid #e0e7ee; border-radius:15px; background:#fff; text-align:center; }
+.guard { display:grid; place-items:center; gap:12px; padding:70px 20px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; text-align:center; }
 .guard p { margin:0; font-size:14px; color:#52657b; }
-.guard a { display:inline-flex; align-items:center; min-height:44px; padding:10px 22px; border-radius:10px; background:#09a96d; color:#fff; font-size:13px; font-weight:600; }
+.guard a { display:inline-flex; align-items:center; min-height:44px; padding:10px 22px; border-radius:10px; background:#087e56; color:#fff; font-size:13px; font-weight:600; }
 .guard a:hover { background:#07885a; }
 
 /* ───────── 텍스트 분석 ───────── */
@@ -104,7 +104,7 @@
 .textarea::placeholder { color:#a3b0c0; }
 .textarea:focus-visible { outline:2px solid #0aaf75; outline-offset:-1px; }
 .textarea:disabled { background:#f3f6f8; color:#9aa8b9; }
-.resultCard { border:1px solid #e0e7ee; border-radius:15px; padding:22px 24px; background:#fff; }
+.resultCard { border:1px solid #e0e7ee; border-radius:10px; padding:22px 24px; background:#fff; }
 .resultHead { display:flex; align-items:center; gap:14px; margin:0 0 10px; }
 .resultCard[data-tone=danger] { border-color:#f3cdd6; }
 .resultCard[data-tone=safe] { border-color:#cdeee0; }
@@ -182,7 +182,7 @@
 /* 이미지 행 내부의 세부 결과(객체 탐지 / OCR 텍스트 분석) 블록 */
 .subBlock { margin-top:14px; }
 .subBlock + .subBlock { padding-top:14px; border-top:1px solid #f0f4f8; }
-.subTitle { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 7px; font-size:11px; font-weight:600; letter-spacing:.3px; color:#8a9bb1; }
+.subTitle { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 7px; font-size:12px; font-weight:600; letter-spacing:.3px; color:#8a9bb1; }
 .subEmpty { margin:0; font-size:12px; color:#9aa8b9; }
 .ocrText { margin:0 0 8px; font-size:12px; line-height:1.7; color:#52657b; overflow-wrap:anywhere; white-space:pre-wrap; }
 .ocrDisclosure { margin:8px 0 12px; border:1px solid #e0e7ee; border-radius:8px; background:#f8fafc; }
@@ -201,7 +201,7 @@
 .stat { display:grid; gap:6px; padding:18px; border:1px solid #e0e7ee; border-radius:11px; background:#fff; text-align:center; }
 .stat strong { font:700 30px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:-1px; color:#172535; }
 .stat span { font-size:11px; color:#8a9bb1; }
-.stat[data-tone=green] { border-color:#cdeee0; background:#effaf5; }
+.stat[data-tone=green] { border-color:#e0e7ee; background:#fff; }
 .stat[data-tone=green] strong { color:#059d69; }
 .stat[data-tone=muted] strong { color:#8a9bb1; }
 .inlineLink { color:#059d69; font-weight:600; }
@@ -210,7 +210,7 @@
 /* ───────── 크롤링 모니터링 ───────── */
 /* 자동 크롤링·진행 로그·수집 기록 묶음. 박스 대신 라벨과 좁은 간격으로만 묶음을 표현한다. */
 .group { display:flex; flex-direction:column; gap:12px; }
-.groupLabel { margin:0 2px; font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.8px; color:#8a9bb1; }
+.groupLabel { margin:0 2px; font-size:13px; font-weight:600; color:#52657b; }
 /* 다음 자동 실행 카운트다운 */
 .nextRunNote { display:flex; align-items:center; gap:9px; margin-bottom:16px; padding:12px 16px; border:1px solid #cdeee0; border-radius:11px; background:#effaf5; color:#0a7d58; font-size:12px; line-height:1.6; }
 .nextRunNote > svg { width:15px; height:15px; flex-shrink:0; stroke-width:1.8; }
@@ -220,7 +220,7 @@
 /* 수집 기록 테이블 */
 .tableWrap { overflow-x:auto; }
 .historyTable { width:100%; border-collapse:collapse; font-size:12px; }
-.historyTable th { padding:8px 10px; border-bottom:1px solid #e6edf3; text-align:left; font:600 10px ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.4px; color:#8a9bb1; white-space:nowrap; }
+.historyTable th { padding:8px 10px; border-bottom:1px solid #e6edf3; text-align:left; font-size:12px; font-weight:600; color:#52657b; white-space:nowrap; }
 .historyTable td { padding:10px; border-bottom:1px solid #f0f4f8; color:#52657b; vertical-align:top; }
 .historyTable tr:last-child td { border-bottom:0; }
 .runTime { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; white-space:nowrap; color:#243447; }
@@ -265,7 +265,7 @@
 .resetButton:hover:not(:disabled) { background:#f5f8fa; }
 .resetButton:disabled { opacity:.45; cursor:default; }
 .resetButton > svg { width:15px; height:15px; stroke-width:1.9; }
-.saveButton { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:48px; padding:12px 26px; border:1px solid transparent; border-radius:10px; background:#09a96d; color:#fff; font-size:14px; font-weight:600; transition:background .14s; }
+.saveButton { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:48px; padding:12px 26px; border:1px solid transparent; border-radius:10px; background:#087e56; color:#fff; font-size:14px; font-weight:600; transition:background .14s; }
 .saveButton:hover:not(:disabled) { background:#07885a; }
 .saveButton:disabled { background:#e4eaf0; color:#9aa8b9; cursor:default; }
 .saveButton > svg { width:16px; height:16px; stroke-width:1.9; }
@@ -317,3 +317,76 @@
 @media(max-width:600px) {
   .resultCard { padding:18px 14px; }
 }
+
+/* 공개 체험: 입력과 실행을 하나의 폼으로 묶는다. */
+.trialForm { max-width:none; padding:0; gap:24px; }
+.trialForm .formStack { gap:0; border:1px solid #e0e7ee; border-radius:12px; background:#fff; overflow:hidden; }
+.trialForm .card { border:0; border-radius:0; }
+.trialForm .cardBody { padding:28px; }
+.trialForm .field { gap:12px; }
+.imageField { margin-top:16px; }
+.trialForm .imageField { margin-top:24px; }
+.trialForm .field label { display:flex; align-items:baseline; gap:8px; font-size:14px; }
+.trialForm .field label span { color:#74849a; font-size:12px; font-weight:400; }
+.trialForm .textarea { min-height:200px; padding:16px; border-radius:8px; font-family:inherit; font-size:15px; line-height:1.8; }
+.trialForm .textarea::placeholder { color:#74849a; }
+.trialForm .dropZone { min-height:100px; display:grid; grid-template-columns:24px auto; align-content:center; justify-content:center; column-gap:12px; row-gap:6px; padding:20px 16px; border-width:1px; border-radius:8px; background:#fbfcfd; }
+.trialForm .dropZone > svg { width:24px; height:24px; grid-row:1 / 3; align-self:center; }
+.trialForm .dropZoneText { font-size:13px; text-align:left; }
+.trialForm .dropZoneText strong { color:#087e56; text-decoration:underline; text-underline-offset:3px; }
+.trialForm .dropZone > small { grid-column:2; color:#74849a; text-align:left; }
+.trialForm .dropZone:hover { background:#f3f7f9; }
+.trialForm .dropZone[data-dragging=true] { background:#effaf5; }
+.trialForm .footer { justify-content:space-between; padding:20px 28px; border-top:1px solid #e0e7ee; gap:20px; }
+.trialForm .savedNote { color:#6a7b8f; line-height:1.7; }
+.trialForm .error { margin:0; line-height:1.7; }
+.trialForm .saveButton { flex-shrink:0; min-width:136px; border-radius:8px; background:#087e56; }
+.trialForm .saveButton:hover:not(:disabled) { background:#066b48; }
+.trialForm .saveButton:disabled { background:#e4eaf0; color:#64748b; }
+@media(max-width:600px) {
+  .trialForm .cardBody { padding:20px; }
+  .trialForm .textarea { min-height:180px; font-size:16px; }
+  .trialForm .dropZone { grid-template-columns:1fr; justify-items:center; gap:8px; }
+  .trialForm .dropZone > svg { grid-row:auto; }
+  .trialForm .dropZoneText { text-align:center; word-break:keep-all; }
+  .trialForm .dropZone > small { grid-column:1; text-align:center; }
+  .trialForm .footer { padding:20px; flex-direction:column; align-items:stretch; gap:14px; }
+  .trialForm .saveButton { width:100%; }
+}
+
+.outcomeHeader { display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px 20px; padding:0 0 20px; border-bottom:1px solid #e0e7ee; }
+.outcomeHeader > h2 { grid-column:1; grid-row:1; }
+.outcomeHeader > p { grid-column:1; }
+.outcomeHeader > .outcomeActions { grid-column:2; grid-row:1 / span 2; }
+@media(max-width:600px) { .outcomeHeader { grid-template-columns:1fr; } .outcomeHeader > .outcomeActions { grid-column:1; grid-row:auto; } }
+.outcomeHeader h2 { margin:0 0 10px; color:#202e39; font-size:22px; font-weight:700; letter-spacing:-.5px; scroll-margin-top:96px; }
+.outcomeHeader h2:focus { outline:none; }
+.outcomeHeader p { margin:0; color:#52657b; font-size:14px; line-height:1.8; word-break:keep-all; }
+.outcomeActions { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:12px; }
+.editInputButton { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:12px 20px; border:1px solid #e0e7ee; border-radius:8px; background:#fff; color:#52657b; font-size:14px; }
+.editInputButton svg { width:16px; height:16px; }
+.editInputButton:hover { background:#f3f7f9; }
+@media(max-width:600px) {
+  .outcomeActions > button { flex:1; }
+}
+
+.passwordLink { display:flex; align-items:center; gap:12px; padding:20px; border:1px solid #e0e7ee; border-radius:10px; background:#fff; color:#243447; font-size:14px; }
+.passwordLink:hover { background:#f8fafb; }
+.passwordLink > svg { width:18px; height:18px; color:#74849a; }
+.passwordLink > svg:last-child { margin-left:auto; }
+.passwordBack { display:inline-flex; align-items:center; gap:8px; align-self:flex-start; min-height:44px; font-size:13px; color:#52657b; }
+.passwordTitle { margin:0; font-size:16px; font-weight:600; }
+.passwordForm { display:flex; flex-direction:column; gap:20px; max-width:440px; }
+.passwordFields { display:flex; flex-direction:column; gap:20px; margin:0; padding:0; border:0; min-width:0; }
+.passwordForm .help { margin:0; }
+.passwordForm .error { margin:0; }
+.passwordForm .error:empty { display:none; }
+.passwordForm .saveButton { align-self:flex-start; }
+
+.addImageItem { aspect-ratio:1; }
+.addImageTile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; width:100%; height:100%; padding:12px; border:1px dashed #c7d3de; border-radius:11px; background:#fbfcfd; color:#52657b; cursor:pointer; }
+.addImageTile span { font-size:12px; font-weight:500; }
+.addImageTile:hover, .addImageTile[data-dragging=true] { background:#effaf5; border-color:#087e56; color:#087e56; }
+.addImageTile:focus-visible { outline:2px solid #087e56; outline-offset:2px; }
+.addImageTile:disabled { cursor:default; opacity:.55; }
+.imageLimit { margin:0; color:#74849a; font-size:11px; }

@@ -51,8 +51,8 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
     <main className="auth-page">
       <section className="auth-card" aria-labelledby="auth-title">
         <header className="auth-header">
-          <div className="auth-brand"><span aria-hidden="true" />SENTINEL</div>
-          <h1 id="auth-title">{isSignup ? "회원가입" : "로그인"} · 모니터링 콘솔</h1>
+          <Link href="/" className="auth-brand"><span aria-hidden="true" />SENTINEL</Link>
+          <h1 id="auth-title">{isSignup ? "회원가입" : "로그인"}</h1>
         </header>
 
         <form className="auth-form" onSubmit={handleSubmit} onInput={validatePasswords}>
@@ -106,10 +106,6 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
           <p className="form-message form-error" role="status">{message}</p>
         </form>
 
-        <aside className="auth-guide" aria-label="서비스 안내">
-          <p className="guide-title">{isSignup ? "안전한 모니터링의 시작" : "다시 오신 것을 환영합니다"}</p>
-          <p>의심 게시글을 확인하고,<br />탐지 결과를 한곳에서 관리하세요.</p>
-        </aside>
         <p className="auth-footer">
           {isSignup ? "이미 계정이 있으신가요?" : "아직 계정이 없으신가요?"}{" "}
           <Link href={isSignup ? "/login" : "/signup"}>{isSignup ? "로그인" : "회원가입"}</Link>

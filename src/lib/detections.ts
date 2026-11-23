@@ -16,13 +16,14 @@ export type DetectionImage = {
   score: number;
   detectedObjects: DetectedObject[];
   ocrText: string;
+  ocrResults: (TextAnalysis & { text: string })[];
 };
 
 /** 백엔드 text_ai_result에서 화면에 쓰는 값만 추린 것 */
 export type TextAnalysis = {
-  source: "rule" | "model" | null;
+  source: string | null;
   /** 종합 의심 판정(prediction=1). 모델·규칙 어느 쪽이든 의심이면 1 */
-  flagged: boolean;
+  flagged: boolean | null;
   /**
    * ML 모델의 마약 확률 0~1. 모델 점수 없이 규칙 매칭만 수행된 경우 null.
    * 규칙 양성을 임의의 확률(100%)로 바꿔 보여주지 않는다.
@@ -34,19 +35,24 @@ export type TextAnalysis = {
   matchedIntents: string[];
 };
 
-/** 목록 표시용 이미지 1장의 분석 요약 */
+/** 목록 표시용 이미지 1장의 분석 요약. 목록 응답에는 image_url·객체·ocr_text가 없고 요약값만 내려온다. */
 export type ImageAnalysisSummary = {
-  /** 이미지 URL. 썸네일 표시용 (없으면 빈 문자열) */
-  url: string;
   /** 이미지 AI의 의심 판정(prediction=1) */
   flagged: boolean;
-  /** 검출된 객체들(이름 + 객체별 confidence) */
-  objects: DetectedObject[];
-  /** OCR 텍스트 분석 점수 0~1. 추출된 텍스트가 없으면 null */
+  /** 이미지 AI 탐지 점수 0~1 (image_score) */
+  score: number;
+  /** 이미지에 OCR 텍스트가 있는지 (has_ocr_text) */
+  hasOcrText: boolean;
+  ocrFlagged: boolean | null;
+  /** OCR 텍스트 분석 점수 0~1. 목록 요약에는 없어 항상 null (상세 화면 호환용) */
   ocrScore: number | null;
 };
 
 export type DetectionRow = {
+  /** image_ai_results의 is_ocr_drug를 집계한 판정. */
+  ocrFlagged?: boolean | null;
+  /** 텍스트 판정 미제공 사유를 포함하는 원본 source. */
+  textSource?: string | null;
   id: string;
   isDrug: boolean | null;
   /** 텍스트 AI 모델의 마약 확률(0~1). 모델 점수가 없으면 null */
@@ -72,6 +78,8 @@ export type DetectionDetailData = DetectionRow & {
   images: DetectionImage[];
   /** 텍스트 분석을 돌리지 않은 게시글이면 null */
   textAnalysis: TextAnalysis | null;
+  /** 이 탐지를 담당하는 관리자 ID. 제공되지 않으면 빈 문자열 */
+  adminId: string;
 };
 
 /** 0~1 점수를 비율 문자열로 바꾼다. 필요한 화면에서는 소수 자릿수를 지정한다. */
@@ -123,4 +131,12 @@ export function shortUrl(url: string) {
   } catch {
     return url;
   }
+}
+
+/** 판정 미제공 사유는 source를 보존하고 알려진 값만 설명으로 바꾼다. */
+export function missingVerdictReason(source: string | null | undefined) {
+  if (source === "no_supported_characters") return "분석 가능한 문자가 없어 판정이 제공되지 않았습니다.";
+  if (source === "rule") return "규칙 분석의 판정이 제공되지 않았습니다.";
+  if (source === "model") return "모델 분석의 판정이 제공되지 않았습니다.";
+  return source ? `판정 미제공 사유: ${source}` : "판정과 사유가 제공되지 않았습니다.";
 }

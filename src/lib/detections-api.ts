@@ -1,7 +1,7 @@
 // GET /detections, GET /detections/{id}, GET /dashboard/* 서버 연동. 화면용 타입으로 변환해서 돌려준다.
 
 import { cookies } from "next/headers";
-import type { DetectedObject, DetectionDetailData, DetectionImage, DetectionRow, ReviewStatus, TextAnalysis } from "./detections";
+import type { DetectedObject, DetectionDetailData, DetectionImage, DetectionRow, ImageAnalysisSummary, ReviewStatus, TextAnalysis } from "./detections";
 
 const DEFAULT_API_URL = "https://drug-detection-671085027854.asia-northeast3.run.app";
 const REVIEW_STATUSES: ReviewStatus[] = ["unreviewed", "reviewing", "confirmed"];
@@ -37,16 +37,14 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
     ? (raw.review_status as ReviewStatus)
     : "unreviewed";
   const textAnalysis = toTextAnalysis(raw.text_ai_result);
-  const images = toImages(raw.image_ai_results);
-  const imageAnalyses = images.map((image) => ({
-    url: image.url,
-    flagged: image.flagged,
-    objects: image.detectedObjects,
-    ocrScore: null,
-  }));
+  const imageAnalyses = toImageSummaries(raw.image_ai_results);
+  const ocrImages = imageAnalyses.filter((image) => image.hasOcrText);
   return {
     id,
     isDrug: typeof raw.is_drug === "boolean" ? raw.is_drug : null,
+    ocrFlagged: ocrImages.some((image) => image.ocrFlagged === true) ? true
+      : ocrImages.length > 0 && ocrImages.every((image) => image.ocrFlagged === false) ? false : null,
+    textSource: textAnalysis?.source ?? null,
     textScore: textAnalysis ? textAnalysis.probDrug : null,
     textFlagged: textAnalysis ? textAnalysis.flagged : null,
     imageAnalyses,
@@ -75,18 +73,52 @@ function toDetectedObjects(raw: unknown): DetectedObject[] {
   return objects.sort((a, b) => b.confidence - a.confidence);
 }
 
+/**
+ * 목록 응답의 이미지 요약(image_ai_results[])을 화면용 요약으로 바꾼다.
+ * 목록에는 image_url·detected_objects·ocr_text가 없고 prediction·image_score·has_ocr_text만 내려오므로
+ * image_url 유무에 의존하지 않고 prediction으로 판정을 만든다.
+ */
+function toImageSummaries(raw: unknown): ImageAnalysisSummary[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item) => {
+    if (typeof item !== "object" || item === null) return [];
+    const image = item as Record<string, unknown>;
+    if (image.prediction !== 0 && image.prediction !== 1) return [];
+    return [{
+      flagged: image.prediction === 1,
+      score: typeof image.image_score === "number" ? image.image_score : 0,
+      hasOcrText: image.has_ocr_text === true,
+      ocrFlagged: image.has_ocr_text === true && typeof image.is_ocr_drug === "boolean" ? image.is_ocr_drug : null,
+      ocrScore: null,
+    }];
+  });
+}
+
+function toOcrResults(image: Record<string, unknown>): DetectionImage["ocrResults"] {
+  if (!Array.isArray(image.ocr_text_results)) return [];
+  return image.ocr_text_results.flatMap((raw) => {
+    if (!raw || typeof raw !== "object") return [];
+    const ocr = raw as Record<string, unknown>;
+    if (typeof ocr.ocr_text !== "string") return [];
+    const analysis = toTextAnalysis({ ...ocr, text_score: ocr.ocr_text_score });
+    return analysis ? [{ ...analysis, text: ocr.ocr_text }] : [];
+  });
+}
+
 function toImages(raw: unknown): DetectionImage[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item) => {
     if (typeof item !== "object" || item === null) return [];
     const image = item as Record<string, unknown>;
     if (typeof image.image_url !== "string" || !image.image_url) return [];
+    const ocrResults = toOcrResults(image);
     return [{
       url: image.image_url,
       flagged: image.prediction === 1,
       score: typeof image.image_score === "number" ? image.image_score : 0,
       detectedObjects: toDetectedObjects(image.detected_objects),
-      ocrText: typeof image.ocr_text === "string" ? image.ocr_text.trim() : "",
+      ocrText: ocrResults.map((ocr) => ocr.text).filter((text) => text.trim()).join("\n"),
+      ocrResults,
     }];
   });
 }
@@ -98,16 +130,14 @@ function toStringList(raw: unknown): string[] {
 function toTextAnalysis(raw: unknown): TextAnalysis | null {
   if (typeof raw !== "object" || raw === null) return null;
   const text = raw as Record<string, unknown>;
-  // 공개 분석과 동일하게 백분율을 우선하고, 필드가 없는 응답만 0~1 값을 사용한다.
-  const probability = text.prob_drug_percent === undefined
-    ? text.prob_drug
-    : typeof text.prob_drug_percent === "number" ? text.prob_drug_percent / 100 : null;
+  // text_score는 마약 확률 %(0~100). model 판정 시 제공되고 rule 판정 시 null이다.
+  const score = typeof text.text_score === "number" && Number.isFinite(text.text_score)
+    ? text.text_score / 100 : null;
   return {
-    flagged: text.prediction === 1,
-    source: text.source === "model" || text.source === "rule" ? text.source : null,
-    // prob_drug는 모델 점수라 없을 수 있다. 규칙 양성(prediction=1)을 확률로 둔갑시키지 않는다.
-    probDrug: typeof probability === "number" && Number.isFinite(probability) && probability >= 0 && probability <= 1
-      ? probability : null,
+    flagged: text.prediction === 1 ? true : text.prediction === 0 ? false : null,
+    source: typeof text.source === "string" ? text.source : null,
+    // 규칙 양성(prediction=1)을 확률로 둔갑시키지 않는다. 점수는 model 판정일 때만 존재한다.
+    probDrug: score !== null && score >= 0 && score <= 1 ? score : null,
     matchedTerms: toStringList(text.matched_terms),
     matchedIntents: toStringList(text.matched_intents),
   };
@@ -243,13 +273,18 @@ const OBJECT_CLASSES = ["Cocaine", "Heroin", "Shrooms", "Marijuana"];
  * 목록의 모든 게시글 상세를 모아 텍스트·이미지 통계를 집계한다.
  * TODO(stats): 게시글이 많아지면 요청이 N+1로 늘어나므로 백엔드 통계 API로 교체한다.
  */
-export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
+export async function fetchAnalysisStats(items?: DetectionRow[]): Promise<AnalysisStats | null> {
   try {
-    const { status, data } = await request("/detections");
-    if (status !== 200 || !Array.isArray(data)) return null;
-    const ids = data
-      .map((item) => (typeof item === "object" && item !== null ? (item as Record<string, unknown>).id : null))
-      .filter((id): id is string => typeof id === "string");
+    let ids: string[];
+    if (items) {
+      ids = items.map((item) => item.id);
+    } else {
+      const { status, data } = await request("/detections");
+      if (status !== 200 || !Array.isArray(data)) return null;
+      ids = data
+        .map((item) => (typeof item === "object" && item !== null ? (item as Record<string, unknown>).id : null))
+        .filter((id): id is string => typeof id === "string");
+    }
     const details = await Promise.all(
       ids.map((id) => request(`/detections/${encodeURIComponent(id)}`).catch(() => ({ status: 0, data: null as unknown }))),
     );
@@ -283,7 +318,7 @@ export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
           if (typeof item !== "object" || item === null) continue;
           const image = item as Record<string, unknown>;
           imageTotal += 1;
-          if (typeof image.ocr_text === "string" && image.ocr_text.trim()) withOcr += 1;
+          if (toOcrResults(image).some((ocr) => ocr.text.trim())) withOcr += 1;
           if (Array.isArray(image.detected_objects)) {
             for (const objectRaw of image.detected_objects) {
               if (typeof objectRaw !== "object" || objectRaw === null) continue;
@@ -425,6 +460,7 @@ export async function fetchDetectionDetail(id: string): Promise<DetectionDetailR
         postedAt: formatDateTime(raw.created_at_source),
         images: toImages(raw.image_ai_results),
         textAnalysis: toTextAnalysis(raw.text_ai_result),
+        adminId: typeof raw.admin_id === "string" ? raw.admin_id : "",
       },
     };
   } catch {

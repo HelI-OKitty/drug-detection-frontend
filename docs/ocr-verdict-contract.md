@@ -1,0 +1,14 @@
+# OCR 응답 계약
+
+배포된 OpenAPI 기준으로 기존 임시 `ocr_prediction` 계약은 사용하지 않습니다.
+
+- 목록 `image_ai_results[].is_ocr_drug`: boolean 판정. `true`는 양성, `false`는 음성, `null`·누락은 미제공입니다. 백엔드 추가 예정 계약이며 존재 여부로 추정하지 않습니다.
+- 목록: `image_ai_results[].has_ocr_text`는 OCR 텍스트 존재 여부입니다. 양성·음성을 의미하지 않습니다.
+- 상세·단순 분석: `image_ai_results[].ocr_text_results[]`에서 문구별 `ocr_text`, `prediction`, `ocr_text_score`, `matched_terms`, `matched_intents`를 읽습니다.
+- `prediction: null`은 미제공으로 유지하고 `source`가 있으면 미제공 사유를 표시합니다.
+- OCR 배열이 생략되면 빈 배열로 처리합니다. 존재 여부나 점수로 양성 판정을 만들지 않습니다.
+- 종합 판정 `is_drug`는 서버 응답 그대로 유지합니다.
+
+게시글 OCR 판정은 하나라도 양성이면 양성, OCR 대상 이미지가 모두 명시적으로 음성이면 음성입니다. 양성이 없고 대상 중 미제공이 있거나 OCR 대상이 없으면 미제공입니다.
+
+`has_ocr_text: false`인 이미지는 `is_ocr_drug` 값과 무관하게 OCR 판정 집계에서 제외합니다. 모든 이미지에 OCR 텍스트가 없으면 목록에 “OCR 없음”을 표시하고 양성·음성으로 분류하지 않습니다.
