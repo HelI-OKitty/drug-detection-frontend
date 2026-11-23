@@ -266,15 +266,12 @@
 .filterEmpty { display:grid; justify-items:center; gap:12px; padding:48px 20px; color:#74849a; text-align:center; }
 .filterEmpty strong { color:#52657b; font-size:15px; }
 .filterEmpty p { margin:0; font-size:12px; }
-.filterPagination { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-top:1px solid #edf1f5; color:#64748b; font-size:12px; }
-.filterPagination > div { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-.filterPagination { flex-wrap:wrap; }
-.pageJump { display:flex; align-items:center; gap:8px; }
-.pageJump select { min-height:38px; padding:6px 10px; border:1px solid #dce4eb; border-radius:8px; background:#fff; color:#243447; }
-.filterFields select:focus-visible, .filterFields input:focus-visible, .pageJump select:focus-visible { outline:2px solid #059669; outline-offset:-2px; }
+.filterPagination { display:flex; align-items:center; justify-content:center; gap:16px; padding:16px; border-top:1px solid #edf1f5; }
+.pageSteps, .pageNumbers { display:flex; align-items:center; gap:4px; }
+.filterFields select:focus-visible, .filterFields input:focus-visible, .pageButton:focus-visible { outline:2px solid #059669; outline-offset:2px; }
 @media(max-width:600px) {
-  .filterPagination > div { order:3; width:100%; justify-content:center; }
-  .filterPagination .pageButton { min-width:28px; padding:0 6px; }
+  .filterPagination { flex-wrap:wrap; gap:12px; }
+  .pageNumbers { order:-1; width:100%; justify-content:center; }
 }
 .verdictOverview { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); border:1px solid #e0e7ee; border-radius:10px; background:#fff; margin-bottom:22px; padding:22px 8px; }
 .verdictOverview > div { padding:0 20px; border-right:1px solid #edf1f5; }

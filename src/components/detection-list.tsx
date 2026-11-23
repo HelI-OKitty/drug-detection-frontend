@@ -29,6 +29,8 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const requestedPage = Number(params.get("page"));
   const page = Math.min(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1, totalPages);
+  const firstVisiblePage = Math.max(1, Math.min(page - 2, totalPages - 4));
+  const pageNumbers = Array.from({ length: Math.min(5, totalPages) }, (_, index) => firstVisiblePage + index);
   const rows = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const advancedCount = Number(filters.status !== "all") + Number(filters.period !== "all") + filters.types.length;
   const expanded = params.get("filters") === "open" || (params.get("filters") !== "closed" && advancedCount > 0);
@@ -148,7 +150,15 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
         </div>
         {!rows.length && <div className={styles.filterEmpty} role="status"><Search size={26} aria-hidden="true" /><strong>{items.length ? "조건에 맞는 게시글이 없습니다" : "아직 수집된 게시글이 없습니다"}</strong><p>{items.length ? "선택한 판정이나 기간을 바꿔 다시 확인해 보세요." : "크롤링으로 수집된 게시글이 여기에 표시됩니다."}</p>{active.length > 0 && <button className={styles.resetButton} onClick={reset}>필터 초기화</button>}</div>}
         <nav className={styles.filterPagination} aria-label="페이지 이동">
-          <label className={styles.pageJump}>페이지 이동<select aria-label="이동할 페이지" value={page} onChange={(event) => update({ page: event.target.value })}>{Array.from({ length: totalPages }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} / {totalPages}</option>)}</select></label>
+          <div className={styles.pageSteps}>
+            {[10, 5].map((step) => <button key={step} type="button" className={styles.pageButton} disabled={page === 1} aria-label={`${step}페이지 이전`} onClick={() => update({ page: String(Math.max(1, page - step)) })}>−{step}</button>)}
+          </div>
+          <div className={styles.pageNumbers}>
+            {pageNumbers.map((number) => <button key={number} type="button" className={styles.pageButton} aria-label={`${number}페이지`} aria-current={page === number ? "page" : undefined} onClick={() => update({ page: String(number) })}>{number}</button>)}
+          </div>
+          <div className={styles.pageSteps}>
+            {[5, 10].map((step) => <button key={step} type="button" className={styles.pageButton} disabled={page === totalPages} aria-label={`${step}페이지 다음`} onClick={() => update({ page: String(Math.min(totalPages, page + step)) })}>+{step}</button>)}
+          </div>
         </nav>
       </div>
     </div>
