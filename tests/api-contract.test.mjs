@@ -17,6 +17,7 @@ function loadServer(path) {
 }
 const detections = loadServer("../src/lib/detections-api.ts");
 const crawl = loadServer("../src/app/admin/crawl/actions.ts");
+const review = loadServer("../src/app/detections/[id]/actions.ts");
 const originalFetch = globalThis.fetch;
 const originalKey = process.env.INTERNAL_API_KEY;
 afterEach(() => {
@@ -28,6 +29,16 @@ const rows = [true, false].map((is_drug, index) => ({
   id: `id-${index}`, content: "게시글", is_drug,
   detected_at: "2026-11-03T10:35:00Z", review_status: "unreviewed",
 }));
+
+test("confirming review only updates review status, not the AI verdict", async () => {
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(url).pathname, "/detections/review-item/status");
+    assert.equal(init.method, "PATCH");
+    assert.deepEqual(JSON.parse(init.body), { review_status: "confirmed" });
+    return Response.json({ review_status: "confirmed" });
+  };
+  assert.deepEqual(await review.confirmDetection("review-item"), { success: true });
+});
 
 test("list uses is_drug without fabricating text, images, or OCR scores", async () => {
   globalThis.fetch = async (url, init) => {
