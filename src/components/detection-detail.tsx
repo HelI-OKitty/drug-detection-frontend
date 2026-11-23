@@ -403,7 +403,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
             <p className={error ? styles.actionError : styles.actionNote} role="status">{error || (status === "confirmed" ? "검토가 확정되었습니다." : "")}</p>
             <div className={styles.deleteArea}>
               <div><strong>게시글 삭제</strong><p>이 기록을 완전히 삭제합니다. 되돌릴 수 없습니다.</p></div>
-              <button type="button" onClick={() => setConfirmOpen(true)} disabled={pending !== null}><Trash2 size={15} aria-hidden="true" />삭제…</button>
+              <button type="button" aria-label="게시글 삭제" title="게시글 삭제" onClick={() => setConfirmOpen(true)} disabled={pending !== null}><Trash2 size={15} aria-hidden="true" /></button>
             </div>
           </section>
           <section className={styles.asideCard} aria-labelledby="meta-title">
