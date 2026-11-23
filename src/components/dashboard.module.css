@@ -24,8 +24,15 @@
 .bars li { flex:1; min-width:0; text-align:center; }
 .barColumn { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; height:144px; border-bottom:1px solid #e0e7ee; }
 .barColumn span { font-size:12px; font-variant-numeric:tabular-nums; color:#52657b; }
-.barColumn i { display:block; width:50%; max-width:42px; background:var(--chart-muted); border-radius:3px 3px 0 0; }
-.bars li:last-child i { background:var(--accent); }
+.barStack { width:50%; max-width:42px; border-radius:3px 3px 0 0; overflow:hidden; }
+.barStack i { display:block; }
+.barStack [data-verdict=positive], .trendLegend [data-verdict=positive] { background:var(--attention); }
+.barStack [data-verdict=negative], .trendLegend [data-verdict=negative] { background:var(--accent); }
+.preview .barStack [data-verdict=positive] { background:var(--chart-muted); }
+.preview .bars li:last-child .barStack [data-verdict=positive] { background:var(--accent); }
+.trendLegend { display:flex; justify-content:center; gap:16px; margin-top:14px; color:#52657b; font-size:12px; }
+.trendLegend span { display:flex; align-items:center; gap:6px; }
+.trendLegend i { width:8px; height:8px; border-radius:2px; }
 .bars li:last-child time { color:var(--accent); font-weight:600; }
 .bars time { display:block; margin-top:10px; color:#74849a; font-size:11px; white-space:nowrap; }
 .review { display:flex; align-items:center; gap:20px; min-height:206px; padding:24px; }

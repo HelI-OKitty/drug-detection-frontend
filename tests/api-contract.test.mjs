@@ -75,7 +75,7 @@ test("summary-only image responses support the image-positive filter", async () 
   assert.deepEqual(filterDetections(result.items, readFilters(new URLSearchParams("types=image")), "2026-11-23").map((row) => row.id), [rows[0].id]);
 });
 
-test("detail and statistics use source=model even without a probability", async () => {
+test("detail preserves source=model even without a probability", async () => {
   globalThis.fetch = async (url) => Response.json(new URL(url).pathname === "/detections" ? [rows[0]] : {
     ...rows[0], text_ai_result: { prediction: 1, source: "model", matched_terms: [], matched_intents: [] },
     image_ai_results: [{ image_url: "https://example.com/test.png", prediction: 0, ocr_text: "text" }],
@@ -84,15 +84,19 @@ test("detail and statistics use source=model even without a probability", async 
   assert.equal(detail.detection.textAnalysis.source, "model");
   assert.equal(detail.detection.textAnalysis.probDrug, null);
   assert.equal(detail.detection.imageAnalyses[0].ocrScore, null);
-  const stats = await detections.fetchAnalysisStats();
-  assert.equal(stats.textModel, 1);
-  assert.equal(stats.textRuleOnly, 0);
 });
 
 test("dashboard preserves documented counts and does not turn failures into zero", async () => {
-  const summary = { total: 149, today: 8, unconfirmed: 23, trend: [{ date: "2026-11-03", count: 8 }] };
-  globalThis.fetch = async () => Response.json(summary);
-  assert.deepEqual(await detections.fetchDashboard(), { ok: true, summary });
+  const verdict = { positive: 149, negative: 6 };
+  globalThis.fetch = async (url) => {
+    assert.equal(new URL(url).pathname, "/dashboard/summary");
+    return Response.json({ total: 149, today: 8, unreviewed: 23, verdict });
+  };
+  assert.deepEqual(await detections.fetchDashboard(), {
+    ok: true,
+    summary: { total: 149, today: 8, unconfirmed: 23 },
+    verdicts: verdict,
+  });
   globalThis.fetch = async () => new Response("error", { status: 500 });
   assert.deepEqual(await detections.fetchDashboard(), { ok: false, reason: "error" });
 });
@@ -164,11 +168,23 @@ test("partial failures and missing target results cannot be reported as success"
   assert.equal((await crawl.triggerCrawl(40)).success, false);
 });
 
-test("analysis statistics reuse supplied list without another list request", async () => {
-  let calls=0;
-  globalThis.fetch=async(url)=>{calls++;assert.equal(new URL(url).pathname,'/detections/id-0');return Response.json({...rows[0],image_ai_results:[]});};
-  assert.ok(await detections.fetchAnalysisStats([{id:'id-0'}]));
-  assert.equal(calls,1);
+test("analysis statistics come from the aggregate endpoint", async () => {
+  const trend = [{ date: "2026-11-23", positive: 5, negative: 2 }];
+  globalThis.fetch = async (url) => {
+    assert.equal(new URL(url).pathname, "/dashboard/analytics");
+    return Response.json({
+      trend,
+      text: { analyzed: 4, source: { model: 1, rule: 3 }, top_terms: [{ term: "term", count: 2 }], top_intents: [{ intent: "intent", count: 3 }] },
+      image: { total_images: 6, ocr_with_text: 2, ocr_without_text: 4, objects: [{ class_name: "Heroin", count: 1 }] },
+    });
+  };
+  assert.deepEqual(await detections.fetchAnalysisStats(), {
+    trend, analyzedText: 4, textModel: 1, textRuleOnly: 3,
+    terms: [{ name: "term", count: 2 }], intents: [{ name: "intent", count: 3 }],
+    imageTotal: 6, withOcr: 2, withoutOcr: 4, objects: [{ name: "Heroin", count: 1 }],
+  });
+  globalThis.fetch = async () => Response.json({ trend });
+  assert.equal(await detections.fetchAnalysisStats(), null);
 });
 
 test("null text predictions preserve source instead of becoming negative", async () => {
@@ -184,7 +200,7 @@ test("null text predictions preserve source instead of becoming negative", async
     assert.equal(detail.detection.textAnalysis.source,source);
   }
 });
-test("detail OCR arrays retain every verdict and score; stats count images once", async () => {
+test("detail OCR arrays retain every verdict and score", async () => {
   const ocr = (text,prediction,score) => ({ocr_text:text,prediction,ocr_text_score:score,matched_terms:['term'],matched_intents:['intent']});
   const raw = {...rows[0],image_ai_results:[
     {image_url:'https://example.com/a.png',prediction:0,image_score:.1,detected_objects:[],ocr_text_results:[ocr('first',1,90),ocr('second',0,0),{...ocr('third',null,null),source:'no_supported_characters'}]},
@@ -196,9 +212,6 @@ test("detail OCR arrays retain every verdict and score; stats count images once"
   assert.deepEqual(detection.images[0].ocrResults.map(r=>[r.flagged,r.probDrug]),[[true,.9],[false,0],[null,null]]);
   assert.deepEqual(detection.images[0].ocrResults[0].matchedTerms,['term']);
   assert.deepEqual(detection.images[1].ocrResults,[]);
-  const stats = await detections.fetchAnalysisStats([{id:raw.id}]);
-  assert.equal(stats.withOcr,1);
-  assert.equal(stats.withoutOcr,1);
 });
 test("crawl defaults omitted failed count to zero without accepting invalid counts", async () => {
   process.env.INTERNAL_API_KEY = 'test';

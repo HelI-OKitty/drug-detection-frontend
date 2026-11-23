@@ -192,154 +192,104 @@ export type DashboardSummary = {
   total: number;
   today: number;
   unconfirmed: number;
-  trend: { date: string; count: number }[];
 };
 
+export type DashboardVerdicts = { positive: number; negative: number };
+export type DashboardTrend = { date: string; positive: number; negative: number }[];
+
 export type DashboardResult =
-  | { ok: true; summary: DashboardSummary }
+  | { ok: true; summary: DashboardSummary; verdicts: DashboardVerdicts }
   | { ok: false; reason: "unauthorized" | "error" };
 
-const EMPTY_SUMMARY: DashboardSummary = { total: 0, today: 0, unconfirmed: 0, trend: [] };
-
-function toCount(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+function isCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
-/**
- * 조회 실패를 정상적인 0건으로 표시하지 않는다.
- */
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
 export async function fetchDashboard(): Promise<DashboardResult> {
-  const fallback = { status: 0, data: null as unknown };
-  const summaryRes = await request("/dashboard/summary").catch(() => fallback);
-  if (summaryRes.status === 401 || summaryRes.status === 403) {
-    return { ok: false, reason: "unauthorized" };
-  }
-  if (summaryRes.status !== 200 || !summaryRes.data || typeof summaryRes.data !== "object") {
+  try {
+    const { status, data } = await request("/dashboard/summary");
+    if (status === 401 || status === 403) return { ok: false, reason: "unauthorized" };
+
+    const { total, today, unreviewed, verdict } = asRecord(data);
+    const { positive, negative } = asRecord(verdict);
+    if (status !== 200 || !isCount(total) || !isCount(today) || !isCount(unreviewed)
+      || !isCount(positive) || !isCount(negative)) {
+      return { ok: false, reason: "error" };
+    }
+
+    return {
+      ok: true,
+      summary: { total, today, unconfirmed: unreviewed },
+      verdicts: { positive, negative },
+    };
+  } catch {
     return { ok: false, reason: "error" };
   }
-
-  const summaryRaw = summaryRes.data as Record<string, unknown>;
-  if (![summaryRaw.total, summaryRaw.today, summaryRaw.unconfirmed].every(
-    (value) => typeof value === "number" && Number.isInteger(value) && value >= 0,
-  ) || !Array.isArray(summaryRaw.trend)) return { ok: false, reason: "error" };
-  const trend = Array.isArray(summaryRaw.trend)
-    ? summaryRaw.trend.flatMap((item) => {
-        if (typeof item !== "object" || item === null) return [];
-        const day = item as Record<string, unknown>;
-        if (typeof day.date !== "string") return [];
-        return [{ date: day.date, count: toCount(day.count) }];
-      })
-    : [];
-  const summary: DashboardSummary = {
-    ...EMPTY_SUMMARY,
-    total: toCount(summaryRaw.total),
-    today: toCount(summaryRaw.today),
-    unconfirmed: toCount(summaryRaw.unconfirmed),
-    trend,
-  };
-  return { ok: true, summary };
 }
 
-/** 대시보드 텍스트·이미지 분석 통계 (실데이터 집계) */
 export type AnalysisStats = {
-  /** 텍스트 분석이 수행된 게시글 수 */
+  trend: DashboardTrend;
   analyzedText: number;
-  /** 모델 점수(prob_drug)가 있는 건수 */
   textModel: number;
-  /** 규칙 매칭만 수행된 건수 */
   textRuleOnly: number;
-  /** 단어 사전(용어) 매칭 상위 분포 */
   terms: { name: string; count: number }[];
-  /** 동사 사전(의도) 매칭 상위 분포 */
   intents: { name: string; count: number }[];
   imageTotal: number;
   withOcr: number;
   withoutOcr: number;
-  /** 검출 객체 클래스 분포 */
   objects: { name: string; count: number }[];
 };
 
-function topCounts(map: Map<string, number>, limit = 5) {
-  return [...map.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, limit);
+function parseCounts(value: unknown, nameKey: string) {
+  if (!Array.isArray(value)) return null;
+  const counts: { name: string; count: number }[] = [];
+  for (const item of value) {
+    const { [nameKey]: name, count } = asRecord(item);
+    if (typeof name !== "string" || !isCount(count)) return null;
+    counts.push({ name, count });
+  }
+  return counts;
 }
 
-/** 이미지 모델이 탐지하는 객체 클래스. 분포에 0건인 클래스도 함께 보여주기 위한 기준 목록 */
-const OBJECT_CLASSES = ["Cocaine", "Heroin", "Shrooms", "Marijuana"];
-
-/**
- * 목록의 모든 게시글 상세를 모아 텍스트·이미지 통계를 집계한다.
- * TODO(stats): 게시글이 많아지면 요청이 N+1로 늘어나므로 백엔드 통계 API로 교체한다.
- */
-export async function fetchAnalysisStats(items?: DetectionRow[]): Promise<AnalysisStats | null> {
+export async function fetchAnalysisStats(): Promise<AnalysisStats | null> {
   try {
-    let ids: string[];
-    if (items) {
-      ids = items.map((item) => item.id);
-    } else {
-      const { status, data } = await request("/detections");
-      if (status !== 200 || !Array.isArray(data)) return null;
-      ids = data
-        .map((item) => (typeof item === "object" && item !== null ? (item as Record<string, unknown>).id : null))
-        .filter((id): id is string => typeof id === "string");
+    const { status, data } = await request("/dashboard/analytics");
+    const { trend: rawTrend, text, image } = asRecord(data);
+    const { analyzed, top_terms, top_intents, source } = asRecord(text);
+    const { model, rule } = asRecord(source);
+    const { total_images, ocr_with_text, ocr_without_text, objects: rawObjects } = asRecord(image);
+    if (status !== 200 || !Array.isArray(rawTrend) || !isCount(analyzed) || !isCount(model)
+      || !isCount(rule) || !isCount(total_images) || !isCount(ocr_with_text)
+      || !isCount(ocr_without_text)) return null;
+
+    const trend: DashboardTrend = [];
+    for (const item of rawTrend) {
+      const { date, positive, negative } = asRecord(item);
+      if (typeof date !== "string" || !isCount(positive) || !isCount(negative)) return null;
+      trend.push({ date, positive, negative });
     }
-    const details = await Promise.all(
-      ids.map((id) => request(`/detections/${encodeURIComponent(id)}`).catch(() => ({ status: 0, data: null as unknown }))),
-    );
-
-    if (details.some(({ status, data }) => status !== 200 || !data || typeof data !== "object")) return null;
-
-    let analyzedText = 0;
-    let textModel = 0;
-    let textRuleOnly = 0;
-    let imageTotal = 0;
-    let withOcr = 0;
-    const termCounts = new Map<string, number>();
-    const intentCounts = new Map<string, number>();
-    // 탐지되지 않은 클래스도 0건으로 분포에 나오도록 기준 클래스를 미리 채워둔다.
-    const objectCounts = new Map<string, number>(OBJECT_CLASSES.map((name) => [name, 0]));
-
-    for (const { data: raw } of details) {
-      if (typeof raw !== "object" || raw === null) continue;
-      const detail = raw as Record<string, unknown>;
-      const text = detail.text_ai_result;
-      if (typeof text === "object" && text !== null) {
-        analyzedText += 1;
-        const t = text as Record<string, unknown>;
-        if (t.source === "model") textModel += 1;
-        else if (t.source === "rule") textRuleOnly += 1;
-        for (const word of toStringList(t.matched_terms)) termCounts.set(word, (termCounts.get(word) ?? 0) + 1);
-        for (const word of toStringList(t.matched_intents)) intentCounts.set(word, (intentCounts.get(word) ?? 0) + 1);
-      }
-      if (Array.isArray(detail.image_ai_results)) {
-        for (const item of detail.image_ai_results) {
-          if (typeof item !== "object" || item === null) continue;
-          const image = item as Record<string, unknown>;
-          imageTotal += 1;
-          if (toOcrResults(image).some((ocr) => ocr.text.trim())) withOcr += 1;
-          if (Array.isArray(image.detected_objects)) {
-            for (const objectRaw of image.detected_objects) {
-              if (typeof objectRaw !== "object" || objectRaw === null) continue;
-              const name = (objectRaw as Record<string, unknown>).class_name;
-              if (typeof name === "string" && name) objectCounts.set(name, (objectCounts.get(name) ?? 0) + 1);
-            }
-          }
-        }
-      }
-    }
+    const terms = parseCounts(top_terms, "term");
+    const intents = parseCounts(top_intents, "intent");
+    const objects = parseCounts(rawObjects, "class_name");
+    if (!terms || !intents || !objects) return null;
 
     return {
-      analyzedText,
-      textModel,
-      textRuleOnly,
-      terms: topCounts(termCounts),
-      intents: topCounts(intentCounts),
-      imageTotal,
-      withOcr,
-      withoutOcr: imageTotal - withOcr,
-      objects: topCounts(objectCounts, 8),
+      trend,
+      analyzedText: analyzed,
+      textModel: model,
+      textRuleOnly: rule,
+      terms,
+      intents,
+      imageTotal: total_images,
+      withOcr: ocr_with_text,
+      withoutOcr: ocr_without_text,
+      objects,
     };
   } catch {
     return null;
