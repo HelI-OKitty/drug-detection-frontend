@@ -225,3 +225,18 @@ test('OCR image verdicts aggregate without treating missing predictions as negat
   assert.deepEqual(items.map(item=>item.ocrFlagged),[true,false,null,null,null]);
   assert.deepEqual(filterDetections(items,readFilters(new URLSearchParams('types=ocr')),'2026-11-23').map(item=>item.id),['0']);
 });
+
+test('OCR presence takes precedence over verdicts, including mixed image batches', async () => {
+  const image = (has_ocr_text,is_ocr_drug) => ({prediction:0,image_score:0,has_ocr_text,is_ocr_drug});
+  const batches = [
+    [image(false,false)], [image(false,true)], [],
+    [image(false,true),image(true,false)],
+    [image(false,false),image(true,true)],
+    [image(false,true),image(true,null)],
+  ];
+  globalThis.fetch = async () => Response.json(batches.map((image_ai_results,i)=>({...rows[0],id:String(i),image_ai_results})));
+  const {items} = await detections.fetchDetections();
+  assert.deepEqual(items.map(item=>item.ocrFlagged),[null,null,null,false,true,null]);
+  assert.equal(items[1].imageAnalyses[0].ocrFlagged,null);
+  assert.deepEqual(filterDetections(items,readFilters(new URLSearchParams('types=ocr')),'2026-11-23').map(item=>item.id),['4']);
+});

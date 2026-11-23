@@ -38,7 +38,7 @@ function toRow(raw: Record<string, unknown>): DetectionRow | null {
     : "unreviewed";
   const textAnalysis = toTextAnalysis(raw.text_ai_result);
   const imageAnalyses = toImageSummaries(raw.image_ai_results);
-  const ocrImages = imageAnalyses.filter((image) => image.hasOcrText || image.ocrFlagged !== null);
+  const ocrImages = imageAnalyses.filter((image) => image.hasOcrText);
   return {
     id,
     isDrug: typeof raw.is_drug === "boolean" ? raw.is_drug : null,
@@ -88,7 +88,7 @@ function toImageSummaries(raw: unknown): ImageAnalysisSummary[] {
       flagged: image.prediction === 1,
       score: typeof image.image_score === "number" ? image.image_score : 0,
       hasOcrText: image.has_ocr_text === true,
-      ocrFlagged: typeof image.is_ocr_drug === "boolean" ? image.is_ocr_drug : null,
+      ocrFlagged: image.has_ocr_text === true && typeof image.is_ocr_drug === "boolean" ? image.is_ocr_drug : null,
       ocrScore: null,
     }];
   });
