@@ -90,7 +90,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   ];
   return (
     <div className={styles.page}>
-      <div className={styles.listIntro}><div><h1>탐지 게시글</h1></div><span>전체 {items.length.toLocaleString()}건</span></div>
+      <h1 className={styles.srOnly}>탐지 게시글</h1>
       <section className={styles.filterPanel} aria-label="탐지 게시글 필터">
         <div className={styles.filterSearchRow}>
           <div className={styles.search}><Search aria-hidden="true" /><input type="search" value={filters.query} onChange={(e) => update({ q: e.target.value })} placeholder="게시글 내용 · 작성자 · 키워드 검색" aria-label="탐지 게시글 검색" /></div>

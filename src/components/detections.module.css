@@ -214,10 +214,6 @@
 }
 
 /* 판정 필터: 기존 emerald/slate 스타일을 유지하며 판정과 검토 상태를 분리 */
-.listIntro { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
-.listIntro h1 { margin:0; font-size:23px; letter-spacing:-.7px; color:#172535; }
-.listIntro p { margin:8px 0 0; font-size:13px; line-height:1.7; color:#64748b; }
-.listIntro > span { flex-shrink:0; padding:8px 12px; border:1px solid #dce5e9; border-radius:9px; color:#52657b; font-size:12px; background:#fff; }
 .filterPanel { background:#fff; border:1px solid #e0e7ee; border-radius:10px; padding:16px 20px 0; }
 .filterSearchRow { display:flex; gap:12px; align-items:center; }
 .filterSearchRow input { min-height:42px; padding-top:9px; padding-bottom:9px; }
@@ -293,9 +289,6 @@
   .verdictOverview > div { border:0; }
 }
 @media(max-width:600px) {
-  .listIntro { align-items:start; }
-  .listIntro h1 { font-size:20px; }
-  .listIntro > span { padding:7px; font-size:11px; }
   .filterPanel { padding:16px 16px 0; }
   .filterSearchRow { align-items:stretch; gap:8px; }
   .filterSearchRow .search { flex-basis:auto; }
