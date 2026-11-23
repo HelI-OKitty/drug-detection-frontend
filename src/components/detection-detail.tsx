@@ -112,7 +112,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
         <Link href={listHref} scroll={false} className={styles.backLink}><ArrowLeft aria-hidden="true" />목록으로</Link>
         <a className={styles.originalLink} href={detection.sourceUrl} target="_blank" rel="noreferrer noopener">원문 열기<ExternalLink size={15} aria-hidden="true" /><span className={styles.srOnly}> (새 창)</span></a>
       </div>
-      <div className={styles.detailHeading}><div><h1>탐지 게시글 검토</h1></div><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></div>
+      <h1 className={styles.srOnly}>탐지 게시글 검토</h1>
 
       <section className={styles.verdictOverview} aria-label="판정 및 검토 요약">
         <div><span>종합 판정</span><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong><small>서버의 종합 분석 결과</small></div>
