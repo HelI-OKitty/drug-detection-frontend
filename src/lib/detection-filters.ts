@@ -33,7 +33,7 @@ export function readFilters(params: URLSearchParams): DetectionFilters {
     hasOcrText: ["true", "false"].includes(params.get("has_ocr_text") ?? "") ? params.get("has_ocr_text")! : "all",
     verdict: VERDICTS.some((v) => v.key === verdict) ? verdict : "all",
     status: ["unreviewed", "reviewing", "confirmed"].includes(status) ? status : "all",
-    types: [...new Set((params.get("types") ?? "").split(",").filter((v) => v === "text" || v === "image"))],
+    types: [...new Set((params.get("types") ?? "").split(",").filter((v) => v === "text" || v === "image" || v === "ocr"))],
     period: PERIODS.some((p) => p.key === period) ? period : "all",
     from: validDate(params.get("from") ?? ""), to: validDate(params.get("to") ?? ""),
   };
@@ -66,7 +66,7 @@ export function filterDetections(items: DetectionRow[], filters: DetectionFilter
     if (filters.status !== "all" && filters.status !== item.status) return false;
     // 여러 유형 선택은 OR. 종합 양성 중 실제 개별 판정이 확인된 항목만 포함한다.
     if (filters.types.length && (item.isDrug !== true || !filters.types.some((type) =>
-      type === "text" ? item.textFlagged === true : imageVerdict(item) === true))) return false;
+      type === "text" ? item.textFlagged === true : type === "image" ? imageVerdict(item) === true : item.ocrFlagged === true))) return false;
     const date = validDate(item.detectedAt.slice(0, 10));
     if ((from || to) && (!date || (from && date < from) || (to && date > to))) return false;
     return !query || [item.summary, item.nickname, ...item.keywords].some((value) => value.toLowerCase().includes(query));

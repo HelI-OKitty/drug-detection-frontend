@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, Info, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
 import { STATUS_FILTERS, STATUS_LABEL, sourceHost, missingVerdictReason, type DetectionRow } from "@/lib/detections";
 import { VERDICTS, PERIODS, OCR_PRESENCE, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
 import styles from "./detections.module.css";
@@ -67,7 +67,8 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const hasText = items.some((item) => item.textFlagged !== null);
   const hasImage = items.some((item) => imageVerdict(item) !== null);
   const typeOptions = [{ key: "text", label: "텍스트 양성", Icon: FileText, available: hasText },
-    { key: "image", label: "이미지 양성", Icon: ImageIcon, available: hasImage }];
+    { key: "image", label: "이미지 양성", Icon: ImageIcon, available: hasImage },
+    { key: "ocr", label: "OCR 양성", Icon: ScanText, available: true }];
 
   function update(values: Record<string, string>) {
     const next = new URLSearchParams(window.location.search);
@@ -94,7 +95,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
     ...(filters.query ? [{ label: `검색: ${filters.query}`, clear: () => update({ q: "" }) }] : []),
     ...(filters.verdict !== "all" ? [{ label: `판정: ${VERDICTS.find((v) => v.key === filters.verdict)?.label}`, clear: () => update({ verdict: "all", types: "" }) }] : []),
     ...(filters.status !== "all" ? [{ label: `검토: ${STATUS_FILTERS.find((v) => v.key === filters.status)?.label}`, clear: () => update({ status: "all" }) }] : []),
-    ...filters.types.map((type) => ({ label: type === "text" ? "텍스트 양성" : "이미지 양성", clear: () => update({ types: filters.types.filter((v) => v !== type).join(",") }) })),
+    ...filters.types.map((type) => ({ label: type === "text" ? "텍스트 양성" : type === "image" ? "이미지 양성" : "OCR 양성", clear: () => update({ types: filters.types.filter((v) => v !== type).join(",") }) })),
     ...(filters.period !== "all" ? [{ label: filters.period === "custom" ? `${filters.from || "시작일"} ~ ${filters.to || "종료일"}` : PERIODS.find((p) => p.key === filters.period)?.label, clear: () => update({ period: "all", from: "", to: "" }) }] : []),
   ];
   return (

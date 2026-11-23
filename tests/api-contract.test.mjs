@@ -71,7 +71,7 @@ test("summary-only image responses support the image-positive filter", async () 
   };
   const result = await detections.fetchDetections();
   assert.equal(result.ok, true);
-  assert.deepEqual(result.items[0].imageAnalyses, [{ flagged: true, score: 0.8, hasOcrText: true, ocrScore: null }]);
+  assert.deepEqual(result.items[0].imageAnalyses, [{ flagged: true, score: 0.8, hasOcrText: true, ocrFlagged: null, ocrScore: null }]);
   assert.deepEqual(filterDetections(result.items, readFilters(new URLSearchParams("types=image")), "2026-11-23").map((row) => row.id), [rows[0].id]);
 });
 
@@ -212,8 +212,16 @@ test("crawl defaults omitted failed count to zero without accepting invalid coun
 
 test("list OCR verdict uses only is_ocr_drug booleans independently of OCR presence", async () => {
   const values = [true,false,null,undefined,1,0,'true'];
-  globalThis.fetch = async () => Response.json(values.map((value,index)=>({...rows[0],id:String(index),is_ocr_drug:value,image_ai_results:[{prediction:0,image_score:0,has_ocr_text:true}]})));
+  globalThis.fetch = async () => Response.json(values.map((value,index)=>({...rows[0],id:String(index),image_ai_results:[{prediction:0,image_score:0,has_ocr_text:true,is_ocr_drug:value}]})));
   const {items} = await detections.fetchDetections();
   assert.deepEqual(items.map(item=>item.ocrFlagged),[true,false,null,null,null,null,null]);
   assert.ok(items.every(item=>item.imageAnalyses[0].hasOcrText));
+});
+
+test('OCR image verdicts aggregate without treating missing predictions as negative', async () => {
+  const batches = [[true,null],[false,false],[false,null],[null],[]];
+  globalThis.fetch=async()=>Response.json(batches.map((values,i)=>({...rows[0],id:String(i),image_ai_results:values.map(is_ocr_drug=>({prediction:0,image_score:0,has_ocr_text:true,is_ocr_drug}))})));
+  const {items}=await detections.fetchDetections();
+  assert.deepEqual(items.map(item=>item.ocrFlagged),[true,false,null,null,null]);
+  assert.deepEqual(filterDetections(items,readFilters(new URLSearchParams('types=ocr')),'2026-11-23').map(item=>item.id),['0']);
 });

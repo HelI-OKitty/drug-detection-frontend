@@ -43,12 +43,13 @@ export type ImageAnalysisSummary = {
   score: number;
   /** 이미지에 OCR 텍스트가 있는지 (has_ocr_text) */
   hasOcrText: boolean;
+  ocrFlagged: boolean | null;
   /** OCR 텍스트 분석 점수 0~1. 목록 요약에는 없어 항상 null (상세 화면 호환용) */
   ocrScore: number | null;
 };
 
 export type DetectionRow = {
-  /** 목록 게시글 단위 is_ocr_drug. OCR 존재 여부와 별개인 명시적 판정. */
+  /** image_ai_results의 is_ocr_drug를 집계한 판정. */
   ocrFlagged?: boolean | null;
   /** 텍스트 판정 미제공 사유를 포함하는 원본 source. */
   textSource?: string | null;

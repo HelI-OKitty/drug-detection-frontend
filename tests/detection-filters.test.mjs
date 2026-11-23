@@ -28,7 +28,7 @@ test('invalid URL filters are normalized; OCR text or scores never imply OCR pos
   assert.equal(filters.verdict, 'all');
   assert.equal(filters.status, 'all');
   assert.equal(filters.from, '');
-  assert.deepEqual(filters.types, ['text']);
+  assert.deepEqual(filters.types, ['ocr', 'text']);
 });
 
 test('dashboard counts preserve negative, positive and missing verdicts separately',()=>{
