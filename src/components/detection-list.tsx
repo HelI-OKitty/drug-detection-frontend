@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, RotateCcw, FileText, Image as ImageIcon, ScanText, Info, X } from "lucide-react";
 import { STATUS_FILTERS, STATUS_LABEL, sourceHost, type DetectionRow } from "@/lib/detections";
 import { VERDICTS, PERIODS, readFilters, filterDetections, imageVerdict, verdictMatches } from "@/lib/detection-filters";
 import styles from "./detections.module.css";
@@ -29,8 +29,6 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const requestedPage = Number(params.get("page"));
   const page = Math.min(Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1, totalPages);
-  const pageStart = Math.max(1, Math.min(page - 2, totalPages - 4));
-  const pageNumbers = Array.from({ length: Math.min(5, totalPages) }, (_, index) => pageStart + index);
   const rows = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const advancedCount = Number(filters.status !== "all") + Number(filters.period !== "all") + filters.types.length;
   const expanded = params.get("filters") === "open" || (params.get("filters") !== "closed" && advancedCount > 0);
@@ -149,16 +147,7 @@ export default function DetectionList({ items }: { items: DetectionRow[] }) {
           </table>
         </div>
         {!rows.length && <div className={styles.filterEmpty} role="status"><Search size={26} aria-hidden="true" /><strong>{items.length ? "조건에 맞는 게시글이 없습니다" : "아직 수집된 게시글이 없습니다"}</strong><p>{items.length ? "선택한 판정이나 기간을 바꿔 다시 확인해 보세요." : "크롤링으로 수집된 게시글이 여기에 표시됩니다."}</p>{active.length > 0 && <button className={styles.resetButton} onClick={reset}>필터 초기화</button>}</div>}
-        <p className={styles.resultNote}>텍스트 또는 이미지 중 하나라도 양성이면 종합 양성입니다. 미제공은 음성을 뜻하지 않습니다.</p>
         <nav className={styles.filterPagination} aria-label="페이지 이동">
-          <span>{filtered.length ? `${(page - 1) * PER_PAGE + 1}–${Math.min(page * PER_PAGE, filtered.length)}` : "0"} / {filtered.length}건</span>
-          <div>
-            <button className={styles.pageButton} disabled={page === 1} onClick={() => update({ page: "1" })} aria-label="첫 페이지"><ChevronsLeft size={16} /></button>
-            <button className={styles.pageButton} disabled={page === 1} onClick={() => update({ page: String(page - 1) })} aria-label="이전 페이지"><ChevronLeft size={16} /></button>
-            {pageNumbers.map((number) => <button key={number} className={styles.pageButton} aria-label={`${number}페이지`} aria-current={number === page ? "page" : undefined} onClick={() => update({ page: String(number) })}>{number}</button>)}
-            <button className={styles.pageButton} disabled={page === totalPages} onClick={() => update({ page: String(page + 1) })} aria-label="다음 페이지"><ChevronRight size={16} /></button>
-            <button className={styles.pageButton} disabled={page === totalPages} onClick={() => update({ page: String(totalPages) })} aria-label="마지막 페이지"><ChevronsRight size={16} /></button>
-          </div>
           <label className={styles.pageJump}>페이지 이동<select aria-label="이동할 페이지" value={page} onChange={(event) => update({ page: event.target.value })}>{Array.from({ length: totalPages }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} / {totalPages}</option>)}</select></label>
         </nav>
       </div>
