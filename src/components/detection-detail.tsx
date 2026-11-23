@@ -109,10 +109,10 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
   return (
     <div className={styles.page}>
       <div className={styles.detailTopline}>
-        <Link href={listHref} className={styles.backLink}><ArrowLeft aria-hidden="true" />필터를 유지하고 목록으로</Link>
+        <Link href={listHref} scroll={false} className={styles.backLink}><ArrowLeft aria-hidden="true" />목록으로</Link>
         <a className={styles.originalLink} href={detection.sourceUrl} target="_blank" rel="noreferrer noopener">원문 열기<ExternalLink size={15} aria-hidden="true" /><span className={styles.srOnly}> (새 창)</span></a>
       </div>
-      <div className={styles.detailHeading}><div><h1>탐지 게시글 검토</h1><p>원문과 분석 근거를 확인한 뒤 검토 상태를 확정하세요.</p></div><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></div>
+      <div className={styles.detailHeading}><div><h1>탐지 게시글 검토</h1></div><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></div>
 
       <section className={styles.verdictOverview} aria-label="판정 및 검토 요약">
         <div><span>종합 판정</span><strong data-positive={detection.isDrug === true}>{detection.isDrug === null ? "판정 미제공" : detection.isDrug ? "양성" : "음성"}</strong><small>서버의 종합 분석 결과</small></div>
@@ -161,7 +161,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
             </header>
             {textAnalysis ? (
               <>
-                <p className={styles.evidenceNote}>판정 방식: {textAnalysis.source === "rule" ? "규칙 · 사전 매칭" : textAnalysis.source === "model" ? "AI 모델" : "미제공"}. 모델 점수와 사전 매칭 결과를 함께 확인하세요.</p>
+                <p className={styles.evidenceNote}>판정 방식: {textAnalysis.source === "rule" ? "규칙 · 사전 매칭" : textAnalysis.source === "model" ? "AI 모델" : "미제공"}</p>
                 {/* prob_drug는 ML 모델 점수, matched_*는 사전 기반 규칙 결과로 서로 다른 분석이다. */}
                 {textAnalysis.probDrug !== null ? (
                   <div className={styles.probRow}>
@@ -223,7 +223,7 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
               <h2 className={styles.asideTitle} id="image-analysis-title">이미지 · OCR 분석 근거</h2>
             </header>
             {detection.images.length > 0 ? (
-              <><p className={styles.evidenceNote}>이미지를 누르면 원본 크기로 볼 수 있습니다. 객체의 검출 신뢰도와 OCR 텍스트를 각각 확인하세요.</p><ul className={styles.imageRows}>
+              <><p className={styles.evidenceNote}>이미지를 선택하면 원본을 볼 수 있습니다.</p><ul className={styles.imageRows}>
                 {detection.images.map((image, index) => {
                   const ocrScore = analyses ? analyses[index].ocrScore : null;
                   return (
@@ -320,11 +320,11 @@ export default function DetectionDetail({ detection }: { detection: DetectionDet
         <aside className={`${styles.aside} ${styles.reviewAside}`}>
           <section className={`${styles.asideCard} ${styles.reviewCard}`} aria-labelledby="action-title">
             <div className={styles.reviewCardHeader}><h2 id="action-title">검토 처리</h2><span className={styles.status} data-status={status}>{STATUS_LABEL[status]}</span></div>
-            <p className={styles.evidenceNote}>원문과 분석 근거를 검토한 뒤 확정하세요. AI의 양성·음성 판정은 변경되지 않습니다.</p>
+            <p className={styles.evidenceNote}>검토 확정은 AI 판정을 변경하지 않습니다.</p>
             <button type="button" className={styles.confirmButton} onClick={handleConfirm} disabled={status === "confirmed" || pending !== null}>
               <Check aria-hidden="true" />{pending === "confirm" ? "저장 중…" : status === "confirmed" ? "검토 확정됨" : "검토 확정"}
             </button>
-            <p className={error ? styles.actionError : styles.actionNote} role="status">{error || (status === "confirmed" ? "검토 상태가 확정으로 저장되었습니다." : "확정 시 검토 상태를 서버에 저장합니다.")}</p>
+            <p className={error ? styles.actionError : styles.actionNote} role="status">{error || (status === "confirmed" ? "검토가 확정되었습니다." : "")}</p>
             <div className={styles.deleteArea}>
               <div><strong>게시글 삭제</strong><p>이 기록을 완전히 삭제합니다. 되돌릴 수 없습니다.</p></div>
               <button type="button" onClick={() => setConfirmOpen(true)} disabled={pending !== null}><Trash2 size={15} aria-hidden="true" />삭제…</button>
