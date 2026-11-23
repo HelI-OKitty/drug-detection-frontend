@@ -72,6 +72,8 @@ export type DetectionDetailData = DetectionRow & {
   images: DetectionImage[];
   /** 텍스트 분석을 돌리지 않은 게시글이면 null */
   textAnalysis: TextAnalysis | null;
+  /** 이 탐지를 담당하는 관리자 ID. 제공되지 않으면 빈 문자열 */
+  adminId: string;
 };
 
 /** 0~1 점수를 비율 문자열로 바꾼다. 필요한 화면에서는 소수 자릿수를 지정한다. */
